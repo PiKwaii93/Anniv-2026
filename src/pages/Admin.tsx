@@ -36,10 +36,10 @@ function Admin() {
   const [name, setName] = useState('')
   const [status, setStatus] =
     useState<GuestStatus>('invited')
-  const [plusOnes, setPlusOnes] = useState<PlusOne[]>(
-    [],
-  )
+  const [plusOnes, setPlusOnes] = useState<PlusOne[]>([])
   const [notes, setNotes] = useState('')
+  const [expandedGuestIds, setExpandedGuestIds] =
+    useState<Set<string>>(() => new Set())
 
   const stats = useMemo(() => {
     const confirmed = guests.filter(
@@ -55,8 +55,7 @@ function Admin() {
     ).length
 
     const plusOnes = guests.reduce(
-      (total, guest) =>
-        total + guest.plusOnes.length,
+      (total, guest) => total + guest.plusOnes.length,
       0,
     )
 
@@ -67,6 +66,20 @@ function Admin() {
       plusOnes,
     }
   }, [guests])
+
+  const toggleGuest = (guestId: string) => {
+    setExpandedGuestIds((currentIds) => {
+      const nextIds = new Set(currentIds)
+
+      if (nextIds.has(guestId)) {
+        nextIds.delete(guestId)
+      } else {
+        nextIds.add(guestId)
+      }
+
+      return nextIds
+    })
+  }
 
   const handleAddPlusOne = () => {
     setPlusOnes((currentPlusOnes) => [
@@ -145,6 +158,12 @@ function Admin() {
         createPlusOne(),
       ],
     })
+
+    setExpandedGuestIds((currentIds) => {
+      const nextIds = new Set(currentIds)
+      nextIds.add(guestId)
+      return nextIds
+    })
   }
 
   const updateGuestPlusOne = (
@@ -194,8 +213,8 @@ function Admin() {
   return (
     <main className="admin-page">
       <header className="page-header">
-        <Link to="/" className="back-link">
-          ← Accueil
+        <Link to="/admin" className="back-link">
+          ← Control Room
         </Link>
 
         <div>
@@ -389,133 +408,172 @@ function Admin() {
           </div>
         ) : (
           <div className="guest-list">
-            {guests.map((guest) => (
-              <article
-                key={guest.id}
-                className="guest-row"
-              >
-                <div className="guest-row__identity">
-                  <div className="guest-avatar">
-                    {guest.name
-                      .charAt(0)
-                      .toUpperCase()}
+            {guests.map((guest) => {
+              const isExpanded = expandedGuestIds.has(
+                guest.id,
+              )
+
+              return (
+                <article
+                  key={guest.id}
+                  className={`guest-row ${
+                    isExpanded
+                      ? 'guest-row--expanded'
+                      : ''
+                  }`}
+                >
+                  <div className="guest-row__identity">
+                    <div className="guest-avatar">
+                      {guest.name
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+
+                    <div>
+                      <input
+                        className="guest-name-input"
+                        value={guest.name}
+                        aria-label={`Nom de ${guest.name}`}
+                        onChange={(event) =>
+                          updateGuest(guest.id, {
+                            name: event.target.value,
+                          })
+                        }
+                      />
+
+                      <span className="guest-row__summary">
+                        {statusLabels[guest.status]}
+                        {guest.plusOnes.length > 0
+                          ? ` · ${guest.plusOnes.length} +1`
+                          : ''}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="guest-row__toggle"
+                      aria-expanded={isExpanded}
+                      aria-label={
+                        isExpanded
+                          ? `Replier ${guest.name}`
+                          : `Modifier ${guest.name}`
+                      }
+                      onClick={() =>
+                        toggleGuest(guest.id)
+                      }
+                    >
+                      <span>
+                        {isExpanded ? '−' : '+'}
+                      </span>
+                    </button>
                   </div>
 
-                  <div>
-                    <input
-                      className="guest-name-input"
-                      value={guest.name}
-                      onChange={(event) =>
-                        updateGuest(guest.id, {
-                          name: event.target.value,
-                        })
-                      }
-                    />
-
+                  <div className="guest-row__content">
                     {guest.notes && (
-                      <span>{guest.notes}</span>
+                      <p className="guest-row__notes">
+                        {guest.notes}
+                      </p>
+                    )}
+
+                    <div className="guest-row__controls">
+                      <select
+                        value={guest.status}
+                        aria-label={`Statut de ${guest.name}`}
+                        onChange={(event) =>
+                          updateGuest(guest.id, {
+                            status:
+                              event.target
+                                .value as GuestStatus,
+                          })
+                        }
+                      >
+                        {Object.entries(
+                          statusLabels,
+                        ).map(([value, label]) => (
+                          <option
+                            key={value}
+                            value={value}
+                          >
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          addPlusOneToGuest(guest.id)
+                        }
+                      >
+                        + Ajouter un +1
+                      </button>
+
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={() => {
+                          const shouldDelete =
+                            window.confirm(
+                              `Supprimer ${guest.name} ?`,
+                            )
+
+                          if (shouldDelete) {
+                            removeGuest(guest.id)
+                          }
+                        }}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+
+                    {guest.plusOnes.length > 0 && (
+                      <div className="guest-plus-ones">
+                        <span className="guest-plus-ones__title">
+                          +1
+                        </span>
+
+                        {guest.plusOnes.map(
+                          (plusOne) => (
+                            <div
+                              key={plusOne.id}
+                              className="plus-one-field"
+                            >
+                              <input
+                                type="text"
+                                placeholder="Nom du +1"
+                                value={plusOne.name}
+                                onChange={(event) =>
+                                  updateGuestPlusOne(
+                                    guest.id,
+                                    plusOne.id,
+                                    event.target.value,
+                                  )
+                                }
+                              />
+
+                              <button
+                                type="button"
+                                className="icon-delete-button"
+                                aria-label="Supprimer le +1"
+                                onClick={() =>
+                                  removeGuestPlusOne(
+                                    guest.id,
+                                    plusOne.id,
+                                  )
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ),
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
-
-                <div className="guest-row__content">
-                  <div className="guest-row__controls">
-                    <select
-                      value={guest.status}
-                      onChange={(event) =>
-                        updateGuest(guest.id, {
-                          status:
-                            event.target
-                              .value as GuestStatus,
-                        })
-                      }
-                    >
-                      {Object.entries(
-                        statusLabels,
-                      ).map(([value, label]) => (
-                        <option
-                          key={value}
-                          value={value}
-                        >
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() =>
-                        addPlusOneToGuest(guest.id)
-                      }
-                    >
-                      + Ajouter un +1
-                    </button>
-
-                    <button
-                      type="button"
-                      className="delete-button"
-                      onClick={() => {
-                        const shouldDelete =
-                          window.confirm(
-                            `Supprimer ${guest.name} ?`,
-                          )
-
-                        if (shouldDelete) {
-                          removeGuest(guest.id)
-                        }
-                      }}
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-
-                  {guest.plusOnes.length > 0 && (
-                    <div className="guest-plus-ones">
-                      <span className="guest-plus-ones__title">
-                        +1
-                      </span>
-
-                      {guest.plusOnes.map(
-                        (plusOne) => (
-                          <div
-                            key={plusOne.id}
-                            className="plus-one-field"
-                          >
-                            <input
-                              type="text"
-                              placeholder="Nom du +1"
-                              value={plusOne.name}
-                              onChange={(event) =>
-                                updateGuestPlusOne(
-                                  guest.id,
-                                  plusOne.id,
-                                  event.target.value,
-                                )
-                              }
-                            />
-
-                            <button
-                              type="button"
-                              className="icon-delete-button"
-                              aria-label="Supprimer le +1"
-                              onClick={() =>
-                                removeGuestPlusOne(
-                                  guest.id,
-                                  plusOne.id,
-                                )
-                              }
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            })}
           </div>
         )}
       </section>

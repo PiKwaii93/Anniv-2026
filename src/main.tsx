@@ -8,6 +8,7 @@ import { AuthProvider } from './features/auth/AuthContext'
 import { GuestsProvider } from './features/guests/GuestsContext'
 
 import './index.css'
+import './MobilePolish.css'
 
 createRoot(
   document.getElementById('root')!,
