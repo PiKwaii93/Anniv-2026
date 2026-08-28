@@ -1,0 +1,11 @@
+.module-card--bingo::after {
+  background: #f0aa3d;
+}
+
+.control-module--bingo::before {
+  background: #f0aa3d;
+}
+
+.control-module--bingo:hover {
+  border-color: rgba(240, 170, 61, 0.2);
+}
