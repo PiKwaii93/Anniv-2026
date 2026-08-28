@@ -235,11 +235,8 @@ function Bingo() {
         )
 
         setError(
-          game
-            ? 'Le pool du Bingo est momentanément indisponible. Ta grille actuelle reste jouable.'
-            : 'Impossible de charger le Bingo.',
+          'Impossible de synchroniser le pool du Bingo. Une grille déjà enregistrée reste jouable.',
         )
-
         setLoading(false)
         return
       }
@@ -250,14 +247,19 @@ function Bingo() {
       setPrompts(nextPrompts)
 
       if (
-        !game &&
         nextPrompts.length >= TOTAL_CELLS
       ) {
-        const nextGame =
-          createGame(nextPrompts)
+        setGame((currentGame) => {
+          if (currentGame) {
+            return currentGame
+          }
 
-        setGame(nextGame)
-        saveGame(nextGame)
+          const nextGame =
+            createGame(nextPrompts)
+
+          saveGame(nextGame)
+          return nextGame
+        })
       }
 
       setError(
@@ -267,7 +269,7 @@ function Bingo() {
       )
 
       setLoading(false)
-    }, [game])
+    }, [])
 
   useEffect(() => {
     void loadPrompts()
