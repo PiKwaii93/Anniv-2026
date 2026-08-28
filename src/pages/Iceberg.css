@@ -1,74 +1,8 @@
 .iceberg-page {
-  position: relative;
-
   min-height: 100vh;
-  overflow: hidden;
 
-  padding: 32px 20px 110px;
-
-  color: #f5f7fa;
-
-  background:
-    radial-gradient(
-      circle at 75% 5%,
-      rgba(130, 203, 255, 0.11),
-      transparent 27%
-    ),
-    radial-gradient(
-      circle at 20% 45%,
-      rgba(50, 104, 164, 0.06),
-      transparent 32%
-    ),
-    #080b10;
-}
-
-.iceberg-page__glow {
-  position: absolute;
-
-  border-radius: 50%;
-
-  filter: blur(150px);
-
-  pointer-events: none;
-}
-
-.iceberg-page__glow--top {
-  top: -160px;
-  right: -120px;
-
-  width: 420px;
-  height: 420px;
-
-  background: #8bd4ff;
-
-  opacity: 0.08;
-}
-
-.iceberg-page__glow--bottom {
-  bottom: 5%;
-  left: -240px;
-
-  width: 520px;
-  height: 520px;
-
-  background: #175a95;
-
-  opacity: 0.08;
-}
-
-.iceberg-header,
-.iceberg-error,
-.iceberg-loading,
-.iceberg-empty,
-.iceberg-depths {
-  position: relative;
-  z-index: 1;
-
-  width: 100%;
-  max-width: 1050px;
-
-  margin-left: auto;
-  margin-right: auto;
+  color: #f4f8fb;
+  background: #03070c;
 }
 
 /* =========================================================
@@ -76,38 +10,49 @@
    ========================================================= */
 
 .iceberg-header {
-  margin-bottom: 36px;
+  position: relative;
+  z-index: 10;
+
+  width: 100%;
+  max-width: 1180px;
+
+  margin: 0 auto;
+  padding: 26px 20px 48px;
 }
 
 .iceberg-header__navigation {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 20px;
 
-  margin-bottom: 54px;
+  margin-bottom: 38px;
 }
 
 .iceberg-admin-link {
   padding: 8px 11px;
 
-  color: #9fb5c8;
-
+  color: #a9cadf;
   text-decoration: none;
 
   background: rgba(
-    130,
-    203,
-    255,
-    0.04
+    117,
+    195,
+    239,
+    0.05
   );
 
   border: 1px solid
-    rgba(130, 203, 255, 0.12);
+    rgba(
+      117,
+      195,
+      239,
+      0.15
+    );
 
-  border-radius: 10px;
+  border-radius: 9px;
 
-  font-size: 0.7rem;
+  font-size: 0.68rem;
 
   transition:
     color 160ms ease,
@@ -116,33 +61,33 @@
 }
 
 .iceberg-admin-link:hover {
-  color: #edf8ff;
+  color: #effaff;
 
   background: rgba(
-    130,
-    203,
-    255,
-    0.07
+    117,
+    195,
+    239,
+    0.09
   );
 
   border-color: rgba(
-    130,
-    203,
-    255,
-    0.22
+    117,
+    195,
+    239,
+    0.28
   );
 }
 
 .iceberg-header__content {
-  max-width: 760px;
+  max-width: 720px;
 }
 
 .iceberg-eyebrow {
   margin: 0;
 
-  color: #60809b;
+  color: #6b9ebb;
 
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
 
   text-transform: uppercase;
@@ -150,19 +95,19 @@
 }
 
 .iceberg-header h1 {
-  margin: 11px 0 24px;
+  margin: 9px 0 20px;
 
   font-family:
     'Space Grotesk',
     sans-serif;
 
   font-size: clamp(
-    4rem,
-    14vw,
-    8rem
+    4.2rem,
+    13vw,
+    7.8rem
   );
 
-  line-height: 0.78;
+  line-height: 0.76;
   letter-spacing: -0.075em;
 }
 
@@ -173,76 +118,60 @@
 
   -webkit-text-stroke:
     1px
-    rgba(188, 224, 246, 0.35);
+    rgba(
+      172,
+      220,
+      248,
+      0.35
+    );
 }
 
 .iceberg-header__description {
-  max-width: 510px;
+  max-width: 500px;
 
-  margin: 32px 0 0;
+  margin: 27px 0 0;
 
-  color: #7d8b98;
+  color: #81919e;
 
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   line-height: 1.65;
 }
 
-.iceberg-waterline {
-  display: grid;
-
-  grid-template-columns:
-    auto
-    minmax(30px, 1fr)
-    auto;
-
+.iceberg-scroll-hint {
+  display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 9px;
 
-  margin-top: 60px;
+  margin-top: 34px;
 
-  color: #536b7e;
+  color: #526d80;
 
-  font-size: 0.62rem;
+  font-size: 0.61rem;
   font-weight: 600;
 
   text-transform: uppercase;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
 }
 
-.iceberg-waterline > div {
-  height: 1px;
+.iceberg-scroll-hint span {
+  color: #9fdcff;
 
-  background:
-    linear-gradient(
-      90deg,
-      rgba(
-        133,
-        205,
-        244,
-        0.05
-      ),
-      rgba(
-        133,
-        205,
-        244,
-        0.4
-      ),
-      rgba(
-        133,
-        205,
-        244,
-        0.05
-      )
-    );
+  font-size: 0.85rem;
 }
 
 /* =========================================================
    STATUS
    ========================================================= */
 
-.iceberg-error {
-  margin-bottom: 24px;
+.iceberg-error,
+.iceberg-loading {
+  width: calc(100% - 40px);
+  max-width: 1140px;
 
+  margin: 0 auto 30px;
+}
+
+.iceberg-error {
   padding: 13px 15px;
 
   color: #e78e97;
@@ -255,17 +184,22 @@
   );
 
   border: 1px solid
-    rgba(255, 61, 84, 0.14);
+    rgba(
+      255,
+      61,
+      84,
+      0.14
+    );
 
   border-radius: 12px;
 
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
 
-.iceberg-loading,
-.iceberg-empty {
-  padding: 70px 24px;
+.iceberg-loading {
+  padding: 70px 20px;
 
+  color: #718795;
   text-align: center;
 
   background: rgba(
@@ -276,373 +210,1518 @@
   );
 
   border: 1px solid
-    rgba(255, 255, 255, 0.055);
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
 
-  border-radius: 24px;
+  border-radius: 22px;
 }
 
-.iceberg-loading__symbol,
-.iceberg-empty__symbol {
-  margin-bottom: 20px;
+.iceberg-loading div {
+  margin-bottom: 12px;
 
-  color: #6b91aa;
+  color: #8ed4ff;
 
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .iceberg-loading p {
   margin: 0;
 
-  color: #687b8b;
-
-  font-size: 0.8rem;
-}
-
-.iceberg-empty h2 {
-  margin: 0;
-
-  font-family:
-    'Space Grotesk',
-    sans-serif;
-
-  font-size: 1.8rem;
-  letter-spacing: -0.04em;
-}
-
-.iceberg-empty p {
-  margin: 10px 0 24px;
-
-  color: #687b8b;
-
-  font-size: 0.82rem;
-}
-
-.iceberg-empty__action {
-  display: inline-block;
-
-  padding: 11px 14px;
-
-  color: #081018;
-  text-decoration: none;
-
-  background: #dff3ff;
-
-  border-radius: 11px;
-
   font-size: 0.75rem;
-  font-weight: 700;
 }
 
 /* =========================================================
-   DEPTH
+   SCENE
    ========================================================= */
 
-.iceberg-depths {
+.iceberg-scene {
   position: relative;
 
-  padding-top: 18px;
+  width: 100%;
+
+  overflow: hidden;
+
+  border-top: 1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.04
+    );
 }
 
-.iceberg-depth-line {
+/* =========================================================
+   SKY
+   ========================================================= */
+
+.iceberg-sky {
+  position: relative;
+
+  min-height: 390px;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 70% 0%,
+      rgba(
+        118,
+        191,
+        232,
+        0.14
+      ),
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      #10283d 0%,
+      #123552 48%,
+      #17618e 100%
+    );
+}
+
+.iceberg-sky::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 75% 20%,
+      rgba(
+        188,
+        229,
+        255,
+        0.14
+      ),
+      transparent 30%
+    ),
+    linear-gradient(
+      120deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.025
+      ),
+      transparent 35%
+    );
+
+  pointer-events: none;
+}
+
+.iceberg-cloud {
   position: absolute;
 
-  top: 0;
-  bottom: 80px;
-  left: 13px;
+  height: 70px;
 
-  width: 1px;
+  background: rgba(
+    255,
+    255,
+    255,
+    0.04
+  );
+
+  border-radius: 50%;
+
+  filter: blur(30px);
+}
+
+.iceberg-cloud--one {
+  top: 38px;
+  left: 5%;
+
+  width: 380px;
+}
+
+.iceberg-cloud--two {
+  top: 105px;
+  right: -80px;
+
+  width: 420px;
+
+  opacity: 0.55;
+}
+
+/* =========================================================
+   ICEBERG TIP
+   ========================================================= */
+
+.iceberg-tip {
+  position: absolute;
+
+  bottom: -2px;
+  left: 50%;
+
+  width: min(
+    690px,
+    72vw
+  );
+
+  height: 270px;
+
+  overflow: hidden;
+
+  transform: translateX(-50%);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(
+        246,
+        253,
+        255,
+        0.98
+      ),
+      rgba(
+        171,
+        222,
+        247,
+        0.92
+      )
+        42%,
+      rgba(
+        85,
+        171,
+        215,
+        0.9
+      )
+        100%
+    );
+
+  clip-path: polygon(
+    0% 100%,
+    8% 78%,
+    24% 69%,
+    31% 45%,
+    40% 57%,
+    49% 26%,
+    57% 44%,
+    66% 8%,
+    75% 53%,
+    84% 62%,
+    100% 100%
+  );
+
+  filter:
+    drop-shadow(
+      0 15px 30px
+      rgba(
+        3,
+        25,
+        40,
+        0.32
+      )
+    );
+}
+
+.iceberg-tip::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      118deg,
+      transparent 22%,
+      rgba(
+        255,
+        255,
+        255,
+        0.5
+      )
+        23%,
+      transparent 33%
+    ),
+    linear-gradient(
+      68deg,
+      transparent 52%,
+      rgba(
+        27,
+        111,
+        158,
+        0.24
+      )
+        53%,
+      transparent 68%
+    ),
+    linear-gradient(
+      142deg,
+      transparent 36%,
+      rgba(
+        50,
+        139,
+        185,
+        0.14
+      )
+        37%,
+      transparent 50%
+    );
+}
+
+.iceberg-tip__shine {
+  position: absolute;
+
+  inset: 22% 30% 12% 22%;
+
+  background: rgba(
+    255,
+    255,
+    255,
+    0.22
+  );
+
+  filter: blur(22px);
+
+  transform: rotate(-12deg);
+}
+
+.iceberg-tip__texture {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      71deg,
+      transparent 22%,
+      rgba(
+        24,
+        111,
+        160,
+        0.15
+      )
+        22.5%,
+      transparent 24%
+    ),
+    linear-gradient(
+      122deg,
+      transparent 52%,
+      rgba(
+        255,
+        255,
+        255,
+        0.21
+      )
+        52.5%,
+      transparent 55%
+    ),
+    linear-gradient(
+      28deg,
+      transparent 68%,
+      rgba(
+        37,
+        127,
+        178,
+        0.15
+      )
+        69%,
+      transparent 71%
+    );
+
+  opacity: 0.8;
+}
+
+/* =========================================================
+   WATER
+   ========================================================= */
+
+.iceberg-waterline {
+  position: relative;
+  z-index: 8;
+
+  height: 25px;
+
+  margin-top: -12px;
 
   background:
     linear-gradient(
       180deg,
       rgba(
-        156,
-        219,
+        100,
+        209,
         255,
-        0.35
+        0.14
       ),
       rgba(
-        69,
-        133,
-        180,
-        0.2
-      ),
-      rgba(
-        21,
-        54,
-        85,
-        0.04
+        14,
+        110,
+        165,
+        0.24
       )
+    );
+
+  border-top: 1px solid
+    rgba(
+      178,
+      234,
+      255,
+      0.72
+    );
+
+  border-bottom: 1px solid
+    rgba(
+      72,
+      177,
+      228,
+      0.4
+    );
+
+  box-shadow:
+    0 0 26px
+    rgba(
+      90,
+      205,
+      255,
+      0.22
     );
 }
 
-.iceberg-depth-line span {
+.iceberg-waterline span {
   position: absolute;
 
-  top: 0;
-  left: 50%;
-
-  width: 7px;
-  height: 7px;
-
-  background: #bce7ff;
-
-  border-radius: 50%;
-
-  transform: translate(
-    -50%,
-    -50%
+  top: 50%;
+  right: max(
+    20px,
+    calc(
+      (
+          100vw -
+            1140px
+        ) /
+        2
+    )
   );
 
-  box-shadow:
-    0 0 16px
-    rgba(188, 231, 255, 0.5);
-}
-
-/* =========================================================
-   LEVEL
-   ========================================================= */
-
-.iceberg-level {
-  position: relative;
-
-  margin-left: 36px;
-  padding: 42px 0 58px;
-}
-
-.iceberg-level + .iceberg-level {
-  border-top: 1px solid
-    rgba(255, 255, 255, 0.045);
-}
-
-.iceberg-level--1 {
-  --level-accent: #bce8ff;
-  --level-muted: #7499af;
-}
-
-.iceberg-level--2 {
-  --level-accent: #91c7e7;
-  --level-muted: #6289a0;
-}
-
-.iceberg-level--3 {
-  --level-accent: #6aa6ce;
-  --level-muted: #4f7893;
-}
-
-.iceberg-level--4 {
-  --level-accent: #477da6;
-  --level-muted: #3d627d;
-}
-
-.iceberg-level--5 {
-  --level-accent: #315b7b;
-  --level-muted: #334e64;
-}
-
-.iceberg-level__heading {
-  display: flex;
-  gap: 17px;
-
-  margin-bottom: 24px;
-}
-
-.iceberg-level__number {
-  flex: 0 0 auto;
-
-  padding-top: 5px;
-
-  color: var(
-    --level-muted
+  color: rgba(
+    206,
+    240,
+    255,
+    0.55
   );
 
-  font-family:
-    'Space Grotesk',
-    sans-serif;
-
-  font-size: 0.7rem;
-}
-
-.iceberg-level__heading p {
-  margin: 0 0 6px;
-
-  color: var(
-    --level-muted
-  );
-
-  font-size: 0.58rem;
+  font-size: 0.48rem;
   font-weight: 600;
 
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.16em;
+
+  transform: translateY(-50%);
 }
 
-.iceberg-level__heading h2 {
-  margin: 0;
+.iceberg-waterline__wave {
+  position: absolute;
 
-  color: var(
-    --level-accent
-  );
+  top: -2px;
+  left: 0;
 
-  font-family:
-    'Space Grotesk',
-    sans-serif;
+  width: 100%;
+  height: 5px;
 
-  font-size: clamp(
-    1.8rem,
-    6vw,
-    2.6rem
-  );
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        210,
+        244,
+        255,
+        0.65
+      ),
+      transparent 35%,
+      rgba(
+        210,
+        244,
+        255,
+        0.45
+      )
+        65%,
+      transparent
+    );
 
-  letter-spacing: -0.05em;
-}
-
-.iceberg-level__heading
-  > div:last-child
-  > span {
-  display: block;
-
-  margin-top: 7px;
-
-  color: #657482;
-
-  font-size: 0.75rem;
-  line-height: 1.45;
-}
-
-.iceberg-level__empty {
-  padding: 18px;
-
-  color: #4e5b66;
-
-  border: 1px dashed
-    rgba(255, 255, 255, 0.06);
-
-  border-radius: 14px;
-
-  font-size: 0.72rem;
+  opacity: 0.7;
 }
 
 /* =========================================================
-   ENTRIES
+   UNDERWATER
    ========================================================= */
 
-.iceberg-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
+.iceberg-underwater {
+  position: relative;
 
-.iceberg-entry {
   overflow: hidden;
 
   background:
     linear-gradient(
-      110deg,
-      rgba(
-        255,
-        255,
-        255,
-        0.024
-      ),
-      rgba(
-        255,
-        255,
-        255,
-        0.012
-      )
+      180deg,
+      #0c4167 0%,
+      #092c4c 23%,
+      #071b33 47%,
+      #050f20 72%,
+      #02060d 100%
     );
-
-  border: 1px solid
-    rgba(255, 255, 255, 0.06);
-
-  border-radius: 16px;
-
-  transition:
-    border-color 180ms ease,
-    background 180ms ease;
 }
 
-.iceberg-entry--open {
+.iceberg-underwater::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  z-index: 1;
+
   background:
     linear-gradient(
-      110deg,
+      180deg,
       rgba(
-        101,
-        171,
-        216,
-        0.055
+        94,
+        194,
+        240,
+        0.07
+      ),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(
+        48,
+        144,
+        196,
+        0.08
+      ),
+      transparent 42%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   ICE BODY
+   ========================================================= */
+
+.iceberg-body {
+  position: absolute;
+
+  z-index: 2;
+
+  top: 0;
+  bottom: 155px;
+  left: 50%;
+
+  width: min(
+    860px,
+    76vw
+  );
+
+  overflow: hidden;
+
+  transform: translateX(-50%);
+
+  background:
+    radial-gradient(
+      ellipse at 43% 27%,
+      rgba(
+        128,
+        218,
+        255,
+        0.32
+      ),
+      transparent 29%
+    ),
+    radial-gradient(
+      ellipse at 68% 59%,
+      rgba(
+        19,
+        83,
+        135,
+        0.3
+      ),
+      transparent 32%
+    ),
+    linear-gradient(
+      150deg,
+      rgba(
+        73,
+        189,
+        239,
+        0.85
       ),
       rgba(
-        255,
-        255,
-        255,
-        0.015
+        23,
+        116,
+        174,
+        0.74
+      )
+        38%,
+      rgba(
+        16,
+        74,
+        129,
+        0.72
+      )
+        68%,
+      rgba(
+        9,
+        44,
+        83,
+        0.68
       )
     );
 
-  border-color: rgba(
-    115,
-    186,
-    229,
-    0.15
+  clip-path: polygon(
+    20% 0%,
+    80% 0%,
+    88% 12%,
+    83% 27%,
+    96% 43%,
+    87% 59%,
+    74% 72%,
+    63% 91%,
+    50% 100%,
+    36% 91%,
+    27% 76%,
+    12% 63%,
+    4% 46%,
+    15% 31%,
+    9% 16%
   );
+
+  filter:
+    drop-shadow(
+      0 30px 50px
+      rgba(
+        0,
+        10,
+        25,
+        0.38
+      )
+    );
+
+  opacity: 0.94;
 }
 
-.iceberg-entry__trigger {
-  display: grid;
+.iceberg-body::before {
+  content: '';
 
-  grid-template-columns:
-    auto
-    minmax(0, 1fr)
-    auto;
+  position: absolute;
+  inset: 0;
 
-  align-items: center;
-  gap: 13px;
+  background:
+    linear-gradient(
+      75deg,
+      transparent 18%,
+      rgba(
+        189,
+        235,
+        255,
+        0.2
+      )
+        19%,
+      transparent 31%
+    ),
+    linear-gradient(
+      120deg,
+      transparent 44%,
+      rgba(
+        2,
+        46,
+        81,
+        0.24
+      )
+        45%,
+      transparent 63%
+    ),
+    linear-gradient(
+      160deg,
+      transparent 65%,
+      rgba(
+        128,
+        215,
+        250,
+        0.11
+      )
+        66%,
+      transparent 77%
+    );
+}
+
+.iceberg-body__shine {
+  position: absolute;
+
+  top: 4%;
+  left: 30%;
+
+  width: 23%;
+  height: 65%;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(
+        214,
+        246,
+        255,
+        0.29
+      ),
+      transparent
+    );
+
+  filter: blur(35px);
+
+  transform: rotate(9deg);
+}
+
+.iceberg-body__texture {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      111deg,
+      transparent 16%,
+      rgba(
+        204,
+        241,
+        255,
+        0.14
+      )
+        16.5%,
+      transparent 18%
+    ),
+    linear-gradient(
+      71deg,
+      transparent 31%,
+      rgba(
+        3,
+        51,
+        91,
+        0.18
+      )
+        31.5%,
+      transparent 34%
+    ),
+    linear-gradient(
+      133deg,
+      transparent 49%,
+      rgba(
+        180,
+        230,
+        252,
+        0.1
+      )
+        49.5%,
+      transparent 52%
+    ),
+    linear-gradient(
+      57deg,
+      transparent 64%,
+      rgba(
+        1,
+        43,
+        80,
+        0.2
+      )
+        64.5%,
+      transparent 67%
+    ),
+    linear-gradient(
+      124deg,
+      transparent 78%,
+      rgba(
+        171,
+        221,
+        245,
+        0.1
+      )
+        78.5%,
+      transparent 81%
+    );
+
+  opacity: 0.8;
+}
+
+.iceberg-body__facet {
+  position: absolute;
+
+  background: rgba(
+    4,
+    58,
+    98,
+    0.16
+  );
+
+  filter: blur(8px);
+}
+
+.iceberg-body__facet--one {
+  top: 23%;
+  left: 20%;
+
+  width: 34%;
+  height: 22%;
+
+  transform: rotate(23deg);
+}
+
+.iceberg-body__facet--two {
+  top: 45%;
+  right: 12%;
+
+  width: 32%;
+  height: 27%;
+
+  transform: rotate(-18deg);
+}
+
+.iceberg-body__facet--three {
+  bottom: 12%;
+  left: 31%;
+
+  width: 35%;
+  height: 23%;
+
+  transform: rotate(13deg);
+}
+
+.iceberg-body__facet--four {
+  top: 8%;
+  right: 19%;
+
+  width: 21%;
+  height: 34%;
+
+  background: rgba(
+    132,
+    218,
+    251,
+    0.08
+  );
+
+  transform: rotate(28deg);
+}
+
+.iceberg-body__facet--five {
+  bottom: 29%;
+  left: 7%;
+
+  width: 29%;
+  height: 19%;
+
+  background: rgba(
+    2,
+    43,
+    78,
+    0.2
+  );
+
+  transform: rotate(-31deg);
+}
+
+/* =========================================================
+   TIERS
+   ========================================================= */
+
+.iceberg-tier {
+  position: relative;
+  z-index: 4;
+
+  min-height: 350px;
+
+  border-bottom: 1px solid
+    rgba(
+      155,
+      218,
+      248,
+      0.1
+    );
+}
+
+.iceberg-tier--surface {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 5;
+
+  min-height: 390px;
+
+  border: 0;
+}
+
+.iceberg-tier--2 {
+  min-height: 350px;
+}
+
+.iceberg-tier--3 {
+  min-height: 370px;
+}
+
+.iceberg-tier--4 {
+  min-height: 390px;
+}
+
+.iceberg-tier--5 {
+  min-height: 410px;
+}
+
+.iceberg-tier__inner {
+  position: relative;
 
   width: 100%;
+  max-width: 1200px;
 
-  padding: 16px;
+  min-height: inherit;
 
-  color: #d5dee5;
-  text-align: left;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   LEVEL LABELS
+   ========================================================= */
+
+.iceberg-tier__label {
+  position: absolute;
+
+  z-index: 10;
+
+  top: 20px;
+  left: 24px;
+
+  display: flex;
+  gap: 9px;
+
+  width: 175px;
+
+  opacity: 0.65;
+
+  pointer-events: none;
+}
+
+.iceberg-tier__label > span {
+  padding-top: 3px;
+
+  color: rgba(
+    176,
+    222,
+    244,
+    0.42
+  );
+
+  font-family:
+    'Space Grotesk',
+    sans-serif;
+
+  font-size: 0.5rem;
+}
+
+.iceberg-tier__label small {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: rgba(
+    135,
+    193,
+    221,
+    0.5
+  );
+
+  font-size: 0.47rem;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.iceberg-tier__label h2 {
+  margin: 0;
+
+  color: rgba(
+    215,
+    242,
+    255,
+    0.88
+  );
+
+  font-family:
+    'Space Grotesk',
+    sans-serif;
+
+  font-size: 1.12rem;
+
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.iceberg-tier__label p {
+  max-width: 145px;
+
+  margin: 6px 0 0;
+
+  color: rgba(
+    160,
+    190,
+    205,
+    0.47
+  );
+
+  font-size: 0.54rem;
+  line-height: 1.35;
+}
+
+.iceberg-tier--surface
+  .iceberg-tier__label {
+  top: auto;
+  bottom: 19px;
+
+  opacity: 0.72;
+}
+
+.iceberg-tier--surface
+  .iceberg-tier__label h2 {
+  color: #e9f9ff;
+}
+
+.iceberg-tier--3
+  .iceberg-tier__label h2 {
+  color: #a4dbf6;
+}
+
+.iceberg-tier--4
+  .iceberg-tier__label h2 {
+  color: #82b7d7;
+}
+
+.iceberg-tier--5
+  .iceberg-tier__label h2 {
+  color: #648faa;
+}
+
+/* =========================================================
+   SCATTER AREA
+   ========================================================= */
+
+.iceberg-tier__content {
+  position: absolute;
+  inset: 0;
+
+  z-index: 7;
+}
+
+.iceberg-scatter {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: inherit;
+}
+
+.iceberg-scatter__empty {
+  position: absolute;
+
+  top: 55%;
+  left: 59%;
+
+  color: rgba(
+    158,
+    196,
+    214,
+    0.17
+  );
+
+  font-size: 0.53rem;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    )
+    rotate(-2deg);
+}
+
+/* =========================================================
+   CHAOTIC TITLES
+   ========================================================= */
+
+.iceberg-scatter-item {
+  position: absolute;
+
+  top: var(
+    --scatter-y
+  );
+
+  left: var(
+    --scatter-x
+  );
+
+  z-index: 8;
+
+  width: max-content;
+
+  max-width: min(
+    var(
+      --scatter-width
+    ),
+    31vw
+  );
+
+  padding: 5px 7px;
+
+  color: rgba(
+    241,
+    250,
+    255,
+    var(
+      --scatter-opacity
+    )
+  );
+
+  text-align: center;
+  text-wrap: balance;
 
   background: transparent;
 
   border: 0;
 
+  font-family:
+    'Space Grotesk',
+    sans-serif;
+
+  font-size: var(
+    --scatter-size
+  );
+
+  font-weight: var(
+    --scatter-weight
+  );
+
+  line-height: 1.08;
+
+  letter-spacing: var(
+    --scatter-letter-spacing
+  );
+
+  white-space: normal;
+
+  text-shadow:
+    0 2px 8px
+      rgba(
+        0,
+        8,
+        17,
+        0.96
+      ),
+    0 0 22px
+      rgba(
+        0,
+        14,
+        27,
+        0.7
+      );
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    )
+    rotate(
+      var(
+        --scatter-rotation
+      )
+    );
+
   cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    text-shadow 160ms ease,
+    transform 160ms ease,
+    opacity 160ms ease;
 }
 
-.iceberg-entry__index {
-  color: #445766;
+.iceberg-scatter-item:hover {
+  z-index: 20;
 
-  font-family:
-    'Space Grotesk',
-    sans-serif;
+  color: #ecfaff;
 
-  font-size: 0.62rem;
+  text-shadow:
+    0 0 13px
+      rgba(
+        151,
+        221,
+        255,
+        0.6
+      ),
+    0 3px 15px
+      rgba(
+        0,
+        7,
+        13,
+        0.98
+      );
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    )
+    rotate(
+      var(
+        --scatter-rotation
+      )
+    )
+    scale(1.09);
 }
 
-.iceberg-entry__trigger strong {
-  font-family:
-    'Space Grotesk',
-    sans-serif;
+/* =========================================================
+   TITLE PERSONALITIES
+   ========================================================= */
 
-  font-size: 0.88rem;
+.iceberg-scatter-item--0 {
+  text-align: left;
+}
+
+.iceberg-scatter-item--1 {
+  text-align: center;
+
+  font-style: normal;
+}
+
+.iceberg-scatter-item--2 {
+  text-align: right;
+}
+
+.iceberg-scatter-item--3 {
+  text-align: left;
+
+  text-transform: none;
+}
+
+.iceberg-scatter-item--4 {
+  text-align: center;
+
+  text-shadow:
+    0 0 8px
+      rgba(
+        155,
+        224,
+        255,
+        0.16
+      ),
+    0 3px 10px
+      rgba(
+        0,
+        8,
+        16,
+        0.95
+      );
+}
+
+.iceberg-scatter-item--5 {
+  text-align: right;
+
+  opacity: 0.86;
+}
+
+/* =========================================================
+   SURFACE TITLES
+   ========================================================= */
+
+.iceberg-tier--surface
+  .iceberg-scatter-item {
+  color: rgba(
+    255,
+    255,
+    255,
+    var(
+      --scatter-opacity
+    )
+  );
+
+  -webkit-text-stroke:
+    0.2px
+    rgba(
+      1,
+      18,
+      30,
+      0.65
+    );
+
+  text-shadow:
+    0 1px 1px
+      rgba(
+        0,
+        11,
+        20,
+        0.95
+      ),
+    0 2px 5px
+      rgba(
+        0,
+        12,
+        22,
+        0.98
+      ),
+    0 0 14px
+      rgba(
+        0,
+        18,
+        32,
+        0.88
+      ),
+    0 0 28px
+      rgba(
+        0,
+        12,
+        24,
+        0.55
+      );
+}
+
+.iceberg-tier--surface
+  .iceberg-scatter-item:hover {
+  -webkit-text-stroke:
+    0.2px
+    rgba(
+      0,
+      15,
+      25,
+      0.75
+    );
+
+  text-shadow:
+    0 1px 2px
+      rgba(
+        0,
+        8,
+        15,
+        1
+      ),
+    0 3px 7px
+      rgba(
+        0,
+        10,
+        20,
+        1
+      ),
+    0 0 16px
+      rgba(
+        139,
+        218,
+        255,
+        0.5
+      );
+}
+
+/* =========================================================
+   DEPTH TITLE COLOR
+   ========================================================= */
+
+.iceberg-tier--2
+  .iceberg-scatter-item {
+  color: rgba(
+    235,
+    249,
+    255,
+    var(
+      --scatter-opacity
+    )
+  );
+}
+
+.iceberg-tier--3
+  .iceberg-scatter-item {
+  color: rgba(
+    220,
+    241,
+    251,
+    var(
+      --scatter-opacity
+    )
+  );
+}
+
+.iceberg-tier--4
+  .iceberg-scatter-item {
+  color: rgba(
+    198,
+    224,
+    238,
+    var(
+      --scatter-opacity
+    )
+  );
+}
+
+.iceberg-tier--5
+  .iceberg-scatter-item {
+  color: rgba(
+    166,
+    198,
+    216,
+    var(
+      --scatter-opacity
+    )
+  );
+}
+
+/* =========================================================
+   ABYSS
+   ========================================================= */
+
+.iceberg-abyss {
+  position: relative;
+  z-index: 4;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  min-height: 260px;
+
+  padding: 80px 20px;
+
+  text-align: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(
+        0,
+        0,
+        0,
+        0
+      ),
+      #000 90%
+    );
+}
+
+.iceberg-abyss span {
+  color: #27445b;
+
+  font-size: 0.53rem;
   font-weight: 600;
 
-  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
 }
 
-.iceberg-entry__toggle {
+.iceberg-abyss strong {
+  margin-top: 13px;
+
+  color: #526d80;
+
+  font-family:
+    'Space Grotesk',
+    sans-serif;
+
+  font-size: 1.1rem;
+}
+
+.iceberg-abyss p {
+  margin: 6px 0 0;
+
+  color: #283844;
+
+  font-size: 0.68rem;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.iceberg-modal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1000;
+
   display: grid;
   place-items: center;
 
-  width: 27px;
-  height: 27px;
+  padding: 20px;
 
-  color: #718696;
+  background: rgba(
+    0,
+    5,
+    10,
+    0.78
+  );
+
+  backdrop-filter: blur(14px);
+}
+
+.iceberg-modal__card {
+  position: relative;
+
+  width: 100%;
+  max-width: 580px;
+
+  max-height: min(
+    720px,
+    calc(
+      100vh -
+      40px
+    )
+  );
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(
+        92,
+        182,
+        230,
+        0.09
+      ),
+      transparent 35%
+    ),
+    #091018;
+
+  border: 1px solid
+    rgba(
+      157,
+      215,
+      243,
+      0.16
+    );
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 30px 100px
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+}
+
+.iceberg-modal__close {
+  position: absolute;
+
+  top: 16px;
+  right: 16px;
+
+  display: grid;
+  place-items: center;
+
+  width: 32px;
+  height: 32px;
+
+  padding: 0;
+
+  color: #7792a4;
 
   background: rgba(
     255,
@@ -652,211 +1731,309 @@
   );
 
   border: 1px solid
-    rgba(255, 255, 255, 0.06);
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
 
-  border-radius: 8px;
+  border-radius: 9px;
 
-  font-size: 1rem;
+  font-size: 1.15rem;
+
+  cursor: pointer;
 }
 
-.iceberg-entry__content {
-  display: grid;
-
-  grid-template-rows: 0fr;
-
-  opacity: 0;
-
-  transition:
-    grid-template-rows 220ms ease,
-    opacity 180ms ease;
+.iceberg-modal__close:hover {
+  color: #eef9ff;
 }
 
-.iceberg-entry--open
-  .iceberg-entry__content {
-  grid-template-rows: 1fr;
+.iceberg-modal__depth {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 
-  opacity: 1;
+  margin-bottom: 35px;
+
+  color: #47687e;
+
+  font-size: 0.58rem;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
-.iceberg-entry__content
-  > div {
-  min-height: 0;
-  overflow: hidden;
+.iceberg-modal__depth span {
+  padding-left: 7px;
+
+  color: #769ab1;
+
+  border-left: 1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
 }
 
-.iceberg-entry__content p {
+.iceberg-modal h2 {
+  max-width: 480px;
+
+  margin: 10px 0 0;
+
+  color: #eef9ff;
+
+  font-family:
+    'Space Grotesk',
+    sans-serif;
+
+  font-size: clamp(
+    2rem,
+    7vw,
+    3.4rem
+  );
+
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.iceberg-modal__separator {
+  width: 100%;
+  height: 1px;
+
+  margin: 26px 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(
+        131,
+        203,
+        239,
+        0.3
+      ),
+      transparent
+    );
+}
+
+.iceberg-modal__description {
   margin: 0;
-  padding:
-    0
-    52px
-    19px;
 
-  color: #8495a2;
+  color: #9caeb9;
 
-  font-size: 0.8rem;
-  line-height: 1.65;
+  font-size: 0.88rem;
+  line-height: 1.8;
 
   white-space: pre-wrap;
 }
 
-.iceberg-entry__no-description {
+.iceberg-modal__description--empty {
+  color: #546570;
+
   font-style: italic;
-  opacity: 0.65;
 }
 
-/* =========================================================
-   BOTTOM
-   ========================================================= */
+.iceberg-modal__footer {
+  display: flex;
+  justify-content: space-between;
 
-.iceberg-bottom {
-  margin: 38px 0 0 36px;
-  padding: 50px 20px;
+  margin-top: 40px;
+  padding-top: 15px;
 
-  text-align: center;
+  color: #334b5c;
 
   border-top: 1px solid
-    rgba(255, 255, 255, 0.04);
-}
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
 
-.iceberg-bottom > span {
-  color: #263b4d;
+  font-size: 0.51rem;
+  font-weight: 600;
 
-  font-family:
-    'Space Grotesk',
-    sans-serif;
-
-  font-size: 3.5rem;
-  font-weight: 700;
-}
-
-.iceberg-bottom p {
-  margin: 12px 0 4px;
-
-  color: #5e6c77;
-
-  font-size: 0.75rem;
-}
-
-.iceberg-bottom strong {
-  color: #82909a;
-
-  font-family:
-    'Space Grotesk',
-    sans-serif;
-
-  font-size: 0.9rem;
+  letter-spacing: 0.15em;
 }
 
 /* =========================================================
    TABLET
    ========================================================= */
 
-@media (min-width: 650px) {
-  .iceberg-page {
-    padding:
-      50px
-      40px
-      130px;
-  }
-
+@media (min-width: 700px) {
   .iceberg-header {
-    margin-bottom: 55px;
-  }
-
-  .iceberg-depth-line {
-    left: 24px;
-  }
-
-  .iceberg-level {
-    margin-left: 58px;
-
     padding:
-      52px
-      0
-      72px;
+      38px
+      40px
+      58px;
   }
 
-  .iceberg-level__heading {
-    gap: 25px;
+  .iceberg-tier__label {
+    left: 40px;
   }
 
-  .iceberg-entry__trigger {
-    padding: 18px 20px;
-  }
-
-  .iceberg-entry__content p {
-    padding:
-      0
-      64px
-      22px;
-  }
-
-  .iceberg-bottom {
-    margin-left: 58px;
+  .iceberg-modal__card {
+    padding: 38px;
   }
 }
 
 /* =========================================================
-   DESKTOP
+   LARGE DESKTOP
    ========================================================= */
 
-@media (min-width: 950px) {
-  .iceberg-level {
-    display: grid;
-
-    grid-template-columns:
-      280px
-      minmax(0, 1fr);
-
-    gap: 55px;
-  }
-
-  .iceberg-level__heading {
-    margin: 0;
-  }
-
-  .iceberg-level__heading
-    > div:last-child
-    > span {
-    max-width: 210px;
+@media (min-width: 1200px) {
+  .iceberg-tier__label {
+    left: 0;
   }
 }
 
 /* =========================================================
-   SMALL MOBILE
+   MOBILE
    ========================================================= */
 
-@media (max-width: 480px) {
+@media (max-width: 699px) {
+  .iceberg-header {
+    padding:
+      24px
+      20px
+      42px;
+  }
+
   .iceberg-header__navigation {
-    align-items: flex-start;
-  }
-
-  .iceberg-admin-link {
-    max-width: 130px;
-
-    text-align: center;
+    margin-bottom: 32px;
   }
 
   .iceberg-header h1 {
     font-size: 4.2rem;
   }
 
-  .iceberg-waterline {
-    grid-template-columns:
-      auto
-      1fr;
+  .iceberg-header__description {
+    margin-top: 23px;
   }
 
-  .iceberg-waterline
-    > span:last-child {
+  .iceberg-scroll-hint {
+    margin-top: 27px;
+  }
+
+  .iceberg-sky {
+    min-height: 430px;
+  }
+
+  .iceberg-tip {
+    width: 110vw;
+    height: 245px;
+
+    opacity: 0.9;
+  }
+
+  .iceberg-tier--surface {
+    min-height: 430px;
+  }
+
+  .iceberg-body {
+    width: 125vw;
+
+    opacity: 0.72;
+  }
+
+  .iceberg-tier,
+  .iceberg-tier--2,
+  .iceberg-tier--3,
+  .iceberg-tier--4,
+  .iceberg-tier--5 {
+    min-height: 400px;
+  }
+
+  .iceberg-tier__label {
+    top: 14px;
+    left: 14px;
+
+    width: 140px;
+
+    opacity: 0.58;
+  }
+
+  .iceberg-tier--surface
+    .iceberg-tier__label {
+    top: 14px;
+    bottom: auto;
+
+    opacity: 0.64;
+  }
+
+  .iceberg-tier__label h2 {
+    font-size: 0.98rem;
+  }
+
+  .iceberg-tier__label p {
     display: none;
   }
 
-  .iceberg-entry__content p {
+  .iceberg-tier__label small {
+    font-size: 0.43rem;
+  }
+
+  .iceberg-scatter-item {
+    max-width: min(
+      var(
+        --scatter-width
+      ),
+      44vw
+    );
+
+    font-size: calc(
+      var(
+          --scatter-size
+        ) *
+        0.78
+    );
+  }
+
+  .iceberg-scatter__empty {
+    left: 58%;
+  }
+
+  .iceberg-waterline span {
+    right: 20px;
+  }
+
+  .iceberg-modal__card {
     padding:
-      0
-      16px
-      18px
-      45px;
+      26px
+      22px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 420px) {
+  .iceberg-header__navigation {
+    align-items: flex-start;
+  }
+
+  .iceberg-admin-link {
+    max-width: 125px;
+
+    text-align: center;
+  }
+
+  .iceberg-header h1 {
+    font-size: 3.8rem;
+  }
+
+  .iceberg-scatter-item {
+    max-width: 45vw;
+
+    font-size: calc(
+      var(
+          --scatter-size
+        ) *
+        0.72
+    );
   }
 }
