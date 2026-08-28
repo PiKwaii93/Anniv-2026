@@ -303,7 +303,7 @@ function Bingo() {
   const winningIndexes =
     useMemo(
       () =>
-        new Set(
+        new Set<number>(
           completedLines.flatMap(
             (line) => [...line],
           ),
