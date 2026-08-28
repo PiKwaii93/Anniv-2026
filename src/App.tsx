@@ -11,6 +11,7 @@ import {
 import { useAuth } from './features/auth/AuthContext'
 
 import Admin from './pages/Admin'
+import AdminDashboard from './pages/AdminDashboard'
 import AdminLogin from './pages/AdminLogin'
 import BeerPong from './pages/BeerPong'
 import Guests from './pages/Guests'
@@ -92,6 +93,15 @@ function App() {
 
       <Route
         path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/guests"
         element={
           <AdminRoute>
             <Admin />
