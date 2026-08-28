@@ -1,0 +1,341 @@
+/* =========================================================
+   GLOBAL MOBILE UX POLISH
+   ========================================================= */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+@media (max-width: 699px) {
+  /* -------------------------------------------------------
+     HOME
+     ------------------------------------------------------- */
+
+  .hero {
+    margin-bottom: 38px;
+  }
+
+  .modules {
+    gap: 12px;
+  }
+
+  .module-card {
+    min-height: 170px;
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .module-card h2 {
+    font-size: 1.6rem;
+  }
+
+  .home__footer {
+    margin-top: 30px;
+  }
+
+  /* -------------------------------------------------------
+     PUBLIC GUESTS
+     ------------------------------------------------------- */
+
+  .public-guests {
+    gap: 10px;
+  }
+
+  .public-guest-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  /* -------------------------------------------------------
+     ADMIN GUESTS
+     ------------------------------------------------------- */
+
+  .page-header {
+    margin-bottom: 40px;
+  }
+
+  .page-header .back-link {
+    margin-bottom: 38px;
+  }
+
+  .admin-stats {
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    gap: 8px;
+    min-height: 112px;
+    padding: 15px 16px;
+    border-radius: 18px;
+  }
+
+  .stat-card strong {
+    font-size: 1.9rem;
+  }
+
+  .admin-section {
+    margin-bottom: 46px;
+  }
+
+  .guest-form {
+    gap: 14px;
+    padding: 17px;
+    border-radius: 20px;
+  }
+
+  .plus-one-editor {
+    padding: 14px;
+  }
+
+  .guest-row {
+    gap: 0;
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .guest-row__identity {
+    gap: 12px;
+  }
+
+  .guest-row__identity > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .guest-row__summary {
+    display: block;
+    margin-top: 4px;
+    color: #777783;
+    font-size: 0.7rem;
+  }
+
+  .guest-row__toggle {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    color: #9999a3;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+    cursor: pointer;
+  }
+
+  .guest-row__toggle span {
+    margin: 0;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .guest-row__content {
+    display: none;
+    margin-top: 15px;
+  }
+
+  .guest-row--expanded .guest-row__content {
+    display: flex;
+  }
+
+  .guest-row__notes {
+    margin: 0;
+    padding: 10px 12px;
+    color: #72727c;
+    background: rgba(255, 255, 255, 0.018);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 11px;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .guest-row__controls {
+    gap: 8px;
+  }
+
+  .guest-plus-ones {
+    padding: 10px;
+  }
+
+  /* -------------------------------------------------------
+     PUBLIC ICEBERG
+     ------------------------------------------------------- */
+
+  .iceberg-header {
+    padding-bottom: 36px;
+  }
+
+  .iceberg-underwater .iceberg-tier,
+  .iceberg-underwater .iceberg-tier--2,
+  .iceberg-underwater .iceberg-tier--3,
+  .iceberg-underwater .iceberg-tier--4,
+  .iceberg-underwater .iceberg-tier--5 {
+    min-height: 330px;
+  }
+
+  .iceberg-underwater .iceberg-tier:has(.iceberg-scatter__empty) {
+    min-height: 235px;
+  }
+
+  .iceberg-scatter__empty {
+    display: none;
+  }
+
+  .iceberg-tier__label {
+    opacity: 0.68;
+  }
+
+  .iceberg-tier--surface .iceberg-tier__label {
+    opacity: 0.72;
+  }
+
+  .iceberg-tier__label h2 {
+    font-size: 1rem;
+  }
+
+  .iceberg-abyss {
+    min-height: 210px;
+    padding-top: 62px;
+    padding-bottom: 62px;
+  }
+
+  /* -------------------------------------------------------
+     BEER PONG
+     ------------------------------------------------------- */
+
+  .beer-header {
+    margin-bottom: 52px;
+  }
+
+  .beer-section {
+    margin-bottom: 54px;
+  }
+
+  .beer-team {
+    min-height: 140px;
+    padding: 17px;
+  }
+
+  .beer-team__players,
+  .beer-team__manual {
+    margin-top: 38px;
+  }
+
+  .beer-bracket {
+    gap: 32px;
+  }
+
+  .beer-match__versus {
+    color: #5c5c67;
+  }
+
+  /* -------------------------------------------------------
+     CONTROL ROOM
+     ------------------------------------------------------- */
+
+  .control-header {
+    margin-bottom: 46px;
+  }
+
+  .control-status {
+    padding: 9px 12px;
+  }
+
+  .control-header__description {
+    margin-top: 28px;
+  }
+
+  .control-module {
+    min-height: 235px;
+    padding: 18px;
+  }
+
+  .control-module__body {
+    margin-bottom: 22px;
+  }
+
+  .control-modules,
+  .control-overview,
+  .control-shortcuts {
+    margin-bottom: 56px;
+  }
+
+  /* -------------------------------------------------------
+     ICEBERG ADMIN
+     ------------------------------------------------------- */
+
+  .iceberg-admin-header {
+    margin-bottom: 44px;
+  }
+
+  .iceberg-admin-create,
+  .iceberg-admin-content {
+    margin-bottom: 52px;
+  }
+
+  .iceberg-admin-form {
+    gap: 13px;
+    padding: 17px;
+  }
+
+  .iceberg-admin-levels {
+    gap: 28px;
+  }
+
+  .iceberg-admin-entry {
+    padding: 14px;
+  }
+
+  .iceberg-admin-entry__content p {
+    margin-top: 6px;
+    -webkit-line-clamp: 1;
+  }
+
+  .iceberg-admin-entry__actions {
+    gap: 5px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .iceberg-admin-order-actions {
+    width: auto;
+    margin: 0 auto 0 0;
+  }
+
+  .iceberg-admin-action {
+    flex: 0 1 auto;
+    min-height: 34px;
+    padding: 7px 9px;
+  }
+
+  .iceberg-admin-level__empty {
+    padding: 12px 14px;
+  }
+
+  /* -------------------------------------------------------
+     LOGIN / MOBILE VIEWPORT
+     ------------------------------------------------------- */
+
+  .admin-login {
+    min-height: 100dvh;
+  }
+
+  .admin-login__card {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+@media (min-width: 700px) {
+  .guest-row__toggle {
+    display: none;
+  }
+
+  .guest-row__summary {
+    display: none;
+  }
+}
