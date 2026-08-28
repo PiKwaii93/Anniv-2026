@@ -6,13 +6,20 @@ import {
 import {
   Link,
   Navigate,
+  useLocation,
 } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/AuthContext'
 
 import './AdminLogin.css'
 
+type LoginLocationState = {
+  from?: string
+}
+
 function AdminLogin() {
+  const location = useLocation()
+
   const {
     user,
     isAdmin,
@@ -32,6 +39,18 @@ function AdminLogin() {
 
   const [submitting, setSubmitting] =
     useState(false)
+
+  const locationState =
+    location.state as LoginLocationState | null
+
+  const requestedPath =
+    locationState?.from
+
+  const redirectPath =
+    requestedPath?.startsWith('/admin') &&
+    requestedPath !== '/admin/login'
+      ? requestedPath
+      : '/admin'
 
   if (loading) {
     return (
@@ -54,7 +73,7 @@ function AdminLogin() {
   if (isAdmin) {
     return (
       <Navigate
-        to="/admin"
+        to={redirectPath}
         replace
       />
     )

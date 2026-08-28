@@ -8,6 +8,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
 } from 'react-router-dom'
 
 import { useAuth } from './features/auth/AuthContext'
@@ -67,6 +68,8 @@ function RouteLoading() {
 function AdminRoute({
   children,
 }: AdminRouteProps) {
+  const location = useLocation()
+
   const {
     user,
     isAdmin,
@@ -97,6 +100,9 @@ function AdminRoute({
       <Navigate
         to="/admin/login"
         replace
+        state={{
+          from: `${location.pathname}${location.search}${location.hash}`,
+        }}
       />
     )
   }
