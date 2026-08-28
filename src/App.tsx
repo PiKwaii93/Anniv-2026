@@ -1,5 +1,8 @@
+import type {
+  ReactNode,
+} from 'react'
+
 import {
-  Link,
   Navigate,
   Route,
   Routes,
@@ -12,39 +15,16 @@ import AdminLogin from './pages/AdminLogin'
 import BeerPong from './pages/BeerPong'
 import Guests from './pages/Guests'
 import Home from './pages/Home'
+import Iceberg from './pages/Iceberg'
+import IcebergAdmin from './pages/IcebergAdmin'
 
-type ComingSoonProps = {
-  title: string
+type AdminRouteProps = {
+  children: ReactNode
 }
 
-function ComingSoon({
-  title,
-}: ComingSoonProps) {
-  return (
-    <main className="coming-soon">
-      <Link
-        to="/"
-        className="back-link"
-      >
-        ← Retour
-      </Link>
-
-      <div>
-        <p className="coming-soon__label">
-          Anniv 2026
-        </p>
-
-        <h1>{title}</h1>
-
-        <p>
-          Ce module arrive bientôt.
-        </p>
-      </div>
-    </main>
-  )
-}
-
-function AdminRoute() {
+function AdminRoute({
+  children,
+}: AdminRouteProps) {
   const {
     user,
     isAdmin,
@@ -62,7 +42,8 @@ function AdminRoute() {
           <h1>Admin</h1>
 
           <p>
-            Vérification de la session...
+            Vérification de la
+            session...
           </p>
         </div>
       </main>
@@ -78,7 +59,7 @@ function AdminRoute() {
     )
   }
 
-  return <Admin />
+  return children
 }
 
 function App() {
@@ -91,9 +72,7 @@ function App() {
 
       <Route
         path="/iceberg"
-        element={
-          <ComingSoon title="Iceberg" />
-        }
+        element={<Iceberg />}
       />
 
       <Route
@@ -113,7 +92,30 @@ function App() {
 
       <Route
         path="/admin"
-        element={<AdminRoute />}
+        element={
+          <AdminRoute>
+            <Admin />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/admin/iceberg"
+        element={
+          <AdminRoute>
+            <IcebergAdmin />
+          </AdminRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to="/"
+            replace
+          />
+        }
       />
     </Routes>
   )
