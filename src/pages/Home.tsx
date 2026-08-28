@@ -16,6 +16,13 @@ const modules = [
     className: 'module-card--beer-pong',
   },
   {
+    title: 'Bingo',
+    subtitle: 'Observe la soirée & coche les scènes',
+    tag: 'Jeu perso',
+    path: '/bingo',
+    className: 'module-card--bingo',
+  },
+  {
     title: 'Invités',
     subtitle: 'Les participants de la soirée',
     tag: 'Guest list',
