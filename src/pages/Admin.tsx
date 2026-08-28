@@ -7,9 +7,12 @@ import { Link } from 'react-router-dom'
 
 import { useGuests } from '../features/guests/GuestsContext'
 import type {
+  Guest,
   GuestStatus,
   PlusOne,
 } from '../features/guests/types'
+
+import './AdminGuests.css'
 
 const statusLabels: Record<GuestStatus, string> = {
   invited: 'Invité',
@@ -25,9 +28,20 @@ function createPlusOne(): PlusOne {
   }
 }
 
+function withoutKey<T>(
+  record: Record<string, T>,
+  key: string,
+) {
+  const nextRecord = { ...record }
+  delete nextRecord[key]
+  return nextRecord
+}
+
 function Admin() {
   const {
     guests,
+    loading,
+    synchronizationError,
     addGuest,
     updateGuest,
     removeGuest,
@@ -38,8 +52,21 @@ function Admin() {
     useState<GuestStatus>('invited')
   const [plusOnes, setPlusOnes] = useState<PlusOne[]>([])
   const [notes, setNotes] = useState('')
+
   const [expandedGuestIds, setExpandedGuestIds] =
     useState<Set<string>>(() => new Set())
+
+  const [nameDrafts, setNameDrafts] =
+    useState<Record<string, string>>({})
+
+  const [noteDrafts, setNoteDrafts] =
+    useState<Record<string, string>>({})
+
+  const [plusOneNameDrafts, setPlusOneNameDrafts] =
+    useState<Record<string, string>>({})
+
+  const [pendingPlusOnes, setPendingPlusOnes] =
+    useState<Record<string, PlusOne>>({})
 
   const stats = useMemo(() => {
     const confirmed = guests.filter(
@@ -54,7 +81,7 @@ function Admin() {
       (guest) => guest.status === 'invited',
     ).length
 
-    const plusOnes = guests.reduce(
+    const plusOneCount = guests.reduce(
       (total, guest) => total + guest.plusOnes.length,
       0,
     )
@@ -63,7 +90,7 @@ function Admin() {
       confirmed,
       maybe,
       invited,
-      plusOnes,
+      plusOnes: plusOneCount,
     }
   }, [guests])
 
@@ -90,14 +117,14 @@ function Admin() {
 
   const handleUpdateNewPlusOne = (
     id: string,
-    name: string,
+    nextName: string,
   ) => {
     setPlusOnes((currentPlusOnes) =>
       currentPlusOnes.map((plusOne) =>
         plusOne.id === id
           ? {
               ...plusOne,
-              name,
+              name: nextName,
             }
           : plusOne,
       ),
@@ -143,70 +170,220 @@ function Admin() {
     setNotes('')
   }
 
-  const addPlusOneToGuest = (guestId: string) => {
-    const guest = guests.find(
-      (currentGuest) => currentGuest.id === guestId,
-    )
+  const commitGuestName = (guest: Guest) => {
+    const draft = nameDrafts[guest.id]
 
-    if (!guest) {
+    if (draft === undefined) {
       return
     }
 
-    updateGuest(guestId, {
-      plusOnes: [
-        ...guest.plusOnes,
-        createPlusOne(),
-      ],
-    })
+    const trimmedName = draft.trim()
 
+    if (
+      trimmedName &&
+      trimmedName !== guest.name
+    ) {
+      updateGuest(guest.id, {
+        name: trimmedName,
+      })
+    }
+
+    setNameDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, guest.id),
+    )
+  }
+
+  const commitGuestNotes = (guest: Guest) => {
+    const draft = noteDrafts[guest.id]
+
+    if (draft === undefined) {
+      return
+    }
+
+    const trimmedNotes = draft.trim()
+
+    if (trimmedNotes !== guest.notes) {
+      updateGuest(guest.id, {
+        notes: trimmedNotes,
+      })
+    }
+
+    setNoteDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, guest.id),
+    )
+  }
+
+  const getPlusOneDraftKey = (
+    guestId: string,
+    plusOneId: string,
+  ) => `${guestId}:${plusOneId}`
+
+  const commitPlusOneName = (
+    guest: Guest,
+    plusOne: PlusOne,
+  ) => {
+    const draftKey = getPlusOneDraftKey(
+      guest.id,
+      plusOne.id,
+    )
+
+    const draft = plusOneNameDrafts[draftKey]
+
+    if (draft === undefined) {
+      return
+    }
+
+    const trimmedName = draft.trim()
+
+    if (
+      trimmedName &&
+      trimmedName !== plusOne.name
+    ) {
+      updateGuest(guest.id, {
+        plusOnes: guest.plusOnes.map(
+          (currentPlusOne) =>
+            currentPlusOne.id === plusOne.id
+              ? {
+                  ...currentPlusOne,
+                  name: trimmedName,
+                }
+              : currentPlusOne,
+        ),
+      })
+    }
+
+    setPlusOneNameDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, draftKey),
+    )
+  }
+
+  const startPendingPlusOne = (guestId: string) => {
     setExpandedGuestIds((currentIds) => {
       const nextIds = new Set(currentIds)
       nextIds.add(guestId)
       return nextIds
     })
-  }
 
-  const updateGuestPlusOne = (
-    guestId: string,
-    plusOneId: string,
-    name: string,
-  ) => {
-    const guest = guests.find(
-      (currentGuest) => currentGuest.id === guestId,
-    )
+    setPendingPlusOnes((currentPending) => {
+      if (currentPending[guestId]) {
+        return currentPending
+      }
 
-    if (!guest) {
-      return
-    }
-
-    updateGuest(guestId, {
-      plusOnes: guest.plusOnes.map((plusOne) =>
-        plusOne.id === plusOneId
-          ? {
-              ...plusOne,
-              name,
-            }
-          : plusOne,
-      ),
+      return {
+        ...currentPending,
+        [guestId]: createPlusOne(),
+      }
     })
   }
 
-  const removeGuestPlusOne = (
+  const updatePendingPlusOne = (
     guestId: string,
-    plusOneId: string,
+    nextName: string,
   ) => {
-    const guest = guests.find(
-      (currentGuest) => currentGuest.id === guestId,
-    )
+    setPendingPlusOnes((currentPending) => {
+      const pendingPlusOne =
+        currentPending[guestId]
 
-    if (!guest) {
+      if (!pendingPlusOne) {
+        return currentPending
+      }
+
+      return {
+        ...currentPending,
+        [guestId]: {
+          ...pendingPlusOne,
+          name: nextName,
+        },
+      }
+    })
+  }
+
+  const cancelPendingPlusOne = (guestId: string) => {
+    setPendingPlusOnes((currentPending) =>
+      withoutKey(currentPending, guestId),
+    )
+  }
+
+  const commitPendingPlusOne = (guest: Guest) => {
+    const pendingPlusOne =
+      pendingPlusOnes[guest.id]
+
+    if (!pendingPlusOne) {
       return
     }
 
-    updateGuest(guestId, {
+    const trimmedName =
+      pendingPlusOne.name.trim()
+
+    if (!trimmedName) {
+      return
+    }
+
+    updateGuest(guest.id, {
+      plusOnes: [
+        ...guest.plusOnes,
+        {
+          ...pendingPlusOne,
+          name: trimmedName,
+        },
+      ],
+    })
+
+    cancelPendingPlusOne(guest.id)
+  }
+
+  const removeGuestPlusOne = (
+    guest: Guest,
+    plusOne: PlusOne,
+  ) => {
+    const shouldDelete = window.confirm(
+      `Supprimer ${plusOne.name || 'ce +1'} ?`,
+    )
+
+    if (!shouldDelete) {
+      return
+    }
+
+    updateGuest(guest.id, {
       plusOnes: guest.plusOnes.filter(
-        (plusOne) => plusOne.id !== plusOneId,
+        (currentPlusOne) =>
+          currentPlusOne.id !== plusOne.id,
       ),
+    })
+
+    const draftKey = getPlusOneDraftKey(
+      guest.id,
+      plusOne.id,
+    )
+
+    setPlusOneNameDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, draftKey),
+    )
+  }
+
+  const clearDraftsForGuest = (guestId: string) => {
+    setNameDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, guestId),
+    )
+
+    setNoteDrafts((currentDrafts) =>
+      withoutKey(currentDrafts, guestId),
+    )
+
+    setPendingPlusOnes((currentPending) =>
+      withoutKey(currentPending, guestId),
+    )
+
+    setPlusOneNameDrafts((currentDrafts) => {
+      const nextDrafts = { ...currentDrafts }
+
+      for (const key of Object.keys(nextDrafts)) {
+        if (key.startsWith(`${guestId}:`)) {
+          delete nextDrafts[key]
+        }
+      }
+
+      return nextDrafts
     })
   }
 
@@ -229,6 +406,15 @@ function Admin() {
           </p>
         </div>
       </header>
+
+      {synchronizationError && (
+        <div
+          className="guest-sync-error"
+          role="alert"
+        >
+          {synchronizationError}
+        </div>
+      )}
 
       <section className="admin-stats">
         <article className="stat-card">
@@ -274,11 +460,13 @@ function Admin() {
 
             <input
               type="text"
+              autoComplete="off"
               placeholder="Jean Dupont"
               value={name}
               onChange={(event) =>
                 setName(event.target.value)
               }
+              required
             />
           </label>
 
@@ -397,7 +585,15 @@ function Admin() {
           </span>
         </div>
 
-        {guests.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">
+            <strong>Chargement...</strong>
+
+            <p>
+              Synchronisation de la liste des invités.
+            </p>
+          </div>
+        ) : guests.length === 0 ? (
           <div className="empty-state">
             <strong>Aucun invité.</strong>
 
@@ -412,6 +608,9 @@ function Admin() {
               const isExpanded = expandedGuestIds.has(
                 guest.id,
               )
+
+              const pendingPlusOne =
+                pendingPlusOnes[guest.id]
 
               return (
                 <article
@@ -432,12 +631,22 @@ function Admin() {
                     <div>
                       <input
                         className="guest-name-input"
-                        value={guest.name}
+                        value={
+                          nameDrafts[guest.id] ??
+                          guest.name
+                        }
                         aria-label={`Nom de ${guest.name}`}
                         onChange={(event) =>
-                          updateGuest(guest.id, {
-                            name: event.target.value,
-                          })
+                          setNameDrafts(
+                            (currentDrafts) => ({
+                              ...currentDrafts,
+                              [guest.id]:
+                                event.target.value,
+                            }),
+                          )
+                        }
+                        onBlur={() =>
+                          commitGuestName(guest)
                         }
                       />
 
@@ -469,12 +678,6 @@ function Admin() {
                   </div>
 
                   <div className="guest-row__content">
-                    {guest.notes && (
-                      <p className="guest-row__notes">
-                        {guest.notes}
-                      </p>
-                    )}
-
                     <div className="guest-row__controls">
                       <select
                         value={guest.status}
@@ -503,7 +706,7 @@ function Admin() {
                         type="button"
                         className="secondary-button"
                         onClick={() =>
-                          addPlusOneToGuest(guest.id)
+                          startPendingPlusOne(guest.id)
                         }
                       >
                         + Ajouter un +1
@@ -519,6 +722,7 @@ function Admin() {
                             )
 
                           if (shouldDelete) {
+                            clearDraftsForGuest(guest.id)
                             removeGuest(guest.id)
                           }
                         }}
@@ -527,46 +731,142 @@ function Admin() {
                       </button>
                     </div>
 
-                    {guest.plusOnes.length > 0 && (
+                    <label className="guest-row__notes-editor">
+                      <span>Notes privées</span>
+
+                      <textarea
+                        rows={3}
+                        placeholder="Info utile pour la soirée..."
+                        value={
+                          noteDrafts[guest.id] ??
+                          guest.notes
+                        }
+                        onChange={(event) =>
+                          setNoteDrafts(
+                            (currentDrafts) => ({
+                              ...currentDrafts,
+                              [guest.id]:
+                                event.target.value,
+                            }),
+                          )
+                        }
+                        onBlur={() =>
+                          commitGuestNotes(guest)
+                        }
+                      />
+                    </label>
+
+                    {(guest.plusOnes.length > 0 ||
+                      pendingPlusOne) && (
                       <div className="guest-plus-ones">
                         <span className="guest-plus-ones__title">
                           +1
                         </span>
 
                         {guest.plusOnes.map(
-                          (plusOne) => (
-                            <div
-                              key={plusOne.id}
-                              className="plus-one-field"
-                            >
-                              <input
-                                type="text"
-                                placeholder="Nom du +1"
-                                value={plusOne.name}
-                                onChange={(event) =>
-                                  updateGuestPlusOne(
-                                    guest.id,
-                                    plusOne.id,
-                                    event.target.value,
-                                  )
-                                }
-                              />
+                          (plusOne) => {
+                            const draftKey =
+                              getPlusOneDraftKey(
+                                guest.id,
+                                plusOne.id,
+                              )
 
-                              <button
-                                type="button"
-                                className="icon-delete-button"
-                                aria-label="Supprimer le +1"
-                                onClick={() =>
-                                  removeGuestPlusOne(
-                                    guest.id,
-                                    plusOne.id,
-                                  )
-                                }
+                            return (
+                              <div
+                                key={plusOne.id}
+                                className="plus-one-field"
                               >
-                                ×
-                              </button>
-                            </div>
-                          ),
+                                <input
+                                  type="text"
+                                  placeholder="Nom du +1"
+                                  value={
+                                    plusOneNameDrafts[
+                                      draftKey
+                                    ] ?? plusOne.name
+                                  }
+                                  onChange={(event) =>
+                                    setPlusOneNameDrafts(
+                                      (currentDrafts) => ({
+                                        ...currentDrafts,
+                                        [draftKey]:
+                                          event.target.value,
+                                      }),
+                                    )
+                                  }
+                                  onBlur={() =>
+                                    commitPlusOneName(
+                                      guest,
+                                      plusOne,
+                                    )
+                                  }
+                                />
+
+                                <button
+                                  type="button"
+                                  className="icon-delete-button"
+                                  aria-label={`Supprimer ${plusOne.name || 'le +1'}`}
+                                  onClick={() =>
+                                    removeGuestPlusOne(
+                                      guest,
+                                      plusOne,
+                                    )
+                                  }
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            )
+                          },
+                        )}
+
+                        {pendingPlusOne && (
+                          <div className="plus-one-field plus-one-field--pending">
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Nom du nouveau +1"
+                              value={pendingPlusOne.name}
+                              onChange={(event) =>
+                                updatePendingPlusOne(
+                                  guest.id,
+                                  event.target.value,
+                                )
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault()
+                                  commitPendingPlusOne(guest)
+                                }
+
+                                if (event.key === 'Escape') {
+                                  cancelPendingPlusOne(guest.id)
+                                }
+                              }}
+                            />
+
+                            <button
+                              type="button"
+                              className="icon-confirm-button"
+                              aria-label="Valider le +1"
+                              disabled={!pendingPlusOne.name.trim()}
+                              onClick={() =>
+                                commitPendingPlusOne(guest)
+                              }
+                            >
+                              ✓
+                            </button>
+
+                            <button
+                              type="button"
+                              className="icon-delete-button"
+                              aria-label="Annuler le +1"
+                              onClick={() =>
+                                cancelPendingPlusOne(guest.id)
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}
