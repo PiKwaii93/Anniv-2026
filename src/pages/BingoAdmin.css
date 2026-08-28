@@ -1,0 +1,397 @@
+.bingo-admin-page {
+  min-height: 100vh;
+  padding:
+    max(30px, env(safe-area-inset-top))
+    18px
+    max(70px, env(safe-area-inset-bottom));
+  color: #f5f5f7;
+  background:
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(255, 176, 32, 0.08),
+      transparent 34%
+    ),
+    #09090d;
+}
+
+.bingo-admin-header,
+.bingo-admin-stats,
+.bingo-admin-warning,
+.bingo-admin-error,
+.bingo-admin-create,
+.bingo-admin-pool {
+  width: 100%;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bingo-admin-header {
+  margin-bottom: 36px;
+}
+
+.bingo-admin-header__navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 38px;
+}
+
+.bingo-admin-preview {
+  color: #a9a49d;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.bingo-admin-preview:hover {
+  color: #fff;
+}
+
+.bingo-admin-eyebrow {
+  margin: 0;
+  color: #716b64;
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.bingo-admin-header h1 {
+  margin: 8px 0 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(3.6rem, 13vw, 7rem);
+  line-height: 0.86;
+  letter-spacing: -0.07em;
+}
+
+.bingo-admin-header h1 span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 187, 78, 0.42);
+}
+
+.bingo-admin-description {
+  max-width: 650px;
+  margin: 0;
+  color: #8d8881;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.bingo-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-bottom: 28px;
+}
+
+.bingo-admin-stats article {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+}
+
+.bingo-admin-stats span {
+  color: #68635d;
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.bingo-admin-stats strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: -0.05em;
+}
+
+.bingo-admin-warning,
+.bingo-admin-error {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.bingo-admin-warning {
+  color: #f3c77e;
+  background: rgba(255, 176, 32, 0.07);
+  border: 1px solid rgba(255, 176, 32, 0.2);
+}
+
+.bingo-admin-error {
+  color: #ffacb8;
+  background: rgba(255, 61, 84, 0.07);
+  border: 1px solid rgba(255, 61, 84, 0.2);
+}
+
+.bingo-admin-create {
+  margin-bottom: 46px;
+}
+
+.bingo-admin-pool {
+  margin-bottom: 30px;
+}
+
+.bingo-admin-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bingo-admin-section-heading h2 {
+  margin: 5px 0 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+.bingo-admin-result-count {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 9px;
+  color: #aaa49c;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.bingo-admin-create__form {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+}
+
+.bingo-admin-create__form textarea,
+.bingo-admin-search input,
+.bingo-admin-prompt textarea {
+  width: 100%;
+  color: #f2f0ec;
+  background: #111116;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  outline: none;
+  resize: vertical;
+  transition: border-color 150ms ease;
+}
+
+.bingo-admin-create__form textarea:focus,
+.bingo-admin-search input:focus,
+.bingo-admin-prompt textarea:focus {
+  border-color: rgba(255, 181, 62, 0.55);
+}
+
+.bingo-admin-create__form textarea {
+  min-height: 86px;
+  padding: 12px 13px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.bingo-admin-create__form > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.bingo-admin-create__form span {
+  color: #625e58;
+  font-size: 0.65rem;
+}
+
+.bingo-admin-create__form button {
+  min-height: 42px;
+  padding: 0 14px;
+  color: #18130d;
+  background: #f1af46;
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  font-size: 0.73rem;
+  font-weight: 750;
+}
+
+.bingo-admin-create__form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bingo-admin-search {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+
+.bingo-admin-search span {
+  color: #69645e;
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.bingo-admin-search input {
+  height: 44px;
+  padding: 0 13px;
+  border-radius: 12px;
+}
+
+.bingo-admin-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.bingo-admin-prompt {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 15px;
+  transition:
+    opacity 160ms ease,
+    border-color 160ms ease;
+}
+
+.bingo-admin-prompt--inactive {
+  opacity: 0.58;
+}
+
+.bingo-admin-prompt__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bingo-admin-prompt__index {
+  color: #59554f;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+
+.bingo-admin-prompt__status {
+  padding: 4px 7px;
+  color: #77716a;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  font-size: 0.56rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bingo-admin-prompt__status--active {
+  color: #e3bd7c;
+  background: rgba(255, 176, 32, 0.06);
+  border-color: rgba(255, 176, 32, 0.16);
+}
+
+.bingo-admin-prompt textarea {
+  min-height: 62px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.bingo-admin-prompt__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.bingo-admin-prompt__actions button {
+  min-height: 36px;
+  padding: 0 10px;
+  color: #bcb7b0;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 0.66rem;
+}
+
+.bingo-admin-prompt__actions button:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.bingo-admin-prompt__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bingo-admin-prompt__actions .bingo-admin-prompt__delete {
+  color: #a97880;
+}
+
+.bingo-admin-empty {
+  padding: 28px 18px;
+  color: #68635d;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px dashed rgba(255, 255, 255, 0.07);
+  border-radius: 15px;
+  font-size: 0.78rem;
+}
+
+@media (min-width: 700px) {
+  .bingo-admin-page {
+    padding: 52px 36px 90px;
+  }
+
+  .bingo-admin-header {
+    margin-bottom: 50px;
+  }
+
+  .bingo-admin-header__navigation {
+    margin-bottom: 54px;
+  }
+
+  .bingo-admin-stats {
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .bingo-admin-stats article {
+    padding: 18px;
+  }
+
+  .bingo-admin-stats strong {
+    font-size: 2.25rem;
+  }
+
+  .bingo-admin-create__form {
+    padding: 18px;
+  }
+
+  .bingo-admin-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .bingo-admin-prompt {
+    padding: 14px;
+  }
+}

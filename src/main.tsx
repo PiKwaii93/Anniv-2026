@@ -9,6 +9,7 @@ import { GuestsProvider } from './features/guests/GuestsContext'
 
 import './index.css'
 import './MobilePolish.css'
+import './BingoGlobal.css'
 
 createRoot(
   document.getElementById('root')!,

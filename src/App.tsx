@@ -31,6 +31,14 @@ const BeerPong = lazy(
   () => import('./pages/BeerPong'),
 )
 
+const Bingo = lazy(
+  () => import('./pages/Bingo'),
+)
+
+const BingoAdmin = lazy(
+  () => import('./pages/BingoAdmin'),
+)
+
 const Guests = lazy(
   () => import('./pages/Guests'),
 )
@@ -130,6 +138,11 @@ function App() {
         />
 
         <Route
+          path="/bingo"
+          element={<Bingo />}
+        />
+
+        <Route
           path="/guests"
           element={<Guests />}
         />
@@ -162,6 +175,15 @@ function App() {
           element={
             <AdminRoute>
               <IcebergAdmin />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/bingo"
+          element={
+            <AdminRoute>
+              <BingoAdmin />
             </AdminRoute>
           }
         />

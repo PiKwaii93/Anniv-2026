@@ -17,6 +17,11 @@ type IcebergEntryRow = {
   is_published: boolean
 }
 
+type BingoPromptRow = {
+  id: string
+  is_active: boolean
+}
+
 type BeerPongState = {
   selectedPlayerIds?: string[]
   teams?: unknown[]
@@ -27,17 +32,16 @@ type BeerPongState = {
 
 type BeerPongRow = {
   state: BeerPongState | null
-  updated_at: string
 }
 
-type IcebergStats = {
+type PublicationStats = {
   total: number
-  published: number
+  active: number
 }
 
-const emptyIcebergStats: IcebergStats = {
+const emptyStats: PublicationStats = {
   total: 0,
-  published: 0,
+  active: 0,
 }
 
 function AdminDashboard() {
@@ -48,19 +52,14 @@ function AdminDashboard() {
     signOut,
   } = useAuth()
 
-  const [
-    icebergStats,
-    setIcebergStats,
-  ] = useState<IcebergStats>(
-    emptyIcebergStats,
-  )
+  const [icebergStats, setIcebergStats] =
+    useState<PublicationStats>(emptyStats)
 
-  const [
-    beerPongState,
-    setBeerPongState,
-  ] = useState<BeerPongState>(
-    {},
-  )
+  const [bingoStats, setBingoStats] =
+    useState<PublicationStats>(emptyStats)
+
+  const [beerPongState, setBeerPongState] =
+    useState<BeerPongState>({})
 
   const [loading, setLoading] =
     useState(true)
@@ -68,129 +67,80 @@ function AdminDashboard() {
   const [error, setError] =
     useState('')
 
-  const confirmedCount =
-    useMemo(
-      () =>
-        guests.filter(
-          (guest) =>
-            guest.status ===
-            'confirmed',
-        ).length,
-      [guests],
-    )
-
-  const maybeCount =
-    useMemo(
-      () =>
-        guests.filter(
-          (guest) =>
-            guest.status ===
-            'maybe',
-        ).length,
-      [guests],
-    )
-
-  const invitedCount =
-    useMemo(
-      () =>
-        guests.filter(
-          (guest) =>
-            guest.status ===
-            'invited',
-        ).length,
-      [guests],
-    )
-
-  const declinedCount =
-    useMemo(
-      () =>
-        guests.filter(
-          (guest) =>
-            guest.status ===
-            'declined',
-        ).length,
-      [guests],
-    )
-
-  const plusOneCount =
-    useMemo(
-      () =>
-        guests.reduce(
-          (
-            total,
-            guest,
-          ) =>
-            total +
-            guest.plusOnes.length,
-          0,
-        ),
-      [guests],
-    )
+  const guestStats = useMemo(
+    () => ({
+      confirmed: guests.filter(
+        (guest) =>
+          guest.status === 'confirmed',
+      ).length,
+      invited: guests.filter(
+        (guest) =>
+          guest.status === 'invited',
+      ).length,
+      maybe: guests.filter(
+        (guest) =>
+          guest.status === 'maybe',
+      ).length,
+      declined: guests.filter(
+        (guest) =>
+          guest.status === 'declined',
+      ).length,
+      plusOnes: guests.reduce(
+        (total, guest) =>
+          total + guest.plusOnes.length,
+        0,
+      ),
+    }),
+    [guests],
+  )
 
   const loadDashboardData =
     useCallback(async () => {
       const [
         icebergResult,
         beerPongResult,
+        bingoResult,
       ] = await Promise.all([
         supabase
-          .from(
-            'iceberg_entries',
-          )
-          .select(
-            'id, is_published',
-          ),
-
+          .from('iceberg_entries')
+          .select('id, is_published'),
         supabase
-          .from(
-            'beer_pong_state',
-          )
-          .select(
-            'state, updated_at',
-          )
+          .from('beer_pong_state')
+          .select('state')
           .eq('id', 'main')
           .maybeSingle(),
+        supabase
+          .from('bingo_prompts')
+          .select('id, is_active'),
       ])
 
       let hasError = false
 
-      if (
-        icebergResult.error
-      ) {
+      if (icebergResult.error) {
         console.error(
-          'Unable to load iceberg dashboard stats:',
+          'Unable to load Iceberg dashboard stats:',
           icebergResult.error,
         )
-
         hasError = true
       } else {
         const rows =
-          (icebergResult.data ??
-            []) as IcebergEntryRow[]
+          (icebergResult.data ?? []) as IcebergEntryRow[]
 
         setIcebergStats({
           total: rows.length,
-
-          published:
-            rows.filter(
-              (entry) =>
-                entry.is_published,
-            ).length,
+          active: rows.filter(
+            (entry) => entry.is_published,
+          ).length,
         })
       }
 
-      if (
-        beerPongResult.error
-      ) {
+      if (beerPongResult.error) {
         console.error(
           'Unable to load Beer Pong dashboard stats:',
           beerPongResult.error,
         )
-
         hasError = true
-      } else if (
-        beerPongResult.data
-      ) {
+      } else if (beerPongResult.data) {
         const row =
           beerPongResult.data as BeerPongRow
 
@@ -201,12 +151,29 @@ function AdminDashboard() {
         setBeerPongState({})
       }
 
+      if (bingoResult.error) {
+        console.error(
+          'Unable to load Bingo dashboard stats:',
+          bingoResult.error,
+        )
+        hasError = true
+      } else {
+        const rows =
+          (bingoResult.data ?? []) as BingoPromptRow[]
+
+        setBingoStats({
+          total: rows.length,
+          active: rows.filter(
+            (prompt) => prompt.is_active,
+          ).length,
+        })
+      }
+
       setError(
         hasError
           ? 'Certaines données du dashboard n’ont pas pu être synchronisées.'
           : '',
       )
-
       setLoading(false)
     }, [])
 
@@ -216,16 +183,13 @@ function AdminDashboard() {
 
   useEffect(() => {
     const channel = supabase
-      .channel(
-        'anniv-2026-admin-dashboard',
-      )
+      .channel('anniv-2026-admin-dashboard')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table:
-            'iceberg_entries',
+          table: 'iceberg_entries',
         },
         () => {
           void loadDashboardData()
@@ -236,8 +200,18 @@ function AdminDashboard() {
         {
           event: '*',
           schema: 'public',
-          table:
-            'beer_pong_state',
+          table: 'beer_pong_state',
+        },
+        () => {
+          void loadDashboardData()
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bingo_prompts',
         },
         () => {
           void loadDashboardData()
@@ -253,15 +227,13 @@ function AdminDashboard() {
         15000,
       )
 
-    const handleVisibilityChange =
-      () => {
-        if (
-          document.visibilityState ===
-          'visible'
-        ) {
-          void loadDashboardData()
-        }
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'visible'
+      ) {
+        void loadDashboardData()
       }
+    }
 
     document.addEventListener(
       'visibilitychange',
@@ -269,40 +241,28 @@ function AdminDashboard() {
     )
 
     return () => {
-      window.clearInterval(
-        refreshInterval,
-      )
-
+      window.clearInterval(refreshInterval)
       document.removeEventListener(
         'visibilitychange',
         handleVisibilityChange,
       )
-
-      void supabase.removeChannel(
-        channel,
-      )
+      void supabase.removeChannel(channel)
     }
   }, [loadDashboardData])
 
   const selectedPlayerCount =
-    beerPongState
-      .selectedPlayerIds
+    beerPongState.selectedPlayerIds
       ?.length ?? 0
 
   const teamCount =
-    beerPongState.teams
-      ?.length ?? 0
+    beerPongState.teams?.length ?? 0
 
   const roundCount =
-    beerPongState.rounds
-      ?.length ?? 0
+    beerPongState.rounds?.length ?? 0
 
   const beerPongStatus =
     useMemo(() => {
-      if (
-        beerPongState
-          .championTeamId
-      ) {
+      if (beerPongState.championTeamId) {
         return {
           label: 'Terminé',
           detail:
@@ -311,58 +271,29 @@ function AdminDashboard() {
         }
       }
 
-      if (
-        beerPongState
-          .draftValidated
-      ) {
+      if (beerPongState.draftValidated) {
         return {
           label: 'En cours',
           detail:
-            `${teamCount} équipe${
-              teamCount > 1
-                ? 's'
-                : ''
-            } · ${roundCount} tour${
-              roundCount > 1
-                ? 's'
-                : ''
-            }`,
+            `${teamCount} équipe${teamCount > 1 ? 's' : ''} · ${roundCount} tour${roundCount > 1 ? 's' : ''}`,
           tone: 'live',
         }
       }
 
-      if (
-        teamCount > 0
-      ) {
+      if (teamCount > 0) {
         return {
           label: 'Draft prête',
           detail:
-            `${teamCount} équipe${
-              teamCount > 1
-                ? 's'
-                : ''
-            } à valider`,
+            `${teamCount} équipe${teamCount > 1 ? 's' : ''} à valider`,
           tone: 'ready',
         }
       }
 
-      if (
-        selectedPlayerCount > 0
-      ) {
+      if (selectedPlayerCount > 0) {
         return {
           label: 'Préparation',
           detail:
-            `${selectedPlayerCount} joueur${
-              selectedPlayerCount >
-              1
-                ? 's'
-                : ''
-            } sélectionné${
-              selectedPlayerCount >
-              1
-                ? 's'
-                : ''
-            }`,
+            `${selectedPlayerCount} joueur${selectedPlayerCount > 1 ? 's' : ''} sélectionné${selectedPlayerCount > 1 ? 's' : ''}`,
           tone: 'ready',
         }
       }
@@ -379,11 +310,6 @@ function AdminDashboard() {
       selectedPlayerCount,
       teamCount,
     ])
-
-  const handleSignOut =
-    async () => {
-      await signOut()
-    }
 
   return (
     <main className="control-room">
@@ -403,7 +329,7 @@ function AdminDashboard() {
             type="button"
             className="control-signout"
             onClick={() => {
-              void handleSignOut()
+              void signOut()
             }}
           >
             Déconnexion
@@ -427,28 +353,27 @@ function AdminDashboard() {
 
             <div>
               <strong>
-                Système actif
+                Admin connecté
               </strong>
 
               <span>
-                Supabase connecté
+                {loading
+                  ? 'Synchronisation...'
+                  : 'Données chargées'}
               </span>
             </div>
           </div>
         </div>
 
         <p className="control-header__description">
-          Le centre de contrôle de la
-          soirée. Invités, Iceberg et
-          tournoi sont regroupés ici.
+          Invités, Iceberg, Beer Pong et Bingo sont
+          regroupés ici pour piloter la soirée.
         </p>
 
         {user?.email && (
           <p className="control-header__account">
             Connecté avec{' '}
-            <span>
-              {user.email}
-            </span>
+            <span>{user.email}</span>
           </p>
         )}
       </header>
@@ -465,48 +390,27 @@ function AdminDashboard() {
           className="control-module control-module--guests"
         >
           <div className="control-module__top">
-            <span className="control-module__index">
-              01
-            </span>
-
-            <span className="control-module__arrow">
-              ↗
-            </span>
+            <span className="control-module__index">01</span>
+            <span className="control-module__arrow">↗</span>
           </div>
 
           <div className="control-module__body">
             <p className="control-module__label">
               Organisation
             </p>
-
-            <h2>
-              Invités
-            </h2>
+            <h2>Invités</h2>
 
             <div className="control-module__metric">
-              <strong>
-                {guests.length}
-              </strong>
-
+              <strong>{guests.length}</strong>
               <span>
-                personne
-                {guests.length !== 1
-                  ? 's'
-                  : ''}
+                personne{guests.length !== 1 ? 's' : ''}
               </span>
             </div>
 
             <p className="control-module__summary">
-              {confirmedCount}{' '}
-              confirmé
-              {confirmedCount !== 1
-                ? 's'
-                : ''}
-
+              {guestStats.confirmed} confirmé{guestStats.confirmed !== 1 ? 's' : ''}
               <span>·</span>
-
-              {plusOneCount}{' '}
-              +1
+              {guestStats.plusOnes} +1
             </p>
           </div>
 
@@ -520,62 +424,33 @@ function AdminDashboard() {
           className="control-module control-module--iceberg"
         >
           <div className="control-module__top">
-            <span className="control-module__index">
-              02
-            </span>
-
-            <span className="control-module__arrow">
-              ↗
-            </span>
+            <span className="control-module__index">02</span>
+            <span className="control-module__arrow">↗</span>
           </div>
 
           <div className="control-module__body">
             <p className="control-module__label">
               Archives
             </p>
-
-            <h2>
-              Iceberg
-            </h2>
+            <h2>Iceberg</h2>
 
             <div className="control-module__metric">
               <strong>
-                {loading
-                  ? '—'
-                  : icebergStats.total}
+                {loading ? '—' : icebergStats.total}
               </strong>
-
               <span>
-                dossier
-                {icebergStats.total !==
-                1
-                  ? 's'
-                  : ''}
+                dossier{icebergStats.total !== 1 ? 's' : ''}
               </span>
             </div>
 
             <p className="control-module__summary">
               {loading
                 ? 'Synchronisation...'
-                : `${icebergStats.published} publié${
-                    icebergStats.published !==
-                    1
-                      ? 's'
-                      : ''
-                  }`}
-
+                : `${icebergStats.active} publié${icebergStats.active !== 1 ? 's' : ''}`}
               {!loading && (
                 <>
                   <span>·</span>
-
-                  {icebergStats.total -
-                    icebergStats.published}{' '}
-                  masqué
-                  {icebergStats.total -
-                    icebergStats.published !==
-                  1
-                    ? 's'
-                    : ''}
+                  {icebergStats.total - icebergStats.active} masqué{icebergStats.total - icebergStats.active !== 1 ? 's' : ''}
                 </>
               )}
             </p>
@@ -591,41 +466,61 @@ function AdminDashboard() {
           className="control-module control-module--beer"
         >
           <div className="control-module__top">
-            <span className="control-module__index">
-              03
-            </span>
-
-            <span className="control-module__arrow">
-              ↗
-            </span>
+            <span className="control-module__index">03</span>
+            <span className="control-module__arrow">↗</span>
           </div>
 
           <div className="control-module__body">
             <p className="control-module__label">
               Tournoi
             </p>
-
-            <h2>
-              Beer Pong
-            </h2>
+            <h2>Beer Pong</h2>
 
             <div className="control-module__metric control-module__metric--status">
-              <strong>
-                {
-                  beerPongStatus.label
-                }
-              </strong>
+              <strong>{beerPongStatus.label}</strong>
             </div>
 
             <p className="control-module__summary">
-              {
-                beerPongStatus.detail
-              }
+              {beerPongStatus.detail}
             </p>
           </div>
 
           <div className="control-module__footer">
             Ouvrir le tournoi
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/bingo"
+          className="control-module control-module--bingo"
+        >
+          <div className="control-module__top">
+            <span className="control-module__index">04</span>
+            <span className="control-module__arrow">↗</span>
+          </div>
+
+          <div className="control-module__body">
+            <p className="control-module__label">
+              Jeu personnel
+            </p>
+            <h2>Bingo</h2>
+
+            <div className="control-module__metric">
+              <strong>
+                {loading ? '—' : bingoStats.active}
+              </strong>
+              <span>cases actives</span>
+            </div>
+
+            <p className="control-module__summary">
+              {loading
+                ? 'Synchronisation...'
+                : `${bingoStats.total} au total`}
+            </p>
+          </div>
+
+          <div className="control-module__footer">
+            Gérer le pool du Bingo
           </div>
         </Link>
       </section>
@@ -636,10 +531,7 @@ function AdminDashboard() {
             <p className="control-eyebrow">
               Vue d&apos;ensemble
             </p>
-
-            <h2>
-              État de la soirée
-            </h2>
+            <h2>État de la soirée</h2>
           </div>
 
           <span className="control-live">
@@ -652,88 +544,48 @@ function AdminDashboard() {
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
               <span>Invités</span>
-
-              <strong>
-                {guests.length}
-              </strong>
+              <strong>{guests.length}</strong>
             </div>
 
             <div className="control-stat-list">
               <div>
-                <span>
-                  Confirmés
-                </span>
-
-                <strong>
-                  {confirmedCount}
-                </strong>
+                <span>Confirmés</span>
+                <strong>{guestStats.confirmed}</strong>
               </div>
-
               <div>
-                <span>
-                  Invités
-                </span>
-
-                <strong>
-                  {invitedCount}
-                </strong>
+                <span>En attente</span>
+                <strong>{guestStats.invited}</strong>
               </div>
-
               <div>
-                <span>
-                  Peut-être
-                </span>
-
-                <strong>
-                  {maybeCount}
-                </strong>
+                <span>Peut-être</span>
+                <strong>{guestStats.maybe}</strong>
               </div>
-
               <div>
-                <span>
-                  Refusés
-                </span>
-
-                <strong>
-                  {declinedCount}
-                </strong>
+                <span>Refusés</span>
+                <strong>{guestStats.declined}</strong>
               </div>
-
               <div>
-                <span>
-                  +1
-                </span>
-
-                <strong>
-                  {plusOneCount}
-                </strong>
+                <span>+1</span>
+                <strong>{guestStats.plusOnes}</strong>
               </div>
             </div>
           </article>
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>
-                Iceberg
-              </span>
-
+              <span>Iceberg</span>
               <strong>
-                {loading
-                  ? '—'
-                  : icebergStats.total}
+                {loading ? '—' : icebergStats.total}
               </strong>
             </div>
 
             <div className="control-progress">
               <div className="control-progress__labels">
-                <span>
-                  Publication
-                </span>
-
+                <span>Publication</span>
                 <strong>
                   {loading
                     ? '—'
-                    : `${icebergStats.published}/${icebergStats.total}`}
+                    : `${icebergStats.active}/${icebergStats.total}`}
                 </strong>
               </div>
 
@@ -742,15 +594,8 @@ function AdminDashboard() {
                   className="control-progress__value"
                   style={{
                     width:
-                      icebergStats.total >
-                      0
-                        ? `${
-                            (
-                              icebergStats.published /
-                              icebergStats.total
-                            ) *
-                            100
-                          }%`
+                      icebergStats.total > 0
+                        ? `${(icebergStats.active / icebergStats.total) * 100}%`
                         : '0%',
                   }}
                 />
@@ -760,81 +605,69 @@ function AdminDashboard() {
             <p className="control-overview-card__note">
               {icebergStats.total === 0
                 ? 'Aucun dossier créé.'
-                : icebergStats.published ===
-                    icebergStats.total
-                  ? 'Tout est visible publiquement.'
-                  : `${
-                      icebergStats.total -
-                      icebergStats.published
-                    } dossier${
-                      icebergStats.total -
-                        icebergStats.published >
-                      1
-                        ? 's'
-                        : ''
-                    } encore masqué${
-                      icebergStats.total -
-                        icebergStats.published >
-                      1
-                        ? 's'
-                        : ''
-                    }.`}
+                : `${icebergStats.active} dossier${icebergStats.active !== 1 ? 's' : ''} visible${icebergStats.active !== 1 ? 's' : ''}.`}
             </p>
           </article>
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>
-                Beer Pong
-              </span>
-
+              <span>Beer Pong</span>
               <span
                 className={`control-tournament-status control-tournament-status--${beerPongStatus.tone}`}
               >
-                {
-                  beerPongStatus.label
-                }
+                {beerPongStatus.label}
               </span>
             </div>
 
             <div className="control-stat-list">
               <div>
-                <span>
-                  Joueurs
-                </span>
-
-                <strong>
-                  {
-                    selectedPlayerCount
-                  }
-                </strong>
+                <span>Joueurs</span>
+                <strong>{selectedPlayerCount}</strong>
               </div>
-
               <div>
-                <span>
-                  Équipes
-                </span>
-
-                <strong>
-                  {teamCount}
-                </strong>
+                <span>Équipes</span>
+                <strong>{teamCount}</strong>
               </div>
-
               <div>
-                <span>
-                  Tours créés
-                </span>
-
-                <strong>
-                  {roundCount}
-                </strong>
+                <span>Tours créés</span>
+                <strong>{roundCount}</strong>
               </div>
             </div>
 
             <p className="control-overview-card__note">
-              {
-                beerPongStatus.detail
-              }
+              {beerPongStatus.detail}
+            </p>
+          </article>
+
+          <article className="control-overview-card">
+            <div className="control-overview-card__heading">
+              <span>Bingo</span>
+              <strong>
+                {loading ? '—' : bingoStats.active}
+              </strong>
+            </div>
+
+            <div className="control-stat-list">
+              <div>
+                <span>Cases actives</span>
+                <strong>{bingoStats.active}</strong>
+              </div>
+              <div>
+                <span>Masquées</span>
+                <strong>
+                  {bingoStats.total - bingoStats.active}
+                </strong>
+              </div>
+              <div>
+                <span>Minimum requis</span>
+                <strong>16</strong>
+              </div>
+            </div>
+
+            <p className="control-overview-card__note">
+              {bingoStats.active >= 16
+                ? 'Le pool est prêt à générer des grilles.'
+                : 'Pas assez de cases actives pour générer une grille.'}
             </p>
           </article>
         </div>
@@ -846,10 +679,7 @@ function AdminDashboard() {
             <p className="control-eyebrow">
               Raccourcis
             </p>
-
-            <h2>
-              Accès rapide
-            </h2>
+            <h2>Accès rapide</h2>
           </div>
         </div>
 
@@ -858,14 +688,8 @@ function AdminDashboard() {
             to="/guests"
             className="control-shortcut"
           >
-            <span>
-              Liste publique
-            </span>
-
-            <strong>
-              Voir les invités
-            </strong>
-
+            <span>Liste publique</span>
+            <strong>Voir les invités</strong>
             <span>↗</span>
           </Link>
 
@@ -873,14 +697,8 @@ function AdminDashboard() {
             to="/iceberg"
             className="control-shortcut"
           >
-            <span>
-              Aperçu public
-            </span>
-
-            <strong>
-              Voir l&apos;Iceberg
-            </strong>
-
+            <span>Aperçu public</span>
+            <strong>Voir l&apos;Iceberg</strong>
             <span>↗</span>
           </Link>
 
@@ -888,14 +706,17 @@ function AdminDashboard() {
             to="/beer-pong"
             className="control-shortcut"
           >
-            <span>
-              Mode soirée
-            </span>
+            <span>Mode soirée</span>
+            <strong>Beer Pong</strong>
+            <span>↗</span>
+          </Link>
 
-            <strong>
-              Beer Pong
-            </strong>
-
+          <Link
+            to="/bingo"
+            className="control-shortcut"
+          >
+            <span>Jeu public</span>
+            <strong>Voir le Bingo</strong>
             <span>↗</span>
           </Link>
         </div>
