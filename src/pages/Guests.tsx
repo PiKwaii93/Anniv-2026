@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom'
 import { useGuests } from '../features/guests/GuestsContext'
 
 function Guests() {
-  const { guests } = useGuests()
+  const {
+    guests,
+    loading,
+    synchronizationError,
+  } = useGuests()
 
   const confirmedGuests = guests.filter(
     (guest) => guest.status === 'confirmed',
@@ -30,18 +34,39 @@ function Guests() {
           <h1>Les invités</h1>
 
           <p>
-            {totalPresent === 0
-              ? 'La guest list arrive bientôt.'
-              : `${totalPresent} personne${
-                  totalPresent > 1 ? 's' : ''
-                } confirmée${
-                  totalPresent > 1 ? 's' : ''
-                } pour la soirée.`}
+            {loading
+              ? 'Synchronisation de la guest list...'
+              : totalPresent === 0
+                ? 'La guest list arrive bientôt.'
+                : `${totalPresent} personne${
+                    totalPresent > 1 ? 's' : ''
+                  } confirmée${
+                    totalPresent > 1 ? 's' : ''
+                  } pour la soirée.`}
           </p>
         </div>
       </header>
 
-      {confirmedGuests.length === 0 ? (
+      {loading ? (
+        <div className="empty-state">
+          <strong>Chargement...</strong>
+
+          <p>
+            La liste se synchronise avec la soirée.
+          </p>
+        </div>
+      ) : synchronizationError &&
+        confirmedGuests.length === 0 ? (
+        <div className="empty-state">
+          <strong>
+            La guest list est momentanément indisponible.
+          </strong>
+
+          <p>
+            Réessaie dans quelques instants.
+          </p>
+        </div>
+      ) : confirmedGuests.length === 0 ? (
         <div className="empty-state">
           <strong>
             Personne pour l&apos;instant.
@@ -65,9 +90,7 @@ function Guests() {
               },
               ...guest.plusOnes.map((plusOne) => ({
                 id: plusOne.id,
-                name:
-                  plusOne.name.trim() ||
-                  'Invité mystère',
+                name: plusOne.name,
                 label: `+1 de ${guest.name}`,
               })),
             ]
