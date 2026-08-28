@@ -1,0 +1,88 @@
+/* Content-aware layout overrides for the public Iceberg. */
+
+.iceberg-page .iceberg-sky {
+  min-height: var(--tier-height, 390px);
+}
+
+.iceberg-page .iceberg-tier,
+.iceberg-page .iceberg-tier--surface {
+  min-height: var(--tier-height, 350px);
+}
+
+.iceberg-page .iceberg-scatter-item {
+  top: var(--scatter-y);
+  left: var(--scatter-x);
+
+  max-width: min(
+    var(--scatter-width),
+    var(--scatter-viewport-cap, 31vw)
+  );
+}
+
+.iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+  max-width: min(
+    var(--scatter-width),
+    14.5vw
+  );
+
+  line-height: 1.04;
+}
+
+.iceberg-page .iceberg-tier--empty .iceberg-tier__label {
+  opacity: 0.54;
+}
+
+@media (max-width: 699px) {
+  .iceberg-page .iceberg-sky {
+    min-height: var(--tier-height-mobile, 430px);
+  }
+
+  .iceberg-page .iceberg-tier,
+  .iceberg-page .iceberg-underwater .iceberg-tier,
+  .iceberg-page .iceberg-tier--surface {
+    min-height: var(--tier-height-mobile, 330px);
+  }
+
+  .iceberg-page .iceberg-scatter-item,
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+    top: var(--scatter-y-mobile);
+    left: var(--scatter-x-mobile);
+
+    max-width: min(
+      var(--scatter-mobile-width, 158px),
+      42vw
+    );
+  }
+
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+    font-size: calc(
+      var(--scatter-size) * 0.68
+    );
+  }
+
+  .iceberg-page .iceberg-tier--sparse .iceberg-scatter-item {
+    font-size: calc(
+      var(--scatter-size) * 0.76
+    );
+  }
+
+  .iceberg-page .iceberg-tier--empty .iceberg-tier__label {
+    opacity: 0.62;
+  }
+}
+
+@media (max-width: 420px) {
+  .iceberg-page .iceberg-scatter-item,
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+    max-width: min(
+      var(--scatter-mobile-width, 150px),
+      41vw
+    );
+  }
+
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+    font-size: calc(
+      var(--scatter-size) * 0.64
+    );
+  }
+}
