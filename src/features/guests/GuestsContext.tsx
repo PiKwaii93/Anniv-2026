@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -21,12 +22,21 @@ type GuestInput = Omit<
   'id' | 'createdAt'
 >
 
+type GuestPatch = Partial<
+  Pick<
+    Guest,
+    'name' | 'status' | 'plusOnes' | 'notes'
+  >
+>
+
 type GuestsContextValue = {
   guests: Guest[]
+  loading: boolean
+  synchronizationError: string
   addGuest: (guest: GuestInput) => void
   updateGuest: (
     id: string,
-    data: Partial<Guest>,
+    data: GuestPatch,
   ) => void
   removeGuest: (id: string) => void
 }
@@ -42,6 +52,7 @@ type PlusOneRow = {
   id: string
   guest_id: string
   name: string
+  created_at: string
 }
 
 type PrivateNoteRow = {
@@ -66,8 +77,38 @@ export function GuestsProvider({
     Guest[]
   >([])
 
+  const [loading, setLoading] =
+    useState(true)
+
+  const [
+    synchronizationError,
+    setSynchronizationError,
+  ] = useState('')
+
+  const guestsRef = useRef<Guest[]>([])
+
+  const writeQueueRef =
+    useRef<Promise<void>>(
+      Promise.resolve(),
+    )
+
+  const pendingWritesRef = useRef(0)
+  const deferredRefreshRef = useRef(false)
+  const loadRequestRef = useRef(0)
+
+  const replaceGuests = useCallback(
+    (nextGuests: Guest[]) => {
+      guestsRef.current = nextGuests
+      setGuests(nextGuests)
+    },
+    [],
+  )
+
   const loadGuests = useCallback(
     async () => {
+      const requestId =
+        ++loadRequestRef.current
+
       const [
         guestsResult,
         plusOnesResult,
@@ -84,15 +125,30 @@ export function GuestsProvider({
         supabase
           .from('plus_ones')
           .select(
-            'id, guest_id, name',
-          ),
+            'id, guest_id, name, created_at',
+          )
+          .order('created_at', {
+            ascending: true,
+          }),
       ])
+
+      if (
+        requestId !==
+        loadRequestRef.current
+      ) {
+        return
+      }
 
       if (guestsResult.error) {
         console.error(
           'Unable to load guests:',
           guestsResult.error,
         )
+
+        setSynchronizationError(
+          'Impossible de synchroniser les invités.',
+        )
+        setLoading(false)
 
         return
       }
@@ -102,6 +158,11 @@ export function GuestsProvider({
           'Unable to load plus ones:',
           plusOnesResult.error,
         )
+
+        setSynchronizationError(
+          'Impossible de synchroniser les +1.',
+        )
+        setLoading(false)
 
         return
       }
@@ -117,6 +178,8 @@ export function GuestsProvider({
       let privateNoteRows:
         PrivateNoteRow[] = []
 
+      let notesLoadFailed = false
+
       if (isAdmin) {
         const notesResult =
           await supabase
@@ -127,16 +190,32 @@ export function GuestsProvider({
               'guest_id, notes',
             )
 
+        if (
+          requestId !==
+          loadRequestRef.current
+        ) {
+          return
+        }
+
         if (notesResult.error) {
           console.error(
             'Unable to load private notes:',
             notesResult.error,
           )
+
+          notesLoadFailed = true
         } else {
           privateNoteRows =
             (notesResult.data ??
               []) as PrivateNoteRow[]
         }
+      }
+
+      if (
+        pendingWritesRef.current > 0
+      ) {
+        deferredRefreshRef.current = true
+        return
       }
 
       const plusOnesByGuest =
@@ -186,9 +265,67 @@ export function GuestsProvider({
             guest.created_at,
         }))
 
-      setGuests(mappedGuests)
+      replaceGuests(mappedGuests)
+
+      setSynchronizationError(
+        notesLoadFailed
+          ? 'Les notes privées n’ont pas pu être synchronisées.'
+          : '',
+      )
+
+      setLoading(false)
     },
-    [isAdmin],
+    [isAdmin, replaceGuests],
+  )
+
+  const requestRefresh = useCallback(
+    () => {
+      if (
+        pendingWritesRef.current > 0
+      ) {
+        deferredRefreshRef.current = true
+        return
+      }
+
+      void loadGuests()
+    },
+    [loadGuests],
+  )
+
+  const queueWrite = useCallback(
+    (
+      operation: () => Promise<void>,
+    ) => {
+      pendingWritesRef.current += 1
+
+      writeQueueRef.current =
+        writeQueueRef.current
+          .then(operation)
+          .catch((writeError) => {
+            console.error(
+              'Unable to save guest data:',
+              writeError,
+            )
+
+            setSynchronizationError(
+              'Une modification n’a pas pu être synchronisée.',
+            )
+
+            deferredRefreshRef.current = true
+          })
+          .finally(() => {
+            pendingWritesRef.current -= 1
+
+            if (
+              pendingWritesRef.current === 0 &&
+              deferredRefreshRef.current
+            ) {
+              deferredRefreshRef.current = false
+              void loadGuests()
+            }
+          })
+    },
+    [loadGuests],
   )
 
   useEffect(() => {
@@ -219,9 +356,7 @@ export function GuestsProvider({
           schema: 'public',
           table: 'guests',
         },
-        () => {
-          void loadGuests()
-        },
+        requestRefresh,
       )
       .on(
         'postgres_changes',
@@ -230,16 +365,15 @@ export function GuestsProvider({
           schema: 'public',
           table: 'plus_ones',
         },
-        () => {
-          void loadGuests()
-        },
+        requestRefresh,
       )
       .subscribe()
 
     const refreshInterval =
-      window.setInterval(() => {
-        void loadGuests()
-      }, 15000)
+      window.setInterval(
+        requestRefresh,
+        15000,
+      )
 
     const handleVisibilityChange =
       () => {
@@ -247,7 +381,7 @@ export function GuestsProvider({
           document.visibilityState ===
           'visible'
         ) {
-          void loadGuests()
+          requestRefresh()
         }
       }
 
@@ -272,7 +406,7 @@ export function GuestsProvider({
     }
   }, [
     authLoading,
-    loadGuests,
+    requestRefresh,
   ])
 
   const addGuest = (
@@ -286,53 +420,66 @@ export function GuestsProvider({
       return
     }
 
+    const cleanName = guest.name.trim()
+
+    if (!cleanName) {
+      return
+    }
+
+    const cleanPlusOnes =
+      guest.plusOnes
+        .map((plusOne) => ({
+          ...plusOne,
+          name: plusOne.name.trim(),
+        }))
+        .filter(
+          (plusOne) =>
+            plusOne.name.length > 0,
+        )
+
+    const cleanNotes = guest.notes.trim()
+
     const id = crypto.randomUUID()
     const createdAt =
       new Date().toISOString()
 
     const newGuest: Guest = {
       id,
-      name: guest.name,
+      name: cleanName,
       status: guest.status,
-      plusOnes: guest.plusOnes,
-      notes: guest.notes,
+      plusOnes: cleanPlusOnes,
+      notes: cleanNotes,
       createdAt,
     }
 
-    setGuests((currentGuests) => [
-      ...currentGuests,
+    const nextGuests = [
+      ...guestsRef.current,
       newGuest,
-    ])
+    ]
 
-    const saveGuest = async () => {
+    replaceGuests(nextGuests)
+
+    queueWrite(async () => {
       const guestResult =
         await supabase
           .from('guests')
           .insert({
             id,
-            name: guest.name,
+            name: cleanName,
             status: guest.status,
             created_at: createdAt,
           })
 
       if (guestResult.error) {
-        console.error(
-          'Unable to create guest:',
-          guestResult.error,
-        )
-
-        await loadGuests()
-        return
+        throw guestResult.error
       }
 
-      if (
-        guest.plusOnes.length > 0
-      ) {
+      if (cleanPlusOnes.length > 0) {
         const plusOneResult =
           await supabase
             .from('plus_ones')
             .insert(
-              guest.plusOnes.map(
+              cleanPlusOnes.map(
                 (plusOne) => ({
                   id: plusOne.id,
                   guest_id: id,
@@ -342,18 +489,12 @@ export function GuestsProvider({
             )
 
         if (plusOneResult.error) {
-          console.error(
-            'Unable to create plus ones:',
-            plusOneResult.error,
-          )
-
           await supabase
             .from('guests')
             .delete()
             .eq('id', id)
 
-          await loadGuests()
-          return
+          throw plusOneResult.error
         }
       }
 
@@ -364,33 +505,23 @@ export function GuestsProvider({
           )
           .insert({
             guest_id: id,
-            notes: guest.notes,
+            notes: cleanNotes,
           })
 
       if (notesResult.error) {
-        console.error(
-          'Unable to create private note:',
-          notesResult.error,
-        )
-
         await supabase
           .from('guests')
           .delete()
           .eq('id', id)
 
-        await loadGuests()
-        return
+        throw notesResult.error
       }
-
-      await loadGuests()
-    }
-
-    void saveGuest()
+    })
   }
 
   const updateGuest = (
     id: string,
-    data: Partial<Guest>,
+    data: GuestPatch,
   ) => {
     if (!isAdmin) {
       console.error(
@@ -401,7 +532,7 @@ export function GuestsProvider({
     }
 
     const previousGuest =
-      guests.find(
+      guestsRef.current.find(
         (guest) => guest.id === id,
       )
 
@@ -409,38 +540,77 @@ export function GuestsProvider({
       return
     }
 
-    const nextGuest: Guest = {
-      ...previousGuest,
-      ...data,
+    const normalizedData: GuestPatch = {}
+
+    if (data.name !== undefined) {
+      const cleanName = data.name.trim()
+
+      if (cleanName) {
+        normalizedData.name = cleanName
+      }
     }
 
-    setGuests((currentGuests) =>
-      currentGuests.map((guest) =>
+    if (data.status !== undefined) {
+      normalizedData.status = data.status
+    }
+
+    if (data.notes !== undefined) {
+      normalizedData.notes =
+        data.notes.trim()
+    }
+
+    if (data.plusOnes !== undefined) {
+      normalizedData.plusOnes =
+        data.plusOnes
+          .map((plusOne) => ({
+            ...plusOne,
+            name: plusOne.name.trim(),
+          }))
+          .filter(
+            (plusOne) =>
+              plusOne.name.length > 0,
+          )
+    }
+
+    if (
+      Object.keys(normalizedData)
+        .length === 0
+    ) {
+      return
+    }
+
+    const nextGuest: Guest = {
+      ...previousGuest,
+      ...normalizedData,
+    }
+
+    const nextGuests =
+      guestsRef.current.map((guest) =>
         guest.id === id
           ? nextGuest
           : guest,
-      ),
-    )
+      )
 
-    const saveUpdate = async () => {
+    replaceGuests(nextGuests)
+
+    queueWrite(async () => {
       const guestPatch: {
         name?: string
         status?: GuestStatus
       } = {}
 
       if (
-        data.name !== undefined &&
-        data.name.trim().length > 0
+        normalizedData.name !== undefined
       ) {
         guestPatch.name =
-          data.name.trim()
+          normalizedData.name
       }
 
       if (
-        data.status !== undefined
+        normalizedData.status !== undefined
       ) {
         guestPatch.status =
-          data.status
+          normalizedData.status
       }
 
       if (
@@ -454,18 +624,12 @@ export function GuestsProvider({
             .eq('id', id)
 
         if (guestResult.error) {
-          console.error(
-            'Unable to update guest:',
-            guestResult.error,
-          )
-
-          await loadGuests()
-          return
+          throw guestResult.error
         }
       }
 
       if (
-        data.notes !== undefined
+        normalizedData.notes !== undefined
       ) {
         const notesResult =
           await supabase
@@ -475,7 +639,8 @@ export function GuestsProvider({
             .upsert(
               {
                 guest_id: id,
-                notes: data.notes,
+                notes:
+                  normalizedData.notes,
               },
               {
                 onConflict:
@@ -484,21 +649,15 @@ export function GuestsProvider({
             )
 
         if (notesResult.error) {
-          console.error(
-            'Unable to update private note:',
-            notesResult.error,
-          )
-
-          await loadGuests()
-          return
+          throw notesResult.error
         }
       }
 
       if (
-        data.plusOnes !== undefined
+        normalizedData.plusOnes !== undefined
       ) {
         const nextPlusOnes =
-          data.plusOnes
+          normalizedData.plusOnes
 
         const nextIds = new Set(
           nextPlusOnes.map(
@@ -520,9 +679,7 @@ export function GuestsProvider({
                 plusOne.id,
             )
 
-        if (
-          removedIds.length > 0
-        ) {
+        if (removedIds.length > 0) {
           const deleteResult =
             await supabase
               .from('plus_ones')
@@ -533,19 +690,11 @@ export function GuestsProvider({
               )
 
           if (deleteResult.error) {
-            console.error(
-              'Unable to remove plus one:',
-              deleteResult.error,
-            )
-
-            await loadGuests()
-            return
+            throw deleteResult.error
           }
         }
 
-        if (
-          nextPlusOnes.length > 0
-        ) {
+        if (nextPlusOnes.length > 0) {
           const plusOneResult =
             await supabase
               .from('plus_ones')
@@ -562,22 +711,12 @@ export function GuestsProvider({
                 },
               )
 
-          if (
-            plusOneResult.error
-          ) {
-            console.error(
-              'Unable to update plus ones:',
-              plusOneResult.error,
-            )
-
-            await loadGuests()
-            return
+          if (plusOneResult.error) {
+            throw plusOneResult.error
           }
         }
       }
-    }
-
-    void saveUpdate()
+    })
   }
 
   const removeGuest = (
@@ -591,41 +730,39 @@ export function GuestsProvider({
       return
     }
 
-    setGuests((currentGuests) =>
-      currentGuests.filter(
-        (guest) =>
-          guest.id !== id,
+    if (
+      !guestsRef.current.some(
+        (guest) => guest.id === id,
+      )
+    ) {
+      return
+    }
+
+    replaceGuests(
+      guestsRef.current.filter(
+        (guest) => guest.id !== id,
       ),
     )
 
-    const deleteGuest =
-      async () => {
-        const { error } =
-          await supabase
-            .from('guests')
-            .delete()
-            .eq('id', id)
+    queueWrite(async () => {
+      const { error } =
+        await supabase
+          .from('guests')
+          .delete()
+          .eq('id', id)
 
-        if (error) {
-          console.error(
-            'Unable to delete guest:',
-            error,
-          )
-
-          await loadGuests()
-          return
-        }
-
-        await loadGuests()
+      if (error) {
+        throw error
       }
-
-    void deleteGuest()
+    })
   }
 
   return (
     <GuestsContext.Provider
       value={{
         guests,
+        loading,
+        synchronizationError,
         addGuest,
         updateGuest,
         removeGuest,
