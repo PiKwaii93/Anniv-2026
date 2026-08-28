@@ -1,0 +1,53 @@
+/* Guest admin additions layered on top of the shared guest styles. */
+
+.guest-row__notes-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.guest-row__notes-editor > span {
+  color: #686873;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+
+.guest-row__notes-editor textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 12px 13px;
+  color: #f5f5f7;
+  background: #111116;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  outline: none;
+  line-height: 1.5;
+}
+
+.guest-row__notes-editor textarea::placeholder {
+  color: #555560;
+}
+
+.guest-row__notes-editor textarea:focus {
+  border-color: rgba(114, 92, 255, 0.7);
+}
+
+.plus-one-field--pending {
+  padding: 8px;
+  background: rgba(114, 92, 255, 0.035);
+  border: 1px dashed rgba(114, 92, 255, 0.18);
+  border-radius: 13px;
+}
+
+.plus-one-field--pending input {
+  border-color: rgba(114, 92, 255, 0.22);
+}
+
+@media (max-width: 749px) {
+  .guest-row__notes-editor textarea {
+    min-height: 78px;
+  }
+}
