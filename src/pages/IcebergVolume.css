@@ -20,6 +20,11 @@
 }
 
 .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
+  max-width: min(
+    var(--scatter-width),
+    14.5vw
+  );
+
   line-height: 1.04;
 }
 
@@ -38,7 +43,8 @@
     min-height: var(--tier-height-mobile, 330px);
   }
 
-  .iceberg-page .iceberg-scatter-item {
+  .iceberg-page .iceberg-scatter-item,
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
     top: var(--scatter-y-mobile);
     left: var(--scatter-x-mobile);
 
@@ -66,7 +72,8 @@
 }
 
 @media (max-width: 420px) {
-  .iceberg-page .iceberg-scatter-item {
+  .iceberg-page .iceberg-scatter-item,
+  .iceberg-page .iceberg-tier--dense .iceberg-scatter-item {
     max-width: min(
       var(--scatter-mobile-width, 150px),
       41vw
