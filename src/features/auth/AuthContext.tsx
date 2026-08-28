@@ -49,7 +49,7 @@ export function AuthProvider({
     useState(false)
 
   const [adminLoading, setAdminLoading] =
-    useState(false)
+    useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -63,6 +63,10 @@ export function AuthProvider({
         return
       }
 
+      setIsAdmin(false)
+      setAdminLoading(
+        Boolean(currentSession?.user),
+      )
       setSession(currentSession)
       setInitialized(true)
     }
@@ -74,6 +78,10 @@ export function AuthProvider({
     } =
       supabase.auth.onAuthStateChange(
         (_event, nextSession) => {
+          setIsAdmin(false)
+          setAdminLoading(
+            Boolean(nextSession?.user),
+          )
           setSession(nextSession)
           setInitialized(true)
         },
