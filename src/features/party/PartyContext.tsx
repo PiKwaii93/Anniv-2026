@@ -67,16 +67,8 @@ const defaultSettings: PartySettings = {
 const PartyContext =
   createContext<PartyContextValue | null>(null)
 
-const partyStateSelect = [
-  'id',
-  'phase',
-  'featured_module',
-  'iceberg_visible',
-  'beer_pong_visible',
-  'bingo_visible',
-  'missions_visible',
-  'guests_visible',
-].join(', ')
+const partyStateSelect =
+  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, guests_visible' as const
 
 function rowToSettings(
   row: PartyStateRow,
