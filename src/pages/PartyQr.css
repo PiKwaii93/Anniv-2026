@@ -1,0 +1,233 @@
+.party-qr-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding:
+    max(26px, env(safe-area-inset-top))
+    16px
+    max(26px, env(safe-area-inset-bottom));
+  color: #f7f7f9;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(121, 98, 255, 0.16),
+      transparent 40%
+    ),
+    #09090d;
+}
+
+.party-qr-page__glow {
+  position: absolute;
+  right: -160px;
+  bottom: -80px;
+  width: 360px;
+  height: 360px;
+  background: #5e9fd0;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.party-qr-header,
+.party-qr-card,
+.party-qr-print-note {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.party-qr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.party-qr-header > p {
+  margin: 0;
+  color: #5f5f68;
+  font-size: 0.6rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.party-qr-card {
+  display: grid;
+  place-items: center;
+  gap: 24px;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding: 28px 20px;
+  text-align: center;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.018)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 28px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.32);
+}
+
+.party-qr-card__copy {
+  max-width: 540px;
+}
+
+.party-qr-card__label {
+  display: block;
+  margin-bottom: 12px;
+  color: #888894;
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.party-qr-card h1 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(3.7rem, 17vw, 7rem);
+  line-height: 0.78;
+  letter-spacing: -0.07em;
+}
+
+.party-qr-card h1 span {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+}
+
+.party-qr-card__copy > p {
+  max-width: 470px;
+  margin: 24px auto 0;
+  color: #93939c;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.party-qr-code-shell {
+  display: grid;
+  place-items: center;
+  width: min(76vw, 330px);
+  aspect-ratio: 1;
+  padding: 18px;
+  background: #fff;
+  border-radius: 25px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 22px 55px rgba(0, 0, 0, 0.26);
+}
+
+.party-qr-code {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.party-qr-url {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.party-qr-url span {
+  color: #595963;
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.party-qr-url strong {
+  color: #d8d8de;
+  font-size: 0.78rem;
+}
+
+.party-qr-copy-button {
+  min-height: 43px;
+  padding: 0 18px;
+  color: #111116;
+  background: #f3f3f5;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.party-qr-print-note {
+  margin-top: 26px;
+  color: #4e4e57;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (min-width: 700px) {
+  .party-qr-page {
+    padding: 44px 32px;
+  }
+
+  .party-qr-card {
+    padding: 46px 42px;
+  }
+
+  .party-qr-code-shell {
+    width: 330px;
+    padding: 22px;
+  }
+}
+
+@media print {
+  .party-qr-page {
+    min-height: 100vh;
+    padding: 0;
+    color: #000;
+    background: #fff;
+  }
+
+  .party-qr-page__glow,
+  .party-qr-header,
+  .party-qr-copy-button,
+  .party-qr-print-note {
+    display: none;
+  }
+
+  .party-qr-card {
+    min-height: 100vh;
+    margin: 0;
+    padding: 30mm 20mm;
+    color: #000;
+    background: #fff;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .party-qr-card h1 span {
+    color: #000;
+    -webkit-text-stroke: 0;
+  }
+
+  .party-qr-card__label,
+  .party-qr-card__copy > p,
+  .party-qr-url span,
+  .party-qr-url strong {
+    color: #000;
+  }
+
+  .party-qr-code-shell {
+    width: 90mm;
+    padding: 0;
+    box-shadow: none;
+  }
+}
