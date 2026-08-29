@@ -1,0 +1,27 @@
+.module-card--room::after {
+  background: #6f8fff;
+}
+
+.module-card--room.module-card--featured {
+  border-color: rgba(111, 143, 255, 0.3);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(111, 143, 255, 0.09),
+      rgba(255, 255, 255, 0.03)
+    );
+}
+
+.module-card--room .module-card__featured-pill {
+  color: #d8e2ff;
+  background: rgba(111, 143, 255, 0.09);
+  border-color: rgba(111, 143, 255, 0.22);
+}
+
+.control-module--room::before {
+  background: #6f8fff;
+}
+
+.control-module--room:hover {
+  border-color: rgba(111, 143, 255, 0.22);
+}

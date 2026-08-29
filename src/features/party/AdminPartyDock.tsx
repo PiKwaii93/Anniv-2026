@@ -45,26 +45,12 @@ const moduleOptions: Array<{
   value: PartyModule
   label: string
 }> = [
-  {
-    value: 'iceberg',
-    label: 'Iceberg',
-  },
-  {
-    value: 'beer-pong',
-    label: 'Beer Pong',
-  },
-  {
-    value: 'bingo',
-    label: 'Bingo',
-  },
-  {
-    value: 'missions',
-    label: 'Missions secrètes',
-  },
-  {
-    value: 'guests',
-    label: 'Invités',
-  },
+  { value: 'iceberg', label: 'Iceberg' },
+  { value: 'beer-pong', label: 'Beer Pong' },
+  { value: 'bingo', label: 'Bingo' },
+  { value: 'missions', label: 'Missions secrètes' },
+  { value: 'room', label: 'La Salle' },
+  { value: 'guests', label: 'Invités' },
 ]
 
 function visibilityPatch(
@@ -73,32 +59,23 @@ function visibilityPatch(
 ): Partial<PartySettings> {
   switch (module) {
     case 'iceberg':
-      return {
-        icebergVisible: visible,
-      }
+      return { icebergVisible: visible }
     case 'beer-pong':
-      return {
-        beerPongVisible: visible,
-      }
+      return { beerPongVisible: visible }
     case 'bingo':
-      return {
-        bingoVisible: visible,
-      }
+      return { bingoVisible: visible }
     case 'missions':
-      return {
-        missionsVisible: visible,
-      }
+      return { missionsVisible: visible }
+    case 'room':
+      return { roomVisible: visible }
     case 'guests':
-      return {
-        guestsVisible: visible,
-      }
+      return { guestsVisible: visible }
   }
 }
 
 function AdminPartyDock() {
   const location = useLocation()
   const { isAdmin } = useAuth()
-
   const {
     settings,
     loading,
@@ -106,59 +83,29 @@ function AdminPartyDock() {
     error,
     updateSettings,
   } = useParty()
-
-  const [open, setOpen] =
-    useState(false)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     setOpen(false)
   }, [location.pathname])
 
-  const currentPhase =
-    phaseOptions.find(
-      (option) =>
-        option.value === settings.phase,
-    ) ?? phaseOptions[0]
-
+  const currentPhase = phaseOptions.find((option) => option.value === settings.phase) ?? phaseOptions[0]
   const visibleModules = useMemo(
-    () =>
-      moduleOptions.filter((module) =>
-        isPartyModuleVisible(
-          settings,
-          module.value,
-        ),
-      ),
+    () => moduleOptions.filter((module) => isPartyModuleVisible(settings, module.value)),
     [settings],
   )
 
-  if (
-    !isAdmin ||
-    !location.pathname.startsWith('/admin') ||
-    location.pathname === '/admin/login'
-  ) {
+  if (!isAdmin || !location.pathname.startsWith('/admin') || location.pathname === '/admin/login') {
     return null
   }
 
-  const toggleModule = async (
-    module: PartyModule,
-  ) => {
-    const currentlyVisible =
-      isPartyModuleVisible(
-        settings,
-        module,
-      )
-
+  const toggleModule = async (module: PartyModule) => {
+    const currentlyVisible = isPartyModuleVisible(settings, module)
     const patch: Partial<PartySettings> = {
-      ...visibilityPatch(
-        module,
-        !currentlyVisible,
-      ),
+      ...visibilityPatch(module, !currentlyVisible),
     }
 
-    if (
-      currentlyVisible &&
-      settings.featuredModule === module
-    ) {
+    if (currentlyVisible && settings.featuredModule === module) {
       patch.featuredModule = null
     }
 
@@ -171,63 +118,31 @@ function AdminPartyDock() {
         type="button"
         className={`party-dock party-dock--${settings.phase}`}
         aria-expanded={open}
-        onClick={() =>
-          setOpen((current) => !current)
-        }
+        onClick={() => setOpen((current) => !current)}
       >
         <span className="party-dock__dot" />
-
-        <span>
-          Mode soirée
-        </span>
-
-        <strong>
-          {loading
-            ? 'Synchronisation...'
-            : currentPhase.label}
-        </strong>
+        <span>Mode soirée</span>
+        <strong>{loading ? 'Synchronisation...' : currentPhase.label}</strong>
       </button>
 
       {open && (
-        <div
-          className="party-drawer-backdrop"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
+        <div className="party-drawer-backdrop" role="presentation" onClick={() => setOpen(false)}>
           <aside
             className="party-drawer"
             role="dialog"
             aria-modal="true"
             aria-labelledby="party-drawer-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
           >
             <header className="party-drawer__header">
               <div>
-                <p>
-                  Anniv 2026 / contrôle
-                </p>
-
-                <h2 id="party-drawer-title">
-                  Mode soirée
-                </h2>
+                <p>Anniv 2026 / contrôle</p>
+                <h2 id="party-drawer-title">Mode soirée</h2>
               </div>
-
-              <button
-                type="button"
-                aria-label="Fermer"
-                onClick={() => setOpen(false)}
-              >
-                ×
-              </button>
+              <button type="button" aria-label="Fermer" onClick={() => setOpen(false)}>×</button>
             </header>
 
-            {error && (
-              <div className="party-drawer__error">
-                {error}
-              </div>
-            )}
+            {error && <div className="party-drawer__error">{error}</div>}
 
             <section className="party-drawer__section">
               <div className="party-drawer__section-heading">
@@ -240,20 +155,10 @@ function AdminPartyDock() {
                   <button
                     key={option.value}
                     type="button"
-                    className={
-                      settings.phase === option.value
-                        ? 'party-phase-option party-phase-option--active'
-                        : 'party-phase-option'
-                    }
-                    aria-pressed={
-                      settings.phase === option.value
-                    }
+                    className={settings.phase === option.value ? 'party-phase-option party-phase-option--active' : 'party-phase-option'}
+                    aria-pressed={settings.phase === option.value}
                     disabled={loading || saving}
-                    onClick={() => {
-                      void updateSettings({
-                        phase: option.value,
-                      })
-                    }}
+                    onClick={() => void updateSettings({ phase: option.value })}
                   >
                     <strong>{option.label}</strong>
                     <span>{option.detail}</span>
@@ -274,26 +179,14 @@ function AdminPartyDock() {
                 disabled={loading || saving}
                 onChange={(event) => {
                   const value = event.target.value
-
                   void updateSettings({
-                    featuredModule:
-                      value === ''
-                        ? null
-                        : value as PartyModule,
+                    featuredModule: value === '' ? null : value as PartyModule,
                   })
                 }}
               >
-                <option value="">
-                  Aucun module mis en avant
-                </option>
-
+                <option value="">Aucun module mis en avant</option>
                 {visibleModules.map((module) => (
-                  <option
-                    key={module.value}
-                    value={module.value}
-                  >
-                    {module.label}
-                  </option>
+                  <option key={module.value} value={module.value}>{module.label}</option>
                 ))}
               </select>
             </section>
@@ -306,33 +199,18 @@ function AdminPartyDock() {
 
               <div className="party-visibility-list">
                 {moduleOptions.map((module) => {
-                  const visible =
-                    isPartyModuleVisible(
-                      settings,
-                      module.value,
-                    )
-
+                  const visible = isPartyModuleVisible(settings, module.value)
                   return (
                     <button
                       key={module.value}
                       type="button"
                       disabled={loading || saving}
-                      className={
-                        visible
-                          ? 'party-visibility-row party-visibility-row--visible'
-                          : 'party-visibility-row'
-                      }
+                      className={visible ? 'party-visibility-row party-visibility-row--visible' : 'party-visibility-row'}
                       aria-pressed={visible}
-                      onClick={() => {
-                        void toggleModule(module.value)
-                      }}
+                      onClick={() => void toggleModule(module.value)}
                     >
                       <span>{module.label}</span>
-
-                      <strong>
-                        {visible ? 'Visible' : 'Masqué'}
-                      </strong>
-
+                      <strong>{visible ? 'Visible' : 'Masqué'}</strong>
                       <i aria-hidden="true" />
                     </button>
                   )
@@ -341,28 +219,19 @@ function AdminPartyDock() {
             </section>
 
             <div className="party-drawer__actions">
-              <Link
-                to="/admin/missions"
-                className="party-drawer__qr-link"
-              >
+              <Link to="/admin/room" className="party-drawer__qr-link">
+                <span>◉</span>
+                Régie La Salle
+              </Link>
+              <Link to="/admin/missions" className="party-drawer__qr-link">
                 <span>◎</span>
                 Gérer les missions
               </Link>
-
-              <Link
-                to="/qr"
-                className="party-drawer__qr-link"
-              >
+              <Link to="/qr" className="party-drawer__qr-link">
                 <span>▦</span>
                 Afficher le QR code
               </Link>
-
-              <Link
-                to="/"
-                className="party-drawer__public-link"
-              >
-                Voir la Home ↗
-              </Link>
+              <Link to="/" className="party-drawer__public-link">Voir la Home ↗</Link>
             </div>
           </aside>
         </div>

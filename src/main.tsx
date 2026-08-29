@@ -12,6 +12,7 @@ import './index.css'
 import './MobilePolish.css'
 import './BingoGlobal.css'
 import './MissionGlobal.css'
+import './LiveVoteGlobal.css'
 import './PartyMotion.css'
 
 createRoot(

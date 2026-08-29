@@ -1,0 +1,514 @@
+.live-room-admin {
+  min-height: 100dvh;
+  padding: 28px clamp(16px, 4vw, 42px) 90px;
+  color: #f2f4f7;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(88, 122, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 14%, rgba(255, 79, 122, 0.07), transparent 28%),
+    #05070a;
+}
+
+.live-room-admin__header,
+.live-control,
+.live-room-admin__editor,
+.live-room-admin__bank,
+.live-room-admin__players,
+.live-room-admin__error {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+
+.live-room-admin__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.live-room-admin__header h1 {
+  margin: 14px 0 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2.8rem, 7vw, 5.8rem);
+  line-height: 0.86;
+  letter-spacing: -0.07em;
+}
+
+.live-room-admin__header h1 span {
+  display: block;
+  color: #7192ff;
+}
+
+.live-room-admin__header > div > p:last-child {
+  max-width: 600px;
+  margin: 20px 0 0;
+  color: #767d89;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.live-room-admin__eyebrow,
+.live-room-admin__section-title span {
+  color: #68789f;
+  font-size: 0.61rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+
+.live-room-admin__public-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  color: #c5cbd7;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  font-size: 0.68rem;
+}
+
+.live-room-admin__error {
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  color: #f2a0ab;
+  background: rgba(255, 68, 95, 0.055);
+  border: 1px solid rgba(255, 68, 95, 0.14);
+  border-radius: 11px;
+  font-size: 0.72rem;
+}
+
+.live-control {
+  margin-bottom: 18px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+}
+
+.live-control--open {
+  border-color: rgba(91, 134, 255, 0.25);
+  box-shadow: inset 0 0 45px rgba(91, 134, 255, 0.03);
+}
+
+.live-control--revealed {
+  border-color: rgba(94, 190, 122, 0.2);
+}
+
+.live-control__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-control__top > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #aab1bc;
+  font-size: 0.69rem;
+}
+
+.live-control__dot {
+  width: 7px;
+  height: 7px;
+  background: #657085;
+  border-radius: 50%;
+}
+
+.live-control--open .live-control__dot {
+  background: #7093ff;
+  box-shadow: 0 0 12px rgba(112, 147, 255, 0.5);
+}
+
+.live-control__top b {
+  color: #dbe3fa;
+  font-size: 0.72rem;
+}
+
+.live-control > p,
+.live-room-admin__players > p {
+  margin: 15px 0 0;
+  color: #686f7a;
+  font-size: 0.75rem;
+}
+
+.live-control > small {
+  display: block;
+  margin-top: 18px;
+  color: #738bcf;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.live-control h2 {
+  margin: 8px 0 0;
+  max-width: 850px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  line-height: 1.04;
+}
+
+.live-control__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.live-control__actions button,
+.live-room-admin__section-title button,
+.live-room-admin__question-actions button,
+.live-room-admin__question-order button,
+.live-room-admin__player button {
+  min-height: 36px;
+  padding: 0 11px;
+  color: #9da4af;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 0.63rem;
+}
+
+.live-control__actions .live-control__reveal,
+.live-room-admin__question-actions .live-room-admin__launch {
+  color: #10182c;
+  background: #dfe7ff;
+  border-color: transparent;
+  font-weight: 800;
+}
+
+.live-room-admin__editor,
+.live-room-admin__bank,
+.live-room-admin__players {
+  margin-top: 18px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 20px;
+}
+
+.live-room-admin__section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.live-room-admin__section-title h2 {
+  margin: 4px 0 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+}
+
+.live-room-admin__section-title small {
+  color: #606772;
+  font-size: 0.64rem;
+}
+
+.live-room-admin__modes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.live-room-admin__mode {
+  min-height: 100px;
+  padding: 13px;
+  color: #777e89;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 13px;
+  cursor: pointer;
+}
+
+.live-room-admin__mode strong,
+.live-room-admin__mode span {
+  display: block;
+}
+
+.live-room-admin__mode strong {
+  color: #c5cbd4;
+  font-size: 0.72rem;
+}
+
+.live-room-admin__mode span {
+  margin-top: 8px;
+  font-size: 0.6rem;
+  line-height: 1.45;
+}
+
+.live-room-admin__mode--active {
+  background: rgba(93, 133, 255, 0.075);
+  border-color: rgba(93, 133, 255, 0.28);
+}
+
+.live-room-admin__field {
+  display: grid;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.live-room-admin__field > span {
+  color: #69717d;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.live-room-admin__field input,
+.live-room-admin__field textarea,
+.live-room-admin__field select {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 12px;
+  color: #e5e8ed;
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  outline: 0;
+  resize: vertical;
+}
+
+.live-room-admin__field textarea {
+  line-height: 1.5;
+}
+
+.live-room-admin__editor-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px;
+}
+
+.live-room-admin__suspect-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  max-height: 300px;
+  margin-top: 7px;
+  overflow: auto;
+}
+
+.live-room-admin__suspect {
+  min-height: 58px;
+  padding: 9px;
+  color: #8a919c;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.live-room-admin__suspect strong,
+.live-room-admin__suspect span {
+  display: block;
+}
+
+.live-room-admin__suspect strong {
+  color: #c1c6cf;
+  font-size: 0.68rem;
+}
+
+.live-room-admin__suspect span {
+  margin-top: 4px;
+  color: #626975;
+  font-size: 0.56rem;
+}
+
+.live-room-admin__suspect--selected {
+  background: rgba(90, 130, 255, 0.07);
+  border-color: rgba(90, 130, 255, 0.26);
+}
+
+.live-room-admin__save {
+  min-height: 46px;
+  margin-top: 18px;
+  padding: 0 18px;
+  color: #101625;
+  background: #e8edfb;
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.live-room-admin__save:disabled,
+.live-room-admin button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.live-room-admin__question-list {
+  display: grid;
+  gap: 8px;
+}
+
+.live-room-admin__question {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 13px;
+}
+
+.live-room-admin__question--inactive {
+  opacity: 0.48;
+}
+
+.live-room-admin__question-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-room-admin__question-order b {
+  color: #444b56;
+  font-size: 0.65rem;
+}
+
+.live-room-admin__question-order > div {
+  display: grid;
+  gap: 3px;
+}
+
+.live-room-admin__question-order button {
+  min-width: 25px;
+  min-height: 24px;
+  padding: 0;
+}
+
+.live-room-admin__question-body > span {
+  color: #65749e;
+  font-size: 0.58rem;
+  font-weight: 750;
+}
+
+.live-room-admin__question-body h3 {
+  margin: 5px 0 0;
+  color: #d7dbe2;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.live-room-admin__question-body small {
+  display: block;
+  margin-top: 5px;
+  color: #5f6671;
+  font-size: 0.57rem;
+}
+
+.live-room-admin__question-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  max-width: 290px;
+}
+
+.live-room-admin__question-actions .live-room-admin__delete {
+  color: #b66c78;
+}
+
+.live-room-admin__player-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.live-room-admin__player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.live-room-admin__player strong,
+.live-room-admin__player span {
+  display: block;
+}
+
+.live-room-admin__player strong {
+  color: #c8cdd5;
+  font-size: 0.7rem;
+}
+
+.live-room-admin__player span {
+  margin-top: 3px;
+  color: #5f6671;
+  font-size: 0.57rem;
+}
+
+@media (max-width: 840px) {
+  .live-room-admin__modes,
+  .live-room-admin__suspect-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .live-room-admin__question {
+    grid-template-columns: 48px 1fr;
+  }
+
+  .live-room-admin__question-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    max-width: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .live-room-admin {
+    padding: 16px 11px 72px;
+  }
+
+  .live-room-admin__header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
+
+  .live-room-admin__editor,
+  .live-room-admin__bank,
+  .live-room-admin__players,
+  .live-control {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .live-room-admin__modes {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .live-room-admin__mode {
+    min-height: 88px;
+    padding: 10px;
+  }
+
+  .live-room-admin__editor-row,
+  .live-room-admin__player-list {
+    grid-template-columns: 1fr;
+  }
+
+  .live-room-admin__suspect-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .live-room-admin__question {
+    grid-template-columns: 42px 1fr;
+    padding: 9px;
+  }
+}
