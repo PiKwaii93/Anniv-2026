@@ -12,6 +12,12 @@ import {
 } from 'react-router-dom'
 
 import { useAuth } from './features/auth/AuthContext'
+import AdminPartyDock from './features/party/AdminPartyDock'
+import {
+  isPartyModuleVisible,
+  type PartyModule,
+  useParty,
+} from './features/party/PartyContext'
 
 import Home from './pages/Home'
 
@@ -51,7 +57,16 @@ const IcebergAdmin = lazy(
   () => import('./pages/IcebergAdmin'),
 )
 
+const PartyQr = lazy(
+  () => import('./pages/PartyQr'),
+)
+
 type AdminRouteProps = {
+  children: ReactNode
+}
+
+type ModuleGateProps = {
+  module: PartyModule
   children: ReactNode
 }
 
@@ -68,6 +83,58 @@ function RouteLoading() {
         <p>
           Ouverture du module...
         </p>
+      </div>
+    </main>
+  )
+}
+
+function ModuleGate({
+  module,
+  children,
+}: ModuleGateProps) {
+  const { isAdmin } = useAuth()
+
+  const {
+    settings,
+    loading,
+  } = useParty()
+
+  if (loading) {
+    return <RouteLoading />
+  }
+
+  if (
+    isAdmin ||
+    isPartyModuleVisible(
+      settings,
+      module,
+    )
+  ) {
+    return children
+  }
+
+  const message =
+    settings.phase === 'ended'
+      ? 'Ce module est fermé pour cette édition.'
+      : 'Ce module n’est pas encore ouvert au public.'
+
+  return (
+    <main className="coming-soon">
+      <a
+        href="/"
+        className="back-link"
+      >
+        ← Accueil
+      </a>
+
+      <div>
+        <p className="coming-soon__label">
+          Anniv 2026
+        </p>
+
+        <h1>Patience</h1>
+
+        <p>{message}</p>
       </div>
     </main>
   )
@@ -120,85 +187,110 @@ function AdminRoute({
 
 function App() {
   return (
-    <Suspense fallback={<RouteLoading />}>
-      <Routes>
-        <Route
-          path="/"
-          element={<Home />}
-        />
+    <>
+      <AdminPartyDock />
 
-        <Route
-          path="/iceberg"
-          element={<Iceberg />}
-        />
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
+          <Route
+            path="/"
+            element={<Home />}
+          />
 
-        <Route
-          path="/beer-pong"
-          element={<BeerPong />}
-        />
+          <Route
+            path="/iceberg"
+            element={
+              <ModuleGate module="iceberg">
+                <Iceberg />
+              </ModuleGate>
+            }
+          />
 
-        <Route
-          path="/bingo"
-          element={<Bingo />}
-        />
+          <Route
+            path="/beer-pong"
+            element={
+              <ModuleGate module="beer-pong">
+                <BeerPong />
+              </ModuleGate>
+            }
+          />
 
-        <Route
-          path="/guests"
-          element={<Guests />}
-        />
+          <Route
+            path="/bingo"
+            element={
+              <ModuleGate module="bingo">
+                <Bingo />
+              </ModuleGate>
+            }
+          />
 
-        <Route
-          path="/admin/login"
-          element={<AdminLogin />}
-        />
+          <Route
+            path="/guests"
+            element={
+              <ModuleGate module="guests">
+                <Guests />
+              </ModuleGate>
+            }
+          />
 
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+          <Route
+            path="/qr"
+            element={<PartyQr />}
+          />
 
-        <Route
-          path="/admin/guests"
-          element={
-            <AdminRoute>
-              <Admin />
-            </AdminRoute>
-          }
-        />
+          <Route
+            path="/admin/login"
+            element={<AdminLogin />}
+          />
 
-        <Route
-          path="/admin/iceberg"
-          element={
-            <AdminRoute>
-              <IcebergAdmin />
-            </AdminRoute>
-          }
-        />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
 
-        <Route
-          path="/admin/bingo"
-          element={
-            <AdminRoute>
-              <BingoAdmin />
-            </AdminRoute>
-          }
-        />
+          <Route
+            path="/admin/guests"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
 
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
-      </Routes>
-    </Suspense>
+          <Route
+            path="/admin/iceberg"
+            element={
+              <AdminRoute>
+                <IcebergAdmin />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/bingo"
+            element={
+              <AdminRoute>
+                <BingoAdmin />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/"
+                replace
+              />
+            }
+          />
+        </Routes>
+      </Suspense>
+    </>
   )
 }
 
