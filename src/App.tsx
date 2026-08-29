@@ -57,6 +57,14 @@ const IcebergAdmin = lazy(
   () => import('./pages/IcebergAdmin'),
 )
 
+const LiveVoteRoom = lazy(
+  () => import('./pages/LiveVoteRoom'),
+)
+
+const LiveVoteRoomAdmin = lazy(
+  () => import('./pages/LiveVoteRoomAdmin'),
+)
+
 const PartyQr = lazy(
   () => import('./pages/PartyQr'),
 )
@@ -242,6 +250,15 @@ function App() {
           />
 
           <Route
+            path="/room"
+            element={
+              <ModuleGate module="room">
+                <LiveVoteRoom />
+              </ModuleGate>
+            }
+          />
+
+          <Route
             path="/guests"
             element={
               <ModuleGate module="guests">
@@ -301,6 +318,15 @@ function App() {
             element={
               <AdminRoute>
                 <SecretMissionsAdmin />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/room"
+            element={
+              <AdminRoute>
+                <LiveVoteRoomAdmin />
               </AdminRoute>
             }
           />
