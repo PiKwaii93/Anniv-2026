@@ -58,6 +58,10 @@ const moduleOptions: Array<{
     label: 'Bingo',
   },
   {
+    value: 'missions',
+    label: 'Missions secrètes',
+  },
+  {
     value: 'guests',
     label: 'Invités',
   },
@@ -79,6 +83,10 @@ function visibilityPatch(
     case 'bingo':
       return {
         bingoVisible: visible,
+      }
+    case 'missions':
+      return {
+        missionsVisible: visible,
       }
     case 'guests':
       return {
@@ -333,6 +341,14 @@ function AdminPartyDock() {
             </section>
 
             <div className="party-drawer__actions">
+              <Link
+                to="/admin/missions"
+                className="party-drawer__qr-link"
+              >
+                <span>◎</span>
+                Gérer les missions
+              </Link>
+
               <Link
                 to="/qr"
                 className="party-drawer__qr-link"
