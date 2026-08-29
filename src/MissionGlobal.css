@@ -1,0 +1,19 @@
+.module-card--missions::after {
+  background: #58efad;
+}
+
+.module-card--missions.module-card--featured {
+  border-color: rgba(88, 239, 173, 0.28);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(88, 239, 173, 0.08),
+      rgba(255, 255, 255, 0.03)
+    );
+}
+
+.module-card--missions .module-card__featured-pill {
+  color: #bffbe0;
+  background: rgba(88, 239, 173, 0.08);
+  border-color: rgba(88, 239, 173, 0.18);
+}
