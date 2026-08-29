@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -51,24 +52,45 @@ export function AuthProvider({
   const [adminLoading, setAdminLoading] =
     useState(true)
 
+  const currentUserIdRef =
+    useRef<string | null>(null)
+
   useEffect(() => {
     let mounted = true
+
+    const applySession = (
+      nextSession: Session | null,
+    ) => {
+      if (!mounted) {
+        return
+      }
+
+      const nextUserId =
+        nextSession?.user.id ?? null
+
+      const identityChanged =
+        currentUserIdRef.current !== nextUserId
+
+      currentUserIdRef.current = nextUserId
+
+      if (identityChanged) {
+        setIsAdmin(false)
+        setAdminLoading(Boolean(nextUserId))
+      } else if (!nextUserId) {
+        setIsAdmin(false)
+        setAdminLoading(false)
+      }
+
+      setSession(nextSession)
+      setInitialized(true)
+    }
 
     const initializeSession = async () => {
       const {
         data: { session: currentSession },
       } = await supabase.auth.getSession()
 
-      if (!mounted) {
-        return
-      }
-
-      setIsAdmin(false)
-      setAdminLoading(
-        Boolean(currentSession?.user),
-      )
-      setSession(currentSession)
-      setInitialized(true)
+      applySession(currentSession)
     }
 
     void initializeSession()
@@ -78,12 +100,7 @@ export function AuthProvider({
     } =
       supabase.auth.onAuthStateChange(
         (_event, nextSession) => {
-          setIsAdmin(false)
-          setAdminLoading(
-            Boolean(nextSession?.user),
-          )
-          setSession(nextSession)
-          setInitialized(true)
+          applySession(nextSession)
         },
       )
 
