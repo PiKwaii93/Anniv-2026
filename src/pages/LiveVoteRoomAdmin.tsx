@@ -352,6 +352,12 @@ function LiveVoteRoomAdmin() {
   }, [availablePlayers, suspectSearch])
 
   const liveMode = publicState.mode ? modeCopy[publicState.mode] : null
+  const voteCount = publicState.voteCount ?? 0
+  const participantCount = availablePlayers.length
+  const isLikelyRound = publicState.mode === 'likely'
+  const isLikelyNomination = publicState.phase === 'open' && isLikelyRound && publicState.stage === 'nomination'
+  const isLikelyFinal = publicState.phase === 'open' && isLikelyRound && publicState.stage === 'final'
+  const isLikelyRevealed = publicState.phase === 'revealed' && isLikelyRound
 
   return (
     <main className="live-room-admin">
@@ -367,27 +373,83 @@ function LiveVoteRoomAdmin() {
 
       {error && <div className="live-room-admin__error">{error}</div>}
 
-      <section className={`live-control live-control--${publicState.phase}`}>
+      <section className={`live-control live-control--${publicState.phase}${isLikelyRound ? ' live-control--likely' : ''}`}>
         <div className="live-control__top">
           <div>
             <span className="live-control__dot" />
             <strong>{publicState.phase === 'idle' ? 'Aucun round' : publicState.phase === 'open' ? 'Vote en cours' : 'Résultat révélé'}</strong>
           </div>
-          <b>{publicState.voteCount ?? 0} vote{(publicState.voteCount ?? 0) !== 1 ? 's' : ''}</b>
+          <b>
+            <strong>{voteCount}</strong>
+            {participantCount > 0 ? ` / ${participantCount}` : ''} vote{voteCount !== 1 ? 's' : ''}
+          </b>
         </div>
 
         {publicState.phase === 'idle' ? (
           <p>Choisis une question préparée plus bas pour lancer La Salle.</p>
         ) : (
           <>
-            <small>{liveMode?.label}{publicState.stage === 'final' ? ' · FINALE' : ''}</small>
+            {isLikelyRound && (
+              <div className="live-control__likely-flow" aria-label="Progression du round Plus susceptible de">
+                <div className={`live-control__flow-step${isLikelyNomination ? ' live-control__flow-step--active' : ' live-control__flow-step--done'}`}>
+                  <span>1</span>
+                  <strong>Nominations</strong>
+                </div>
+                <span className={`live-control__flow-link${isLikelyFinal || isLikelyRevealed ? ' live-control__flow-link--done' : ''}`}>Top 4</span>
+                <div className={`live-control__flow-step${isLikelyFinal ? ' live-control__flow-step--active' : isLikelyRevealed ? ' live-control__flow-step--done' : ''}`}>
+                  <span>2</span>
+                  <strong>Finale</strong>
+                </div>
+                <span className={`live-control__flow-link${isLikelyRevealed ? ' live-control__flow-link--done' : ''}`}>Révélation</span>
+              </div>
+            )}
+
+            <small>
+              {liveMode?.label}
+              {isLikelyNomination ? ' · ÉTAPE 1/2' : ''}
+              {isLikelyFinal ? ' · ÉTAPE 2/2' : ''}
+              {isLikelyRevealed ? ' · TERMINÉ' : ''}
+            </small>
             <h2>{publicState.prompt}</h2>
+
+            {isLikelyNomination && (
+              <p className="live-control__guidance">
+                Les invités nomment librement quelqu’un. Quand tu as assez de réponses, transforme les nominations en <strong>Top 4</strong> pour lancer la finale.
+              </p>
+            )}
+
+            {isLikelyFinal && (
+              <p className="live-control__guidance">
+                Les 4 finalistes sont maintenant affichés sur tous les téléphones. Attends les votes, puis <strong>révèle le résultat</strong> à toute la salle.
+              </p>
+            )}
+
+            {isLikelyRevealed && (
+              <p className="live-control__guidance live-control__guidance--done">
+                Résultat révélé. Tu peux fermer ce round quand la salle a fini de réagir.
+              </p>
+            )}
+
             <div className="live-control__actions">
-              {publicState.phase === 'open' && publicState.mode === 'likely' && publicState.stage === 'nomination' && (
-                <button type="button" disabled={busy} onClick={() => void runRpc('admin_advance_likely_vote')}>Top 4 → Finale</button>
+              {isLikelyNomination && (
+                <button
+                  className="live-control__advance"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void runRpc('admin_advance_likely_vote')}
+                >
+                  Passer au Top 4 →
+                </button>
               )}
-              {publicState.phase === 'open' && !(publicState.mode === 'likely' && publicState.stage === 'nomination') && (
-                <button className="live-control__reveal" type="button" disabled={busy} onClick={() => void runRpc('admin_reveal_live_vote')}>Révéler les résultats</button>
+              {publicState.phase === 'open' && !isLikelyNomination && (
+                <button
+                  className="live-control__reveal"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void runRpc('admin_reveal_live_vote')}
+                >
+                  Révéler les résultats
+                </button>
               )}
               {publicState.phase === 'open' && (
                 <button type="button" disabled={busy} onClick={() => void runRpc('admin_skip_live_vote')}>Passer la question</button>
