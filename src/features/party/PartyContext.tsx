@@ -19,6 +19,7 @@ export type PartyModule =
   | 'iceberg'
   | 'beer-pong'
   | 'bingo'
+  | 'missions'
   | 'guests'
 
 export type PartySettings = {
@@ -27,6 +28,7 @@ export type PartySettings = {
   icebergVisible: boolean
   beerPongVisible: boolean
   bingoVisible: boolean
+  missionsVisible: boolean
   guestsVisible: boolean
 }
 
@@ -37,6 +39,7 @@ type PartyStateRow = {
   iceberg_visible: boolean
   beer_pong_visible: boolean
   bingo_visible: boolean
+  missions_visible: boolean
   guests_visible: boolean
 }
 
@@ -57,11 +60,23 @@ const defaultSettings: PartySettings = {
   icebergVisible: true,
   beerPongVisible: true,
   bingoVisible: true,
+  missionsVisible: true,
   guestsVisible: true,
 }
 
 const PartyContext =
   createContext<PartyContextValue | null>(null)
+
+const partyStateSelect = [
+  'id',
+  'phase',
+  'featured_module',
+  'iceberg_visible',
+  'beer_pong_visible',
+  'bingo_visible',
+  'missions_visible',
+  'guests_visible',
+].join(', ')
 
 function rowToSettings(
   row: PartyStateRow,
@@ -72,6 +87,7 @@ function rowToSettings(
     icebergVisible: row.iceberg_visible,
     beerPongVisible: row.beer_pong_visible,
     bingoVisible: row.bingo_visible,
+    missionsVisible: row.missions_visible,
     guestsVisible: row.guests_visible,
   }
 }
@@ -103,6 +119,10 @@ function settingsPatchToRow(
     row.bingo_visible = patch.bingoVisible
   }
 
+  if (patch.missionsVisible !== undefined) {
+    row.missions_visible = patch.missionsVisible
+  }
+
   if (patch.guestsVisible !== undefined) {
     row.guests_visible = patch.guestsVisible
   }
@@ -121,6 +141,8 @@ export function isPartyModuleVisible(
       return settings.beerPongVisible
     case 'bingo':
       return settings.bingoVisible
+    case 'missions':
+      return settings.missionsVisible
     case 'guests':
       return settings.guestsVisible
   }
@@ -149,9 +171,7 @@ export function PartyProvider({
       error: loadError,
     } = await supabase
       .from('party_state')
-      .select(
-        'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, guests_visible',
-      )
+      .select(partyStateSelect)
       .eq('id', 'main')
       .maybeSingle()
 
@@ -243,9 +263,7 @@ export function PartyProvider({
           settingsPatchToRow(patch),
         )
         .eq('id', 'main')
-        .select(
-          'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, guests_visible',
-        )
+        .select(partyStateSelect)
         .single()
 
       setSaving(false)
