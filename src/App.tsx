@@ -61,6 +61,14 @@ const PartyQr = lazy(
   () => import('./pages/PartyQr'),
 )
 
+const SecretMissions = lazy(
+  () => import('./pages/SecretMissions'),
+)
+
+const SecretMissionsAdmin = lazy(
+  () => import('./pages/SecretMissionsAdmin'),
+)
+
 type AdminRouteProps = {
   children: ReactNode
 }
@@ -225,6 +233,15 @@ function App() {
           />
 
           <Route
+            path="/missions"
+            element={
+              <ModuleGate module="missions">
+                <SecretMissions />
+              </ModuleGate>
+            }
+          />
+
+          <Route
             path="/guests"
             element={
               <ModuleGate module="guests">
@@ -275,6 +292,15 @@ function App() {
             element={
               <AdminRoute>
                 <BingoAdmin />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/missions"
+            element={
+              <AdminRoute>
+                <SecretMissionsAdmin />
               </AdminRoute>
             }
           />
