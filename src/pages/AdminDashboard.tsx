@@ -22,6 +22,16 @@ type BingoPromptRow = {
   is_active: boolean
 }
 
+type MissionPromptRow = {
+  id: string
+  is_active: boolean
+}
+
+type MissionScoreRow = {
+  player_id: string
+  completed_count: number
+}
+
 type BeerPongState = {
   selectedPlayerIds?: string[]
   teams?: unknown[]
@@ -39,9 +49,21 @@ type PublicationStats = {
   active: number
 }
 
+type MissionStats = PublicationStats & {
+  players: number
+  completed: number
+}
+
 const emptyStats: PublicationStats = {
   total: 0,
   active: 0,
+}
+
+const emptyMissionStats: MissionStats = {
+  total: 0,
+  active: 0,
+  players: 0,
+  completed: 0,
 }
 
 function AdminDashboard() {
@@ -57,6 +79,9 @@ function AdminDashboard() {
 
   const [bingoStats, setBingoStats] =
     useState<PublicationStats>(emptyStats)
+
+  const [missionStats, setMissionStats] =
+    useState<MissionStats>(emptyMissionStats)
 
   const [beerPongState, setBeerPongState] =
     useState<BeerPongState>({})
@@ -100,6 +125,8 @@ function AdminDashboard() {
         icebergResult,
         beerPongResult,
         bingoResult,
+        missionPromptResult,
+        missionScoreResult,
       ] = await Promise.all([
         supabase
           .from('iceberg_entries')
@@ -112,6 +139,12 @@ function AdminDashboard() {
         supabase
           .from('bingo_prompts')
           .select('id, is_active'),
+        supabase
+          .from('secret_mission_prompts')
+          .select('id, is_active'),
+        supabase
+          .from('secret_mission_scoreboard')
+          .select('player_id, completed_count'),
       ])
 
       let hasError = false
@@ -169,6 +202,46 @@ function AdminDashboard() {
         })
       }
 
+      if (
+        missionPromptResult.error ||
+        missionScoreResult.error
+      ) {
+        if (missionPromptResult.error) {
+          console.error(
+            'Unable to load mission prompt stats:',
+            missionPromptResult.error,
+          )
+        }
+
+        if (missionScoreResult.error) {
+          console.error(
+            'Unable to load mission score stats:',
+            missionScoreResult.error,
+          )
+        }
+
+        hasError = true
+      } else {
+        const promptRows =
+          (missionPromptResult.data ?? []) as MissionPromptRow[]
+
+        const scoreRows =
+          (missionScoreResult.data ?? []) as MissionScoreRow[]
+
+        setMissionStats({
+          total: promptRows.length,
+          active: promptRows.filter(
+            (prompt) => prompt.is_active,
+          ).length,
+          players: scoreRows.length,
+          completed: scoreRows.reduce(
+            (total, row) =>
+              total + row.completed_count,
+            0,
+          ),
+        })
+      }
+
       setError(
         hasError
           ? 'Certaines données du dashboard n’ont pas pu être synchronisées.'
@@ -217,6 +290,17 @@ function AdminDashboard() {
           void loadDashboardData()
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'secret_mission_scoreboard',
+        },
+        () => {
+          void loadDashboardData()
+        },
+      )
       .subscribe()
 
     const refreshInterval =
@@ -260,56 +344,55 @@ function AdminDashboard() {
   const roundCount =
     beerPongState.rounds?.length ?? 0
 
-  const beerPongStatus =
-    useMemo(() => {
-      if (beerPongState.championTeamId) {
-        return {
-          label: 'Terminé',
-          detail:
-            'Le tournoi a son champion.',
-          tone: 'finished',
-        }
-      }
-
-      if (beerPongState.draftValidated) {
-        return {
-          label: 'En cours',
-          detail:
-            `${teamCount} équipe${teamCount > 1 ? 's' : ''} · ${roundCount} tour${roundCount > 1 ? 's' : ''}`,
-          tone: 'live',
-        }
-      }
-
-      if (teamCount > 0) {
-        return {
-          label: 'Draft prête',
-          detail:
-            `${teamCount} équipe${teamCount > 1 ? 's' : ''} à valider`,
-          tone: 'ready',
-        }
-      }
-
-      if (selectedPlayerCount > 0) {
-        return {
-          label: 'Préparation',
-          detail:
-            `${selectedPlayerCount} joueur${selectedPlayerCount > 1 ? 's' : ''} sélectionné${selectedPlayerCount > 1 ? 's' : ''}`,
-          tone: 'ready',
-        }
-      }
-
+  const beerPongStatus = useMemo(() => {
+    if (beerPongState.championTeamId) {
       return {
-        label: 'Non démarré',
+        label: 'Terminé',
         detail:
-          'Aucun joueur sélectionné.',
-        tone: 'idle',
+          'Le tournoi a son champion.',
+        tone: 'finished',
       }
-    }, [
-      beerPongState,
-      roundCount,
-      selectedPlayerCount,
-      teamCount,
-    ])
+    }
+
+    if (beerPongState.draftValidated) {
+      return {
+        label: 'En cours',
+        detail:
+          `${teamCount} équipe${teamCount > 1 ? 's' : ''} · ${roundCount} tour${roundCount > 1 ? 's' : ''}`,
+        tone: 'live',
+      }
+    }
+
+    if (teamCount > 0) {
+      return {
+        label: 'Draft prête',
+        detail:
+          `${teamCount} équipe${teamCount > 1 ? 's' : ''} à valider`,
+        tone: 'ready',
+      }
+    }
+
+    if (selectedPlayerCount > 0) {
+      return {
+        label: 'Préparation',
+        detail:
+          `${selectedPlayerCount} joueur${selectedPlayerCount > 1 ? 's' : ''} sélectionné${selectedPlayerCount > 1 ? 's' : ''}`,
+        tone: 'ready',
+      }
+    }
+
+    return {
+      label: 'Non démarré',
+      detail:
+        'Aucun joueur sélectionné.',
+      tone: 'idle',
+    }
+  }, [
+    beerPongState,
+    roundCount,
+    selectedPlayerCount,
+    teamCount,
+  ])
 
   return (
     <main className="control-room">
@@ -366,8 +449,7 @@ function AdminDashboard() {
         </div>
 
         <p className="control-header__description">
-          Invités, Iceberg, Beer Pong et Bingo sont
-          regroupés ici pour piloter la soirée.
+          Invités, Iceberg, Beer Pong, Bingo et Missions secrètes sont regroupés ici pour piloter la soirée.
         </p>
 
         {user?.email && (
@@ -523,6 +605,40 @@ function AdminDashboard() {
             Gérer le pool du Bingo
           </div>
         </Link>
+
+        <Link
+          to="/admin/missions"
+          className="control-module control-module--missions"
+        >
+          <div className="control-module__top">
+            <span className="control-module__index">05</span>
+            <span className="control-module__arrow">↗</span>
+          </div>
+
+          <div className="control-module__body">
+            <p className="control-module__label">
+              Infiltration
+            </p>
+            <h2>Missions</h2>
+
+            <div className="control-module__metric">
+              <strong>
+                {loading ? '—' : missionStats.active}
+              </strong>
+              <span>missions actives</span>
+            </div>
+
+            <p className="control-module__summary">
+              {loading
+                ? 'Synchronisation...'
+                : `${missionStats.players} agent${missionStats.players !== 1 ? 's' : ''} · ${missionStats.completed} réussite${missionStats.completed !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+
+          <div className="control-module__footer">
+            Gérer les Missions secrètes
+          </div>
+        </Link>
       </section>
 
       <section className="control-overview">
@@ -670,6 +786,36 @@ function AdminDashboard() {
                 : 'Pas assez de cases actives pour générer une grille.'}
             </p>
           </article>
+
+          <article className="control-overview-card">
+            <div className="control-overview-card__heading">
+              <span>Missions</span>
+              <strong>
+                {loading ? '—' : missionStats.players}
+              </strong>
+            </div>
+
+            <div className="control-stat-list">
+              <div>
+                <span>Pool actif</span>
+                <strong>{missionStats.active}</strong>
+              </div>
+              <div>
+                <span>Agents</span>
+                <strong>{missionStats.players}</strong>
+              </div>
+              <div>
+                <span>Réussites</span>
+                <strong>{missionStats.completed}</strong>
+              </div>
+            </div>
+
+            <p className="control-overview-card__note">
+              {missionStats.players === 0
+                ? 'Aucune identité liée pour le moment.'
+                : `${missionStats.completed} mission${missionStats.completed !== 1 ? 's' : ''} validée${missionStats.completed !== 1 ? 's' : ''} par les agents.`}
+            </p>
+          </article>
         </div>
       </section>
 
@@ -717,6 +863,15 @@ function AdminDashboard() {
           >
             <span>Jeu public</span>
             <strong>Voir le Bingo</strong>
+            <span>↗</span>
+          </Link>
+
+          <Link
+            to="/missions"
+            className="control-shortcut"
+          >
+            <span>Infiltration</span>
+            <strong>Missions secrètes</strong>
             <span>↗</span>
           </Link>
         </div>

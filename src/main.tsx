@@ -11,6 +11,7 @@ import { PartyProvider } from './features/party/PartyContext'
 import './index.css'
 import './MobilePolish.css'
 import './BingoGlobal.css'
+import './MissionGlobal.css'
 import './PartyMotion.css'
 
 createRoot(

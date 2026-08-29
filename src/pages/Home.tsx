@@ -29,10 +29,16 @@ type BeerPongRow = {
   state: BeerPongState | null
 }
 
+type MissionScoreRow = {
+  completed_count: number
+}
+
 type HomeStats = {
   iceberg: number
   bingo: number
   beerPong: BeerPongState
+  missionPlayers: number
+  missionCompleted: number
 }
 
 type PublicModuleDefinition = {
@@ -68,6 +74,14 @@ const publicModules: PublicModuleDefinition[] = [
     tag: 'Jeu perso',
     path: '/bingo',
     className: 'module-card--bingo',
+  },
+  {
+    key: 'missions',
+    title: 'Missions secrètes',
+    subtitle: 'Infiltre la soirée sans te faire griller',
+    tag: 'Infiltration',
+    path: '/missions',
+    className: 'module-card--missions',
   },
   {
     key: 'guests',
@@ -107,6 +121,8 @@ const emptyStats: HomeStats = {
   iceberg: 0,
   bingo: 0,
   beerPong: {},
+  missionPlayers: 0,
+  missionCompleted: 0,
 }
 
 function Home() {
@@ -129,6 +145,7 @@ function Home() {
       icebergResult,
       bingoResult,
       beerPongResult,
+      missionScoreResult,
     ] = await Promise.all([
       supabase
         .from('iceberg_entries')
@@ -149,6 +166,9 @@ function Home() {
         .select('state')
         .eq('id', 'main')
         .maybeSingle(),
+      supabase
+        .from('secret_mission_scoreboard')
+        .select('completed_count'),
     ])
 
     if (icebergResult.error) {
@@ -172,8 +192,18 @@ function Home() {
       )
     }
 
+    if (missionScoreResult.error) {
+      console.error(
+        'Unable to load Home mission stats:',
+        missionScoreResult.error,
+      )
+    }
+
     const beerPongRow =
       beerPongResult.data as BeerPongRow | null
+
+    const missionRows =
+      (missionScoreResult.data ?? []) as MissionScoreRow[]
 
     setStats({
       iceberg:
@@ -182,6 +212,14 @@ function Home() {
         bingoResult.count ?? 0,
       beerPong:
         beerPongRow?.state ?? {},
+      missionPlayers:
+        missionRows.length,
+      missionCompleted:
+        missionRows.reduce(
+          (total, row) =>
+            total + row.completed_count,
+          0,
+        ),
     })
 
     setStatsLoading(false)
@@ -222,6 +260,17 @@ function Home() {
           event: '*',
           schema: 'public',
           table: 'beer_pong_state',
+        },
+        () => {
+          void loadStats()
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'secret_mission_scoreboard',
         },
         () => {
           void loadStats()
@@ -305,6 +354,12 @@ function Home() {
         return beerPongStatus
       case 'bingo':
         return `${stats.bingo} situation${stats.bingo !== 1 ? 's' : ''} dans le pool`
+      case 'missions':
+        if (stats.missionPlayers === 0) {
+          return 'Aucun agent actif pour l’instant'
+        }
+
+        return `${stats.missionPlayers} agent${stats.missionPlayers !== 1 ? 's' : ''} · ${stats.missionCompleted} mission${stats.missionCompleted !== 1 ? 's' : ''} réussie${stats.missionCompleted !== 1 ? 's' : ''}`
       case 'guests':
         return `${participantCount} participant${participantCount !== 1 ? 's' : ''} confirmé${participantCount !== 1 ? 's' : ''}`
     }
