@@ -125,6 +125,7 @@ function AdminPartyDock() {
 
   if (
     !isAdmin ||
+    !location.pathname.startsWith('/admin') ||
     location.pathname === '/admin/login'
   ) {
     return null
