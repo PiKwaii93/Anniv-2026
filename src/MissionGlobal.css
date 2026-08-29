@@ -17,3 +17,7 @@
   background: rgba(88, 239, 173, 0.08);
   border-color: rgba(88, 239, 173, 0.18);
 }
+
+.party-drawer__actions .party-drawer__public-link {
+  grid-column: 1 / -1;
+}
