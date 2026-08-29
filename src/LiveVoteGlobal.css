@@ -25,3 +25,185 @@
 .control-module--room:hover {
   border-color: rgba(111, 143, 255, 0.22);
 }
+
+.live-control__top b {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.live-control__top b > strong {
+  color: #f2f5ff;
+  font-size: 0.95rem;
+}
+
+.live-control__likely-flow {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) auto minmax(130px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 10px;
+  background: rgba(111, 143, 255, 0.045);
+  border: 1px solid rgba(111, 143, 255, 0.12);
+  border-radius: 13px;
+}
+
+.live-control__flow-step {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  color: #676e7a;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  border-radius: 10px;
+}
+
+.live-control__flow-step > span {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  display: grid;
+  place-items: center;
+  color: #7b8390;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  font-size: 0.63rem;
+  font-weight: 900;
+}
+
+.live-control__flow-step > strong {
+  font-size: 0.67rem;
+  letter-spacing: 0.01em;
+}
+
+.live-control__flow-step--active {
+  color: #f1f4ff;
+  background: rgba(111, 143, 255, 0.11);
+  border-color: rgba(111, 143, 255, 0.28);
+  box-shadow: 0 0 28px rgba(111, 143, 255, 0.055);
+}
+
+.live-control__flow-step--active > span {
+  color: #091020;
+  background: #9eb4ff;
+  border-color: transparent;
+}
+
+.live-control__flow-step--done {
+  color: #aeb9d6;
+  border-color: rgba(111, 143, 255, 0.13);
+}
+
+.live-control__flow-step--done > span {
+  color: #bfd0ff;
+  border-color: rgba(111, 143, 255, 0.22);
+}
+
+.live-control__flow-link {
+  position: relative;
+  min-width: 64px;
+  color: #59606c;
+  text-align: center;
+  font-size: 0.55rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.live-control__flow-link::after {
+  content: '→';
+  display: block;
+  margin-top: 2px;
+  color: #444b59;
+  font-size: 0.8rem;
+}
+
+.live-control__flow-link--done {
+  color: #98aad8;
+}
+
+.live-control__flow-link--done::after {
+  color: #7e98dc;
+}
+
+.live-control__guidance {
+  max-width: 790px;
+  margin: 12px 0 0;
+  padding: 11px 12px;
+  color: #98a0ad;
+  background: rgba(111, 143, 255, 0.035);
+  border-left: 2px solid rgba(111, 143, 255, 0.5);
+  border-radius: 0 9px 9px 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.live-control__guidance strong {
+  color: #dce5ff;
+}
+
+.live-control__guidance--done {
+  background: rgba(94, 190, 122, 0.035);
+  border-left-color: rgba(94, 190, 122, 0.5);
+}
+
+.live-control__actions .live-control__advance,
+.live-control__actions .live-control__reveal {
+  min-height: 46px;
+  padding-inline: 18px;
+  border-color: transparent;
+  font-size: 0.69rem;
+  font-weight: 900;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.live-control__actions .live-control__advance {
+  color: #071020;
+  background: linear-gradient(135deg, #aec0ff, #7394ff);
+}
+
+.live-control__actions .live-control__advance:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 34px rgba(111, 143, 255, 0.2);
+}
+
+.live-control__actions .live-control__reveal {
+  color: #07150e;
+  background: linear-gradient(135deg, #b9f5ca, #72d995);
+}
+
+.live-control__actions .live-control__reveal:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 34px rgba(114, 217, 149, 0.17);
+}
+
+@media (max-width: 640px) {
+  .live-control__likely-flow {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .live-control__flow-link {
+    min-height: 42px;
+    display: grid;
+    place-items: center;
+    padding: 7px 8px;
+    background: rgba(255, 255, 255, 0.014);
+    border: 1px dashed rgba(255, 255, 255, 0.055);
+    border-radius: 10px;
+  }
+
+  .live-control__flow-link::after {
+    display: none;
+  }
+
+  .live-control__actions .live-control__advance,
+  .live-control__actions .live-control__reveal {
+    width: 100%;
+    justify-content: center;
+  }
+}
