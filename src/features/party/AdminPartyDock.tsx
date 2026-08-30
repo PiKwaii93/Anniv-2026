@@ -246,6 +246,10 @@ function AdminPartyDock() {
                 <span>◎</span>
                 Gérer les missions
               </Link>
+              <Link to="/admin/content" className="party-drawer__qr-link">
+                <span>⇅</span>
+                Sauvegarder le contenu
+              </Link>
               <Link to="/qr" className="party-drawer__qr-link">
                 <span>▦</span>
                 Afficher le QR code
