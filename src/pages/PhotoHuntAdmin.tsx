@@ -12,7 +12,10 @@ import {
   type PhotoHuntSubmission,
   type PhotoHuntSubmissionStatus,
 } from '../features/photo-hunt/photoHunt'
-import { useParty } from '../features/party/PartyContext'
+import {
+  type PartyModule,
+  useParty,
+} from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntAdmin.css'
@@ -290,7 +293,7 @@ function PhotoHuntAdmin() {
   const featurePhotoHunt = async () => {
     await updateSettings({
       photosVisible: true,
-      featuredModule: 'photos',
+      featuredModule: 'photos' as PartyModule,
     })
   }
 
@@ -333,7 +336,7 @@ function PhotoHuntAdmin() {
         <div className="photo-hunt-admin__hero-actions">
           <Link to="/photos" target="_blank" rel="noreferrer">Voir public ↗</Link>
           <button type="button" onClick={() => void featurePhotoHunt()}>
-            {settings.featuredModule === 'photos' ? 'À la une ✓' : 'Mettre à la une'}
+            {String(settings.featuredModule) === 'photos' ? 'À la une ✓' : 'Mettre à la une'}
           </button>
         </div>
       </header>
