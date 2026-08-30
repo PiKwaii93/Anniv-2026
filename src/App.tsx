@@ -13,6 +13,10 @@ import {
 
 import LiveAnnouncementOverlay from './features/announcements/LiveAnnouncementOverlay'
 import { useAuth } from './features/auth/AuthContext'
+import {
+  PartyIdentityBadge,
+  PartyIdentityGate,
+} from './features/identity/PartyIdentityUI'
 import AdminPartyDock from './features/party/AdminPartyDock'
 import {
   isPartyModuleVisible,
@@ -215,6 +219,7 @@ function App() {
     <>
       <AdminPartyDock />
       <LiveAnnouncementOverlay />
+      <PartyIdentityBadge />
 
       <Suspense fallback={<RouteLoading />}>
         <Routes>
@@ -259,7 +264,9 @@ function App() {
             path="/missions"
             element={
               <ModuleGate module="missions">
-                <SecretMissions />
+                <PartyIdentityGate>
+                  <SecretMissions />
+                </PartyIdentityGate>
               </ModuleGate>
             }
           />
@@ -268,7 +275,9 @@ function App() {
             path="/room"
             element={
               <ModuleGate module="room">
-                <LiveVoteRoom />
+                <PartyIdentityGate>
+                  <LiveVoteRoom />
+                </PartyIdentityGate>
               </ModuleGate>
             }
           />

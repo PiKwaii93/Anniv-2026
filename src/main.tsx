@@ -7,6 +7,7 @@ import App from './App'
 import { AnnouncementProvider } from './features/announcements/AnnouncementContext'
 import { AuthProvider } from './features/auth/AuthContext'
 import { GuestsProvider } from './features/guests/GuestsContext'
+import PartyIdentityProvider from './features/identity/PartyIdentityContext'
 import { PartyProvider } from './features/party/PartyContext'
 
 import './index.css'
@@ -25,7 +26,9 @@ createRoot(
         <PartyProvider>
           <AnnouncementProvider>
             <GuestsProvider>
-              <App />
+              <PartyIdentityProvider>
+                <App />
+              </PartyIdentityProvider>
             </GuestsProvider>
           </AnnouncementProvider>
         </PartyProvider>
