@@ -21,8 +21,11 @@ export type PartyModule =
   | 'bingo'
   | 'missions'
   | 'room'
-  | 'photos'
   | 'guests'
+
+export type PartyVisibilityModule =
+  | PartyModule
+  | 'photos'
 
 export type PartySettings = {
   phase: PartyPhase
@@ -39,7 +42,7 @@ export type PartySettings = {
 type PartyStateRow = {
   id: string
   phase: PartyPhase
-  featured_module: PartyModule | null
+  featured_module: string | null
   iceberg_visible: boolean
   beer_pong_visible: boolean
   bingo_visible: boolean
@@ -83,7 +86,10 @@ function rowToSettings(
 ): PartySettings {
   return {
     phase: row.phase,
-    featuredModule: row.featured_module,
+    // Photo Hunt is intercepted before the legacy TV/director engines render.
+    // Keeping their historical PartyModule union unchanged avoids widening
+    // exhaustive switches that do not need to know how Photo Hunt renders.
+    featuredModule: row.featured_module as PartyModule | null,
     icebergVisible: row.iceberg_visible,
     beerPongVisible: row.beer_pong_visible,
     bingoVisible: row.bingo_visible,
@@ -142,7 +148,7 @@ function settingsPatchToRow(
 
 export function isPartyModuleVisible(
   settings: PartySettings,
-  module: PartyModule,
+  module: PartyVisibilityModule,
 ) {
   switch (module) {
     case 'iceberg':
