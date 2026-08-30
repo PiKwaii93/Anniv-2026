@@ -221,6 +221,11 @@ export function PartyProvider({
       )
       .subscribe()
 
+    const fallback = window.setInterval(
+      () => void refresh(),
+      15000,
+    )
+
     const handleVisibilityChange = () => {
       if (
         document.visibilityState === 'visible'
@@ -235,6 +240,7 @@ export function PartyProvider({
     )
 
     return () => {
+      window.clearInterval(fallback)
       document.removeEventListener(
         'visibilitychange',
         handleVisibilityChange,
