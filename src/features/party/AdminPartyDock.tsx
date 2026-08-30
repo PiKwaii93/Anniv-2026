@@ -14,6 +14,7 @@ import {
   type PartyModule,
   type PartyPhase,
   type PartySettings,
+  type PartyVisibilityModule,
   useParty,
 } from './PartyContext'
 
@@ -43,7 +44,7 @@ const phaseOptions: Array<{
 ]
 
 const moduleOptions: Array<{
-  value: PartyModule
+  value: PartyVisibilityModule
   label: string
 }> = [
   { value: 'iceberg', label: 'Iceberg' },
@@ -56,7 +57,7 @@ const moduleOptions: Array<{
 ]
 
 function visibilityPatch(
-  module: PartyModule,
+  module: PartyVisibilityModule,
   visible: boolean,
 ): Partial<PartySettings> {
   switch (module) {
@@ -103,17 +104,26 @@ function AdminPartyDock() {
     return null
   }
 
-  const toggleModule = async (module: PartyModule) => {
+  const toggleModule = async (module: PartyVisibilityModule) => {
     const currentlyVisible = isPartyModuleVisible(settings, module)
     const patch: Partial<PartySettings> = {
       ...visibilityPatch(module, !currentlyVisible),
     }
 
-    if (currentlyVisible && settings.featuredModule === module) {
+    if (
+      currentlyVisible
+      && String(settings.featuredModule) === module
+    ) {
       patch.featuredModule = null
     }
 
     await updateSettings(patch)
+  }
+
+  const featureModule = (value: string) => {
+    void updateSettings({
+      featuredModule: value === '' ? null : value as PartyModule,
+    })
   }
 
   return (
@@ -209,12 +219,7 @@ function AdminPartyDock() {
                 className="party-featured-select"
                 value={settings.featuredModule ?? ''}
                 disabled={loading || saving}
-                onChange={(event) => {
-                  const value = event.target.value
-                  void updateSettings({
-                    featuredModule: value === '' ? null : value as PartyModule,
-                  })
-                }}
+                onChange={(event) => featureModule(event.target.value)}
               >
                 <option value="">Aucun module mis en avant</option>
                 {visibleModules.map((module) => (
