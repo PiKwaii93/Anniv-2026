@@ -46,7 +46,7 @@ const BingoAdmin = lazy(
 )
 
 const DirectorMode = lazy(
-  () => import('./pages/DirectorMode'),
+  () => import('./pages/DirectorModePolished'),
 )
 
 const Guests = lazy(
