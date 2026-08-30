@@ -147,6 +147,8 @@ function LiveVoteRoom() {
   const [error, setError] = useState('')
   const [now, setNow] = useState(Date.now())
   const previousPhaseRef = useRef<PublicState['phase']>('idle')
+  const publicStateRef = useRef<PublicState>({ phase: 'idle', roundId: null })
+  const identityRef = useRef<StoredIdentity | null>(null)
 
   const availablePlayers = useMemo<AvailablePlayer[]>(() => {
     const players: AvailablePlayer[] = []
@@ -162,30 +164,6 @@ function LiveVoteRoom() {
   }, [guests])
 
   const participantCount = availablePlayers.length
-
-  const loadPublicState = useCallback(async () => {
-    const { data, error: loadError } = await supabase
-      .from('live_vote_public_state')
-      .select('state')
-      .eq('id', 'main')
-      .single()
-
-    if (loadError) {
-      console.error('Unable to load live vote state:', loadError)
-      setError('Impossible de charger la question en cours.')
-      setLoading(false)
-      return
-    }
-
-    const nextState = (data?.state ?? { phase: 'idle', roundId: null }) as PublicState
-    setPublicState(nextState)
-    setLoading(false)
-
-    if (previousPhaseRef.current !== 'revealed' && nextState.phase === 'revealed') {
-      navigator.vibrate?.([35, 40, 70])
-    }
-    previousPhaseRef.current = nextState.phase
-  }, [])
 
   const loadScores = useCallback(async () => {
     const { data, error: scoreError } = await supabase.rpc('get_live_vote_scoreboard')
@@ -216,6 +194,49 @@ function LiveVoteRoom() {
     setPlayerState(next)
   }, [])
 
+  const applyPublicState = useCallback((nextState: PublicState) => {
+    const previousState = publicStateRef.current
+    const enteredReveal =
+      previousState.phase !== 'revealed' && nextState.phase === 'revealed'
+    const roundChanged =
+      previousState.roundId !== nextState.roundId ||
+      previousState.stage !== nextState.stage
+
+    publicStateRef.current = nextState
+    setPublicState(nextState)
+    setLoading(false)
+
+    if (enteredReveal) {
+      navigator.vibrate?.([35, 40, 70])
+      void loadScores()
+    }
+
+    if ((roundChanged || enteredReveal) && identityRef.current) {
+      void loadPlayerState(identityRef.current)
+    }
+
+    previousPhaseRef.current = nextState.phase
+  }, [loadPlayerState, loadScores])
+
+  const loadPublicState = useCallback(async () => {
+    const { data, error: loadError } = await supabase
+      .from('live_vote_public_state')
+      .select('state')
+      .eq('id', 'main')
+      .single()
+
+    if (loadError) {
+      console.error('Unable to load live vote state:', loadError)
+      setError('Impossible de charger la question en cours.')
+      setLoading(false)
+      return null
+    }
+
+    const nextState = (data?.state ?? { phase: 'idle', roundId: null }) as PublicState
+    applyPublicState(nextState)
+    return nextState
+  }, [applyPublicState])
+
   const claimIdentity = useCallback(async (candidate: StoredIdentity, silent = false) => {
     const { data, error: claimError } = await supabase.rpc('claim_live_vote_identity', {
       p_player_key: candidate.playerKey,
@@ -234,11 +255,16 @@ function LiveVoteRoom() {
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate))
+    identityRef.current = candidate
     setIdentity(candidate)
     setPlayerState(result)
     setError('')
     return true
   }, [])
+
+  useEffect(() => {
+    identityRef.current = identity
+  }, [identity])
 
   useEffect(() => {
     void loadPublicState()
@@ -263,10 +289,13 @@ function LiveVoteRoom() {
         schema: 'public',
         table: 'live_vote_public_state',
         filter: 'id=eq.main',
-      }, () => {
+      }, (payload) => {
+        const row = payload.new as { state?: PublicState } | null
+        if (row?.state) {
+          applyPublicState(row.state)
+          return
+        }
         void loadPublicState()
-        void loadScores()
-        if (identity) void loadPlayerState(identity)
       })
       .subscribe()
 
@@ -274,11 +303,26 @@ function LiveVoteRoom() {
       void loadPublicState()
     }, 15000)
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return
+
+      void loadPublicState()
+      if (identityRef.current) {
+        void loadPlayerState(identityRef.current)
+      }
+      if (publicStateRef.current.phase === 'revealed') {
+        void loadScores()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
       window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       void supabase.removeChannel(channel)
     }
-  }, [identity, loadPlayerState, loadPublicState, loadScores])
+  }, [applyPublicState, loadPlayerState, loadPublicState, loadScores])
 
   useEffect(() => {
     if (!publicState.closesAt || publicState.phase !== 'open') return
@@ -336,11 +380,27 @@ function LiveVoteRoom() {
       console.error('Unable to cast live vote:', voteError)
       setError('Ton vote n’a pas pu être enregistré.')
     } else {
-      const result = data as { ok: boolean; code?: string; myVote?: string }
+      const result = data as {
+        ok: boolean
+        code?: string
+        myVote?: string
+        voteCount?: number
+      }
       if (!result.ok) {
         setError(errorCopy(result.code))
+        if (result.code === 'ROUND_CHANGED' || result.code === 'ROUND_CLOSED') {
+          void loadPublicState()
+        }
       } else {
         setPlayerState((current) => current ? { ...current, myVote: result.myVote ?? choiceKey } : current)
+        if (typeof result.voteCount === 'number') {
+          const nextState = {
+            ...publicStateRef.current,
+            voteCount: result.voteCount,
+          }
+          publicStateRef.current = nextState
+          setPublicState(nextState)
+        }
         navigator.vibrate?.(20)
       }
     }
