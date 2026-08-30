@@ -51,6 +51,7 @@ const moduleOptions: Array<{
   { value: 'bingo', label: 'Bingo' },
   { value: 'missions', label: 'Missions secrètes' },
   { value: 'room', label: 'La Salle' },
+  { value: 'photos', label: 'Photo Hunt' },
   { value: 'guests', label: 'Invités' },
 ]
 
@@ -69,6 +70,8 @@ function visibilityPatch(
       return { missionsVisible: visible }
     case 'room':
       return { roomVisible: visible }
+    case 'photos':
+      return { photosVisible: visible }
     case 'guests':
       return { guestsVisible: visible }
   }
@@ -199,7 +202,7 @@ function AdminPartyDock() {
             <section className="party-drawer__section">
               <div className="party-drawer__section-heading">
                 <span>À la une</span>
-                <small>Home</small>
+                <small>Home + TV</small>
               </div>
 
               <select
@@ -259,6 +262,10 @@ function AdminPartyDock() {
               <Link to="/admin/missions" className="party-drawer__qr-link">
                 <span>◎</span>
                 Gérer les missions
+              </Link>
+              <Link to="/admin/photos" className="party-drawer__qr-link">
+                <span>▧</span>
+                Régie Photo Hunt
               </Link>
               <Link to="/admin/content" className="party-drawer__qr-link">
                 <span>⇅</span>
