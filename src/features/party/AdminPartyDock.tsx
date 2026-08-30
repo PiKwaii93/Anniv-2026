@@ -18,6 +18,7 @@ import {
 } from './PartyContext'
 
 import './AdminPartyDock.css'
+import './AdminDirectorLaunch.css'
 
 const phaseOptions: Array<{
   value: PartyPhase
@@ -114,6 +115,20 @@ function AdminPartyDock() {
 
   return (
     <>
+      <Link
+        to="/admin/live"
+        className={
+          location.pathname === '/admin/live'
+            ? 'party-director-launch party-director-launch--active'
+            : 'party-director-launch'
+        }
+        aria-label="Ouvrir le Mode Directeur"
+      >
+        <span>⌘</span>
+        <strong>Directeur</strong>
+        <small>Jour J</small>
+      </Link>
+
       <button
         type="button"
         className={`party-dock party-dock--${settings.phase}`}
