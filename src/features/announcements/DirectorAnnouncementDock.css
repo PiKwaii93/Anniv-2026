@@ -1,0 +1,300 @@
+.director-announcement-dock {
+  position: fixed;
+  z-index: 82;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 184px);
+}
+
+.director-announcement-launch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 190px;
+  min-height: 54px;
+  padding: 9px 12px;
+  color: #edf2ff;
+  background: rgba(15, 19, 28, 0.96);
+  border: 1px solid rgba(120, 150, 255, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(16px);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.director-announcement-launch > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+}
+
+.director-announcement-launch small,
+.director-announcement-launch strong {
+  display: block;
+}
+
+.director-announcement-launch small {
+  color: #68748a;
+  font-size: 0.52rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.director-announcement-launch strong {
+  margin-top: 2px;
+  font-size: 0.67rem;
+}
+
+.director-announcement-launch--active {
+  border-color: rgba(105, 218, 164, 0.38);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.36),
+    0 0 30px rgba(81, 207, 151, 0.08);
+}
+
+.director-announcement-launch--active small {
+  color: #79caa5;
+}
+
+.director-announcement-panel {
+  position: absolute;
+  right: 0;
+  bottom: 66px;
+  width: min(390px, calc(100vw - 28px));
+  padding: 15px;
+  color: #eff3fa;
+  background: rgba(9, 12, 18, 0.985);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 17px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(20px);
+}
+
+.director-announcement-panel__header,
+.director-announcement-current,
+.director-announcement-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.director-announcement-panel__header small,
+.director-announcement-panel__header strong {
+  display: block;
+}
+
+.director-announcement-panel__header small {
+  color: #67738a;
+  font-size: 0.56rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.director-announcement-panel__header strong {
+  margin-top: 3px;
+  font-size: 0.82rem;
+}
+
+.director-announcement-panel__header > button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #7d8796;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.director-announcement-current {
+  margin-top: 13px;
+  padding: 11px 12px;
+  background: rgba(76, 199, 143, 0.055);
+  border: 1px solid rgba(76, 199, 143, 0.16);
+  border-radius: 12px;
+}
+
+.director-announcement-current > div {
+  min-width: 0;
+}
+
+.director-announcement-current small,
+.director-announcement-current strong {
+  display: block;
+}
+
+.director-announcement-current small {
+  color: #68ad8d;
+  font-size: 0.53rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.director-announcement-current strong {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.director-announcement-current button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  color: #e9b5bc;
+  background: rgba(255, 101, 119, 0.055);
+  border: 1px solid rgba(255, 101, 119, 0.14);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.director-announcement-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 13px;
+}
+
+.director-announcement-quick button {
+  min-height: 31px;
+  padding: 0 9px;
+  color: #aeb8c7;
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.58rem;
+  cursor: pointer;
+}
+
+.director-announcement-quick button:hover,
+.director-announcement-quick button:focus-visible {
+  color: #f1f4f9;
+  border-color: rgba(133, 157, 255, 0.22);
+}
+
+.director-announcement-panel textarea {
+  width: 100%;
+  min-height: 82px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  resize: vertical;
+  color: #eef2f8;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  outline: none;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.director-announcement-panel textarea:focus {
+  border-color: rgba(117, 146, 255, 0.34);
+  box-shadow: 0 0 0 3px rgba(91, 125, 255, 0.06);
+}
+
+.director-announcement-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.director-announcement-settings label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #606b7b;
+  font-size: 0.52rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.director-announcement-settings select {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 9px;
+  color: #ced5e1;
+  background: #0e121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.61rem;
+}
+
+.director-announcement-footer {
+  margin-top: 10px;
+}
+
+.director-announcement-footer > span {
+  color: #596474;
+  font-size: 0.55rem;
+}
+
+.director-announcement-send {
+  min-height: 39px;
+  padding: 0 14px;
+  color: #07120d;
+  background: #ceffec;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.director-announcement-send:disabled,
+.director-announcement-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.director-announcement-error {
+  margin: 10px 0 0;
+  color: #f0a5ae;
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .director-announcement-dock {
+    right: 14px;
+    bottom: 190px;
+  }
+
+  .director-announcement-launch {
+    min-width: 0;
+    width: 54px;
+    justify-content: center;
+    padding: 9px;
+  }
+
+  .director-announcement-launch div {
+    display: none;
+  }
+
+  .director-announcement-panel {
+    position: fixed;
+    right: 8px;
+    bottom: 255px;
+    width: calc(100vw - 16px);
+    max-height: min(620px, calc(100dvh - 275px));
+    overflow-y: auto;
+  }
+}
