@@ -10,7 +10,7 @@ function PartyScreenWithHall() {
     return <HallOfFameScreen />
   }
 
-  if (!loading && settings.featuredModule === 'photos') {
+  if (!loading && String(settings.featuredModule) === 'photos') {
     return <PhotoHuntScreen />
   }
 
