@@ -219,6 +219,10 @@ function AdminPartyDock() {
             </section>
 
             <div className="party-drawer__actions">
+              <Link to="/admin/live" className="party-drawer__qr-link">
+                <span>⌘</span>
+                Mode Directeur
+              </Link>
               <Link to="/admin/room" className="party-drawer__qr-link">
                 <span>◉</span>
                 Régie La Salle
