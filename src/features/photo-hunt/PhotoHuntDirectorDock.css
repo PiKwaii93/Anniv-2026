@@ -1,0 +1,126 @@
+.photo-director-dock {
+  position: fixed;
+  z-index: 76;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 184px);
+  width: 228px;
+  overflow: hidden;
+  color: #f3e5eb;
+  background: rgba(17, 15, 22, 0.95);
+  border: 1px solid rgba(255, 145, 177, 0.17);
+  border-radius: 15px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+}
+
+.photo-director-dock--featured {
+  border-color: rgba(255, 151, 182, 0.38);
+  box-shadow:
+    0 16px 44px rgba(0, 0, 0, 0.36),
+    0 0 26px rgba(255, 130, 170, 0.08);
+}
+
+.photo-director-dock__main {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.photo-director-dock__main > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #ffc1d3;
+  background: rgba(255, 130, 166, 0.08);
+  border: 1px solid rgba(255, 130, 166, 0.15);
+  border-radius: 10px;
+}
+
+.photo-director-dock__main small,
+.photo-director-dock__main strong {
+  display: block;
+}
+
+.photo-director-dock__main small {
+  color: #866b76;
+  font-size: 0.51rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.photo-director-dock__main strong {
+  margin-top: 2px;
+  color: #f0e6eb;
+  font-size: 0.66rem;
+}
+
+.photo-director-dock__main b {
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  padding-inline: 6px;
+  color: #240b13;
+  background: #ffabc3;
+  border-radius: 999px;
+  font-size: 0.62rem;
+}
+
+.photo-director-dock > button {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  color: #c991a1;
+  background: rgba(255, 121, 159, 0.035);
+  border: 0;
+  border-top: 1px solid rgba(255, 145, 177, 0.1);
+  font-size: 0.57rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.photo-director-dock > button:hover,
+.photo-director-dock__main:hover {
+  background: rgba(255, 129, 164, 0.065);
+}
+
+.photo-director-dock > button:disabled {
+  color: #9c7c86;
+  cursor: default;
+  opacity: 0.72;
+}
+
+@media (max-width: 760px) {
+  .photo-director-dock {
+    right: 14px;
+    bottom: 190px;
+    width: auto;
+  }
+
+  .photo-director-dock__main {
+    grid-template-columns: 34px auto;
+    padding: 9px;
+  }
+
+  .photo-director-dock__main > div,
+  .photo-director-dock > button {
+    display: none;
+  }
+
+  .photo-director-dock__main b {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    min-width: 18px;
+    height: 18px;
+    padding-inline: 4px;
+    font-size: 0.48rem;
+  }
+}
