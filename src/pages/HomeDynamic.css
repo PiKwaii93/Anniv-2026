@@ -86,6 +86,25 @@
   color: #c9c9d1;
 }
 
+.module-card--photos {
+  background:
+    radial-gradient(circle at 92% 12%, rgba(255, 126, 165, 0.1), transparent 36%),
+    rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 137, 170, 0.1);
+}
+
+.module-card--photos .module-card__tag {
+  color: #c98599;
+}
+
+.module-card--photos.module-card--featured {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(255, 128, 168, 0.16), transparent 36%),
+    linear-gradient(135deg, rgba(255, 118, 157, 0.07), rgba(111, 103, 255, 0.03));
+  border-color: rgba(255, 143, 175, 0.25);
+  box-shadow: 0 24px 70px rgba(120, 42, 72, 0.08);
+}
+
 .module-card--hall {
   grid-column: 1 / -1;
   min-height: 210px;
