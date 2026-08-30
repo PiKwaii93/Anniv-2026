@@ -10,8 +10,8 @@ import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import {
   isPartyModuleVisible,
-  type PartyModule,
   type PartyPhase,
+  type PartyVisibilityModule,
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
@@ -55,7 +55,7 @@ type HomeStats = {
 }
 
 type PublicModuleDefinition = {
-  key: PartyModule
+  key: PartyVisibilityModule
   title: string
   subtitle: string
   tag: string
@@ -238,7 +238,7 @@ function Home() {
     return 'Tournoi pas encore lancé'
   }, [stats.beerPong])
 
-  const moduleStatus = (module: PartyModule) => {
+  const moduleStatus = (module: PartyVisibilityModule) => {
     if (statsLoading) return 'Synchronisation...'
 
     switch (module) {
