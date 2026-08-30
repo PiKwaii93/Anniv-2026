@@ -73,6 +73,10 @@ const PartyQr = lazy(
   () => import('./pages/PartyQr'),
 )
 
+const PartyScreen = lazy(
+  () => import('./pages/PartyScreen'),
+)
+
 const SecretMissions = lazy(
   () => import('./pages/SecretMissions'),
 )
@@ -215,6 +219,11 @@ function App() {
           <Route
             path="/"
             element={<Home />}
+          />
+
+          <Route
+            path="/screen"
+            element={<PartyScreen />}
           />
 
           <Route
