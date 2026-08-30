@@ -87,7 +87,7 @@ const PartyQr = lazy(
 )
 
 const PartyScreen = lazy(
-  () => import('./pages/PartyScreen'),
+  () => import('./pages/PartyScreenWithHall'),
 )
 
 const SecretMissions = lazy(
