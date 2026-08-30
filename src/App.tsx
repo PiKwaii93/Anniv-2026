@@ -90,6 +90,14 @@ const PartyScreen = lazy(
   () => import('./pages/PartyScreenWithHall'),
 )
 
+const PhotoHunt = lazy(
+  () => import('./pages/PhotoHunt'),
+)
+
+const PhotoHuntAdmin = lazy(
+  () => import('./pages/PhotoHuntAdmin'),
+)
+
 const SecretMissions = lazy(
   () => import('./pages/SecretMissions'),
 )
@@ -296,6 +304,17 @@ function App() {
           />
 
           <Route
+            path="/photos"
+            element={
+              <ModuleGate module="photos">
+                <PartyIdentityGate>
+                  <PhotoHunt />
+                </PartyIdentityGate>
+              </ModuleGate>
+            }
+          />
+
+          <Route
             path="/guests"
             element={
               <ModuleGate module="guests">
@@ -382,6 +401,15 @@ function App() {
             element={
               <AdminRoute>
                 <LiveVoteRoomAdmin />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/photos"
+            element={
+              <AdminRoute>
+                <PhotoHuntAdmin />
               </AdminRoute>
             }
           />
