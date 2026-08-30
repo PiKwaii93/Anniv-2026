@@ -50,6 +50,10 @@ const BingoAdmin = lazy(
   () => import('./pages/BingoAdmin'),
 )
 
+const ContentManager = lazy(
+  () => import('./pages/ContentManager'),
+)
+
 const DirectorMode = lazy(
   () => import('./pages/DirectorModePolished'),
 )
@@ -315,6 +319,15 @@ function App() {
             element={
               <AdminRoute>
                 <DirectorMode />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/content"
+            element={
+              <AdminRoute>
+                <ContentManager />
               </AdminRoute>
             }
           />

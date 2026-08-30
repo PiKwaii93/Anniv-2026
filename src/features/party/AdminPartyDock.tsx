@@ -116,6 +116,20 @@ function AdminPartyDock() {
   return (
     <>
       <Link
+        to="/admin/content"
+        className={
+          location.pathname === '/admin/content'
+            ? 'party-director-launch party-director-launch--content party-director-launch--active'
+            : 'party-director-launch party-director-launch--content'
+        }
+        aria-label="Ouvrir les sauvegardes de contenu"
+      >
+        <span>⇅</span>
+        <strong>Contenu</strong>
+        <small>Backup</small>
+      </Link>
+
+      <Link
         to="/admin/live"
         className={
           location.pathname === '/admin/live'
@@ -245,6 +259,10 @@ function AdminPartyDock() {
               <Link to="/admin/missions" className="party-drawer__qr-link">
                 <span>◎</span>
                 Gérer les missions
+              </Link>
+              <Link to="/admin/content" className="party-drawer__qr-link">
+                <span>⇅</span>
+                Sauvegarder le contenu
               </Link>
               <Link to="/qr" className="party-drawer__qr-link">
                 <span>▦</span>
