@@ -45,6 +45,10 @@ const BingoAdmin = lazy(
   () => import('./pages/BingoAdmin'),
 )
 
+const DirectorMode = lazy(
+  () => import('./pages/DirectorMode'),
+)
+
 const Guests = lazy(
   () => import('./pages/Guests'),
 )
@@ -282,6 +286,15 @@ function App() {
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/live"
+            element={
+              <AdminRoute>
+                <DirectorMode />
               </AdminRoute>
             }
           />
