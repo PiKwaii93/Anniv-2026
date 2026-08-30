@@ -124,7 +124,7 @@ const phaseCopy: Record<PartyPhase, { label: string; detail: string }> = {
   },
   ended: {
     label: 'Soirée terminée',
-    detail: 'Merci d’être passé. Les souvenirs restent accessibles ici.',
+    detail: 'Merci d’être passé. Le Hall of Fame et les souvenirs restent accessibles ici.',
   },
 }
 
@@ -257,6 +257,7 @@ function Home() {
   }, [isAdmin, settings])
 
   const phase = phaseCopy[settings.phase]
+  const showHallOfFame = settings.phase === 'ended' || isAdmin
 
   return (
     <main className="home">
@@ -279,6 +280,32 @@ function Home() {
       </section>
 
       <section className="modules" aria-label="Modules">
+        {showHallOfFame && (
+          <Link
+            to="/hall-of-fame"
+            className={`module-card module-card--hall${settings.phase === 'ended' ? ' module-card--hall-live' : ''}`}
+          >
+            <div className="module-card__top">
+              <span className="module-card__tag">
+                {settings.phase === 'ended' ? 'Palmarès final' : 'Aperçu admin'}
+              </span>
+              <span className="module-card__arrow">↗</span>
+            </div>
+            <div>
+              <span className="module-card__featured-pill">
+                Hall of Fame
+              </span>
+              <h2>Les gagnants de la soirée</h2>
+              <p>Champions Beer Pong, agents, mentalistes et grands chiffres.</p>
+              <span className="module-card__status">
+                {settings.phase === 'ended'
+                  ? 'Le palmarès est ouvert à tout le monde'
+                  : 'Données provisoires · visible uniquement par l’admin'}
+              </span>
+            </div>
+          </Link>
+        )}
+
         {visibleModules.map((module) => {
           const featured = module.key === settings.featuredModule
           const visible = isPartyModuleVisible(settings, module.key)

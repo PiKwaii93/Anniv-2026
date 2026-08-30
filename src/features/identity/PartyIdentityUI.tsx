@@ -167,7 +167,8 @@ export function PartyIdentityBadge() {
   const hidden =
     location.pathname.startsWith('/admin') ||
     location.pathname === '/screen' ||
-    location.pathname === '/qr'
+    location.pathname === '/qr' ||
+    location.pathname === '/hall-of-fame'
 
   if (hidden || loading) return null
 

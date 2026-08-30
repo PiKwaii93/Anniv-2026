@@ -86,6 +86,41 @@
   color: #c9c9d1;
 }
 
+.module-card--hall {
+  grid-column: 1 / -1;
+  min-height: 210px;
+  background:
+    radial-gradient(circle at 90% 20%, rgba(105, 132, 255, 0.13), transparent 34%),
+    linear-gradient(135deg, rgba(104, 126, 255, 0.08), rgba(255, 255, 255, 0.025));
+  border-color: rgba(111, 137, 255, 0.18);
+}
+
+.module-card--hall::after {
+  content: '★';
+  position: absolute;
+  right: clamp(24px, 5vw, 62px);
+  bottom: clamp(20px, 4vw, 44px);
+  color: rgba(181, 196, 255, 0.08);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(5rem, 12vw, 9rem);
+  line-height: 0.8;
+}
+
+.module-card--hall h2 {
+  max-width: 680px;
+}
+
+.module-card--hall-live {
+  border-color: rgba(122, 147, 255, 0.3);
+  box-shadow: 0 24px 80px rgba(64, 82, 170, 0.08);
+}
+
+.module-card--hall-live .module-card__featured-pill {
+  color: #dce4ff;
+  background: rgba(107, 132, 255, 0.1);
+  border-color: rgba(121, 146, 255, 0.2);
+}
+
 .module-card__featured-pill {
   display: inline-flex;
   align-items: center;
@@ -136,6 +171,16 @@
 
   .module-card__status {
     margin-top: 11px;
+  }
+
+  .module-card--hall {
+    min-height: 225px;
+  }
+
+  .module-card--hall::after {
+    right: 18px;
+    bottom: 24px;
+    font-size: 5.2rem;
   }
 }
 
