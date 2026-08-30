@@ -243,6 +243,61 @@
   transform: translateY(-1px);
 }
 
+.director-tv-launch {
+  position: fixed;
+  z-index: 76;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 118px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 168px;
+  min-height: 54px;
+  padding: 9px 12px;
+  color: #dce5ff;
+  text-decoration: none;
+  background: rgba(14, 18, 28, 0.94);
+  border: 1px solid rgba(120, 150, 255, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(16px);
+}
+
+.director-tv-launch > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  color: #b9c8ff;
+  background: rgba(108, 140, 255, 0.1);
+  border: 1px solid rgba(108, 140, 255, 0.2);
+  border-radius: 9px;
+}
+
+.director-tv-launch small,
+.director-tv-launch strong {
+  display: block;
+}
+
+.director-tv-launch small {
+  color: #64708a;
+  font-size: 0.52rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.director-tv-launch strong {
+  margin-top: 2px;
+  font-size: 0.67rem;
+}
+
+.director-tv-launch:hover,
+.director-tv-launch:focus-visible {
+  background: rgba(22, 29, 46, 0.97);
+  border-color: rgba(138, 165, 255, 0.4);
+}
+
 @media (max-width: 760px) {
   .director-header__main {
     margin-top: 12px;
@@ -279,6 +334,16 @@
 
   .director-shortcut {
     min-height: 68px;
+  }
+
+  .director-tv-launch {
+    right: 14px;
+    bottom: 126px;
+    min-width: 0;
+  }
+
+  .director-tv-launch div {
+    display: none;
   }
 }
 
