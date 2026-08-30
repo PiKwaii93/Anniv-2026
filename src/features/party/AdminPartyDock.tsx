@@ -14,6 +14,7 @@ import {
   type PartyModule,
   type PartyPhase,
   type PartySettings,
+  type PartyVisibilityModule,
   useParty,
 } from './PartyContext'
 
@@ -43,7 +44,7 @@ const phaseOptions: Array<{
 ]
 
 const moduleOptions: Array<{
-  value: PartyModule
+  value: PartyVisibilityModule
   label: string
 }> = [
   { value: 'iceberg', label: 'Iceberg' },
@@ -51,11 +52,12 @@ const moduleOptions: Array<{
   { value: 'bingo', label: 'Bingo' },
   { value: 'missions', label: 'Missions secrètes' },
   { value: 'room', label: 'La Salle' },
+  { value: 'photos', label: 'Photo Hunt' },
   { value: 'guests', label: 'Invités' },
 ]
 
 function visibilityPatch(
-  module: PartyModule,
+  module: PartyVisibilityModule,
   visible: boolean,
 ): Partial<PartySettings> {
   switch (module) {
@@ -69,6 +71,8 @@ function visibilityPatch(
       return { missionsVisible: visible }
     case 'room':
       return { roomVisible: visible }
+    case 'photos':
+      return { photosVisible: visible }
     case 'guests':
       return { guestsVisible: visible }
   }
@@ -100,17 +104,26 @@ function AdminPartyDock() {
     return null
   }
 
-  const toggleModule = async (module: PartyModule) => {
+  const toggleModule = async (module: PartyVisibilityModule) => {
     const currentlyVisible = isPartyModuleVisible(settings, module)
     const patch: Partial<PartySettings> = {
       ...visibilityPatch(module, !currentlyVisible),
     }
 
-    if (currentlyVisible && settings.featuredModule === module) {
+    if (
+      currentlyVisible
+      && String(settings.featuredModule) === module
+    ) {
       patch.featuredModule = null
     }
 
     await updateSettings(patch)
+  }
+
+  const featureModule = (value: string) => {
+    void updateSettings({
+      featuredModule: value === '' ? null : value as PartyModule,
+    })
   }
 
   return (
@@ -199,19 +212,14 @@ function AdminPartyDock() {
             <section className="party-drawer__section">
               <div className="party-drawer__section-heading">
                 <span>À la une</span>
-                <small>Home</small>
+                <small>Home + TV</small>
               </div>
 
               <select
                 className="party-featured-select"
                 value={settings.featuredModule ?? ''}
                 disabled={loading || saving}
-                onChange={(event) => {
-                  const value = event.target.value
-                  void updateSettings({
-                    featuredModule: value === '' ? null : value as PartyModule,
-                  })
-                }}
+                onChange={(event) => featureModule(event.target.value)}
               >
                 <option value="">Aucun module mis en avant</option>
                 {visibleModules.map((module) => (
@@ -259,6 +267,10 @@ function AdminPartyDock() {
               <Link to="/admin/missions" className="party-drawer__qr-link">
                 <span>◎</span>
                 Gérer les missions
+              </Link>
+              <Link to="/admin/photos" className="party-drawer__qr-link">
+                <span>▧</span>
+                Régie Photo Hunt
               </Link>
               <Link to="/admin/content" className="party-drawer__qr-link">
                 <span>⇅</span>

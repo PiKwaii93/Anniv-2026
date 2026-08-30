@@ -23,6 +23,10 @@ export type PartyModule =
   | 'room'
   | 'guests'
 
+export type PartyVisibilityModule =
+  | PartyModule
+  | 'photos'
+
 export type PartySettings = {
   phase: PartyPhase
   featuredModule: PartyModule | null
@@ -31,18 +35,20 @@ export type PartySettings = {
   bingoVisible: boolean
   missionsVisible: boolean
   roomVisible: boolean
+  photosVisible: boolean
   guestsVisible: boolean
 }
 
 type PartyStateRow = {
   id: string
   phase: PartyPhase
-  featured_module: PartyModule | null
+  featured_module: string | null
   iceberg_visible: boolean
   beer_pong_visible: boolean
   bingo_visible: boolean
   missions_visible: boolean
   room_visible: boolean
+  photos_visible: boolean
   guests_visible: boolean
 }
 
@@ -65,6 +71,7 @@ const defaultSettings: PartySettings = {
   bingoVisible: true,
   missionsVisible: true,
   roomVisible: true,
+  photosVisible: true,
   guestsVisible: true,
 }
 
@@ -72,19 +79,23 @@ const PartyContext =
   createContext<PartyContextValue | null>(null)
 
 const partyStateSelect =
-  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, guests_visible' as const
+  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, photos_visible, guests_visible' as const
 
 function rowToSettings(
   row: PartyStateRow,
 ): PartySettings {
   return {
     phase: row.phase,
-    featuredModule: row.featured_module,
+    // Photo Hunt is intercepted before the legacy TV/director engines render.
+    // Keeping their historical PartyModule union unchanged avoids widening
+    // exhaustive switches that do not need to know how Photo Hunt renders.
+    featuredModule: row.featured_module as PartyModule | null,
     icebergVisible: row.iceberg_visible,
     beerPongVisible: row.beer_pong_visible,
     bingoVisible: row.bingo_visible,
     missionsVisible: row.missions_visible,
     roomVisible: row.room_visible,
+    photosVisible: row.photos_visible,
     guestsVisible: row.guests_visible,
   }
 }
@@ -124,6 +135,10 @@ function settingsPatchToRow(
     row.room_visible = patch.roomVisible
   }
 
+  if (patch.photosVisible !== undefined) {
+    row.photos_visible = patch.photosVisible
+  }
+
   if (patch.guestsVisible !== undefined) {
     row.guests_visible = patch.guestsVisible
   }
@@ -133,7 +148,7 @@ function settingsPatchToRow(
 
 export function isPartyModuleVisible(
   settings: PartySettings,
-  module: PartyModule,
+  module: PartyVisibilityModule,
 ) {
   switch (module) {
     case 'iceberg':
@@ -146,6 +161,8 @@ export function isPartyModuleVisible(
       return settings.missionsVisible
     case 'room':
       return settings.roomVisible
+    case 'photos':
+      return settings.photosVisible
     case 'guests':
       return settings.guestsVisible
   }

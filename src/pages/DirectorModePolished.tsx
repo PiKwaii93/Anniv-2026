@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import DirectorAnnouncementDock from '../features/announcements/DirectorAnnouncementDock'
+import PhotoHuntDirectorDock from '../features/photo-hunt/PhotoHuntDirectorDock'
 import DirectorMode from './DirectorMode'
 
 import './DirectorModePolish.css'
@@ -10,6 +11,7 @@ function DirectorModePolished() {
     <>
       <DirectorMode />
       <DirectorAnnouncementDock />
+      <PhotoHuntDirectorDock />
       <Link
         to="/screen"
         target="_blank"

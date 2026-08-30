@@ -10,8 +10,8 @@ import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import {
   isPartyModuleVisible,
-  type PartyModule,
   type PartyPhase,
+  type PartyVisibilityModule,
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
@@ -51,10 +51,11 @@ type HomeStats = {
   missionPlayers: number
   missionCompleted: number
   room: RoomState
+  photos: number
 }
 
 type PublicModuleDefinition = {
-  key: PartyModule
+  key: PartyVisibilityModule
   title: string
   subtitle: string
   tag: string
@@ -104,6 +105,14 @@ const publicModules: PublicModuleDefinition[] = [
     className: 'module-card--room',
   },
   {
+    key: 'photos',
+    title: 'Photo Hunt',
+    subtitle: 'Défis photo & mur de souvenirs',
+    tag: 'Chasse photo',
+    path: '/photos',
+    className: 'module-card--photos',
+  },
+  {
     key: 'guests',
     title: 'Invités',
     subtitle: 'Les participants de la soirée',
@@ -135,6 +144,7 @@ const emptyStats: HomeStats = {
   missionPlayers: 0,
   missionCompleted: 0,
   room: { phase: 'idle', voteCount: 0 },
+  photos: 0,
 }
 
 function Home() {
@@ -151,12 +161,14 @@ function Home() {
       beerPongResult,
       missionScoreResult,
       roomResult,
+      photoResult,
     ] = await Promise.all([
       supabase.from('iceberg_entries').select('id', { count: 'exact', head: true }).eq('is_published', true),
       supabase.from('bingo_prompts').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('beer_pong_state').select('state').eq('id', 'main').maybeSingle(),
       supabase.from('secret_mission_scoreboard').select('completed_count'),
       supabase.from('live_vote_public_state').select('state').eq('id', 'main').maybeSingle(),
+      supabase.from('photo_hunt_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
     ])
 
     if (icebergResult.error) console.error('Unable to load Home Iceberg stats:', icebergResult.error)
@@ -164,6 +176,7 @@ function Home() {
     if (beerPongResult.error) console.error('Unable to load Home Beer Pong stats:', beerPongResult.error)
     if (missionScoreResult.error) console.error('Unable to load Home mission stats:', missionScoreResult.error)
     if (roomResult.error) console.error('Unable to load Home live room stats:', roomResult.error)
+    if (photoResult.error) console.error('Unable to load Home Photo Hunt stats:', photoResult.error)
 
     const beerPongRow = beerPongResult.data as BeerPongRow | null
     const missionRows = (missionScoreResult.data ?? []) as MissionScoreRow[]
@@ -176,6 +189,7 @@ function Home() {
       missionPlayers: missionRows.length,
       missionCompleted: missionRows.reduce((total, row) => total + row.completed_count, 0),
       room: roomRow?.state ?? { phase: 'idle', voteCount: 0 },
+      photos: photoResult.count ?? 0,
     })
     setStatsLoading(false)
   }, [])
@@ -192,6 +206,7 @@ function Home() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beer_pong_state' }, () => void loadStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'secret_mission_scoreboard' }, () => void loadStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_vote_public_state' }, () => void loadStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'photo_hunt_submissions' }, () => void loadStats())
       .subscribe()
 
     const refreshInterval = window.setInterval(() => void loadStats(), 30000)
@@ -223,7 +238,7 @@ function Home() {
     return 'Tournoi pas encore lancé'
   }, [stats.beerPong])
 
-  const moduleStatus = (module: PartyModule) => {
+  const moduleStatus = (module: PartyVisibilityModule) => {
     if (statsLoading) return 'Synchronisation...'
 
     switch (module) {
@@ -241,6 +256,10 @@ function Home() {
         if (stats.room.phase === 'open') return `${stats.room.voteCount ?? 0} vote${(stats.room.voteCount ?? 0) !== 1 ? 's' : ''} · round en cours`
         if (stats.room.phase === 'revealed') return 'Résultats révélés · prochain round bientôt'
         return 'En attente du prochain vote live'
+      case 'photos':
+        return stats.photos === 0
+          ? 'Le mur attend sa première photo'
+          : `${stats.photos} photo${stats.photos !== 1 ? 's' : ''} publiée${stats.photos !== 1 ? 's' : ''}`
       case 'guests':
         return `${participantCount} participant${participantCount !== 1 ? 's' : ''} confirmé${participantCount !== 1 ? 's' : ''}`
     }

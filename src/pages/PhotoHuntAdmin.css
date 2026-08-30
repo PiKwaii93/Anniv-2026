@@ -1,0 +1,448 @@
+.photo-hunt-admin {
+  min-height: 100dvh;
+  padding: 28px clamp(18px, 4vw, 54px) 110px;
+  color: #f4f6fa;
+  background: #05070a;
+}
+
+.photo-hunt-admin--loading {
+  display: grid;
+  place-items: center;
+  color: #757d8b;
+}
+
+.photo-hunt-admin__hero,
+.photo-hunt-admin__metrics,
+.photo-hunt-admin__panel,
+.photo-hunt-admin__error {
+  width: min(1220px, 100%);
+  margin-inline: auto;
+}
+
+.photo-hunt-admin__hero {
+  padding-top: 34px;
+}
+
+.photo-hunt-admin__hero > p {
+  margin: 34px 0 0;
+  color: #7c6270;
+  font-size: 0.6rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.photo-hunt-admin__hero h1 {
+  margin: 10px 0 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(4.2rem, 9vw, 8rem);
+  line-height: 0.86;
+  letter-spacing: -0.07em;
+}
+
+.photo-hunt-admin__hero h1 span {
+  color: #ff9ab7;
+}
+
+.photo-hunt-admin__hero-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.photo-hunt-admin__hero-actions a,
+.photo-hunt-admin__hero-actions button,
+.photo-hunt-admin__csv,
+.photo-hunt-admin__filter,
+.photo-hunt-admin__submission-actions button,
+.photo-hunt-admin__challenge-actions button,
+.photo-hunt-admin__new-challenge button {
+  color: #dce1e9;
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.photo-hunt-admin__hero-actions a,
+.photo-hunt-admin__hero-actions button {
+  padding: 10px 12px;
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.photo-hunt-admin__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 34px;
+}
+
+.photo-hunt-admin__metrics > div {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+}
+
+.photo-hunt-admin__metrics strong,
+.photo-hunt-admin__metrics span {
+  display: block;
+}
+
+.photo-hunt-admin__metrics strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+}
+
+.photo-hunt-admin__metrics span {
+  margin-top: 4px;
+  color: #68717f;
+  font-size: 0.62rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.photo-hunt-admin__error {
+  margin-top: 16px;
+  padding: 11px 13px;
+  color: #ffc3cd;
+  background: rgba(255, 83, 111, 0.055);
+  border: 1px solid rgba(255, 83, 111, 0.2);
+  border-radius: 12px;
+  font-size: 0.72rem;
+}
+
+.photo-hunt-admin__panel {
+  margin-top: 18px;
+  padding: clamp(16px, 2.5vw, 24px);
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 19px;
+}
+
+.photo-hunt-admin__panel-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.photo-hunt-admin__panel-heading p {
+  margin: 0 0 4px;
+  color: #735d69;
+  font-size: 0.56rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.photo-hunt-admin__panel-heading h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+.photo-hunt-admin__filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.photo-hunt-admin__filter,
+.photo-hunt-admin__csv {
+  padding: 8px 10px;
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.photo-hunt-admin__filter--active {
+  color: #180b11;
+  background: #ffabc3;
+  border-color: #ffabc3;
+}
+
+.photo-hunt-admin__moderation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.photo-hunt-admin__submission {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #090c11;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+}
+
+.photo-hunt-admin__submission--pending {
+  border-color: rgba(255, 190, 88, 0.18);
+}
+
+.photo-hunt-admin__submission--approved {
+  border-color: rgba(75, 208, 151, 0.17);
+}
+
+.photo-hunt-admin__submission--rejected {
+  opacity: 0.72;
+}
+
+.photo-hunt-admin__submission-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  object-fit: cover;
+  color: #606875;
+  background: #030507;
+}
+
+.photo-hunt-admin__submission-copy {
+  padding: 14px;
+}
+
+.photo-hunt-admin__submission-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.photo-hunt-admin__submission-meta span,
+.photo-hunt-admin__submission-meta b {
+  font-size: 0.56rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.photo-hunt-admin__submission-meta span {
+  color: #efa0b7;
+}
+
+.photo-hunt-admin__submission-meta b {
+  color: #777f8b;
+}
+
+.photo-hunt-admin__submission-copy > strong {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.38;
+}
+
+.photo-hunt-admin__submission-copy > p {
+  margin: 7px 0 0;
+  color: #747d89;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.photo-hunt-admin__submission-copy > small {
+  display: block;
+  margin-top: 10px;
+  color: #555e6a;
+  font-size: 0.56rem;
+}
+
+.photo-hunt-admin__submission-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: auto;
+  padding: 0 12px 12px;
+}
+
+.photo-hunt-admin__submission-actions button,
+.photo-hunt-admin__challenge-actions button {
+  padding: 8px 9px;
+  font-size: 0.58rem;
+  font-weight: 750;
+}
+
+.photo-hunt-admin__submission-actions .photo-hunt-admin__approve {
+  color: #baf0d3;
+  border-color: rgba(74, 209, 151, 0.19);
+  background: rgba(74, 209, 151, 0.055);
+}
+
+.photo-hunt-admin__delete {
+  color: #e69aa8 !important;
+  border-color: rgba(236, 99, 121, 0.14) !important;
+}
+
+.photo-hunt-admin__empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+}
+
+.photo-hunt-admin__empty p {
+  margin: 5px 0 0;
+  color: #68717e;
+  font-size: 0.72rem;
+}
+
+.photo-hunt-admin__new-challenge {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.photo-hunt-admin textarea,
+.photo-hunt-admin input {
+  width: 100%;
+  color: #eef1f6;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  outline: none;
+}
+
+.photo-hunt-admin textarea:focus,
+.photo-hunt-admin input:focus {
+  border-color: rgba(255, 153, 183, 0.28);
+}
+
+.photo-hunt-admin__new-challenge textarea {
+  min-height: 78px;
+  resize: vertical;
+  padding: 11px;
+}
+
+.photo-hunt-admin__new-challenge input {
+  padding: 11px;
+}
+
+.photo-hunt-admin__new-challenge button {
+  padding: 0 15px;
+  font-weight: 800;
+}
+
+.photo-hunt-admin__challenge-list {
+  display: grid;
+  gap: 7px;
+}
+
+.photo-hunt-admin__challenge {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 13px;
+}
+
+.photo-hunt-admin__challenge--inactive {
+  opacity: 0.5;
+}
+
+.photo-hunt-admin__challenge-index {
+  color: #664f5a;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.photo-hunt-admin__challenge-copy strong,
+.photo-hunt-admin__challenge-copy span {
+  display: block;
+}
+
+.photo-hunt-admin__challenge-copy strong {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.photo-hunt-admin__challenge-copy span {
+  margin-top: 4px;
+  color: #68717e;
+  font-size: 0.64rem;
+  line-height: 1.35;
+}
+
+.photo-hunt-admin__challenge-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.photo-hunt-admin__challenge-edit {
+  display: grid;
+  gap: 6px;
+}
+
+.photo-hunt-admin__challenge-edit textarea {
+  min-height: 66px;
+  padding: 9px;
+  resize: vertical;
+}
+
+.photo-hunt-admin__challenge-edit input {
+  padding: 9px;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+@media (max-width: 900px) {
+  .photo-hunt-admin__moderation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .photo-hunt-admin__new-challenge {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .photo-hunt-admin__new-challenge button {
+    min-height: 44px;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .photo-hunt-admin {
+    padding-inline: 14px;
+  }
+
+  .photo-hunt-admin__metrics,
+  .photo-hunt-admin__moderation-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .photo-hunt-admin__panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .photo-hunt-admin__filters {
+    justify-content: flex-start;
+  }
+
+  .photo-hunt-admin__new-challenge {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-hunt-admin__challenge {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .photo-hunt-admin__challenge-actions {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+}
