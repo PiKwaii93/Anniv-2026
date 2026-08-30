@@ -264,6 +264,10 @@ function AdminPartyDock() {
                 <span>⇅</span>
                 Sauvegarder le contenu
               </Link>
+              <Link to="/hall-of-fame" className="party-drawer__qr-link">
+                <span>★</span>
+                Prévisualiser le Hall of Fame
+              </Link>
               <Link to="/qr" className="party-drawer__qr-link">
                 <span>▦</span>
                 Afficher le QR code
