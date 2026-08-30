@@ -62,6 +62,10 @@ const Guests = lazy(
   () => import('./pages/Guests'),
 )
 
+const HallOfFame = lazy(
+  () => import('./pages/HallOfFame'),
+)
+
 const Iceberg = lazy(
   () => import('./pages/Iceberg'),
 )
@@ -235,6 +239,11 @@ function App() {
           <Route
             path="/screen"
             element={<PartyScreen />}
+          />
+
+          <Route
+            path="/hall-of-fame"
+            element={<HallOfFame />}
           />
 
           <Route
