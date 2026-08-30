@@ -21,6 +21,7 @@ export type PartyModule =
   | 'bingo'
   | 'missions'
   | 'room'
+  | 'photos'
   | 'guests'
 
 export type PartySettings = {
@@ -31,6 +32,7 @@ export type PartySettings = {
   bingoVisible: boolean
   missionsVisible: boolean
   roomVisible: boolean
+  photosVisible: boolean
   guestsVisible: boolean
 }
 
@@ -43,6 +45,7 @@ type PartyStateRow = {
   bingo_visible: boolean
   missions_visible: boolean
   room_visible: boolean
+  photos_visible: boolean
   guests_visible: boolean
 }
 
@@ -65,6 +68,7 @@ const defaultSettings: PartySettings = {
   bingoVisible: true,
   missionsVisible: true,
   roomVisible: true,
+  photosVisible: true,
   guestsVisible: true,
 }
 
@@ -72,7 +76,7 @@ const PartyContext =
   createContext<PartyContextValue | null>(null)
 
 const partyStateSelect =
-  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, guests_visible' as const
+  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, photos_visible, guests_visible' as const
 
 function rowToSettings(
   row: PartyStateRow,
@@ -85,6 +89,7 @@ function rowToSettings(
     bingoVisible: row.bingo_visible,
     missionsVisible: row.missions_visible,
     roomVisible: row.room_visible,
+    photosVisible: row.photos_visible,
     guestsVisible: row.guests_visible,
   }
 }
@@ -124,6 +129,10 @@ function settingsPatchToRow(
     row.room_visible = patch.roomVisible
   }
 
+  if (patch.photosVisible !== undefined) {
+    row.photos_visible = patch.photosVisible
+  }
+
   if (patch.guestsVisible !== undefined) {
     row.guests_visible = patch.guestsVisible
   }
@@ -146,6 +155,8 @@ export function isPartyModuleVisible(
       return settings.missionsVisible
     case 'room':
       return settings.roomVisible
+    case 'photos':
+      return settings.photosVisible
     case 'guests':
       return settings.guestsVisible
   }
