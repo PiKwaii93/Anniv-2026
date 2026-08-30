@@ -20,7 +20,7 @@ import {
 import AdminPartyDock from './features/party/AdminPartyDock'
 import {
   isPartyModuleVisible,
-  type PartyModule,
+  type PartyVisibilityModule,
   useParty,
 } from './features/party/PartyContext'
 
@@ -111,7 +111,7 @@ type AdminRouteProps = {
 }
 
 type ModuleGateProps = {
-  module: PartyModule
+  module: PartyVisibilityModule
   children: ReactNode
 }
 
