@@ -11,6 +11,7 @@ import {
   useLocation,
 } from 'react-router-dom'
 
+import LiveAnnouncementOverlay from './features/announcements/LiveAnnouncementOverlay'
 import { useAuth } from './features/auth/AuthContext'
 import AdminPartyDock from './features/party/AdminPartyDock'
 import {
@@ -213,6 +214,7 @@ function App() {
   return (
     <>
       <AdminPartyDock />
+      <LiveAnnouncementOverlay />
 
       <Suspense fallback={<RouteLoading />}>
         <Routes>

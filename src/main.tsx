@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 
 import App from './App'
 
+import { AnnouncementProvider } from './features/announcements/AnnouncementContext'
 import { AuthProvider } from './features/auth/AuthContext'
 import { GuestsProvider } from './features/guests/GuestsContext'
 import { PartyProvider } from './features/party/PartyContext'
@@ -22,9 +23,11 @@ createRoot(
     <BrowserRouter>
       <AuthProvider>
         <PartyProvider>
-          <GuestsProvider>
-            <App />
-          </GuestsProvider>
+          <AnnouncementProvider>
+            <GuestsProvider>
+              <App />
+            </GuestsProvider>
+          </AnnouncementProvider>
         </PartyProvider>
       </AuthProvider>
     </BrowserRouter>
