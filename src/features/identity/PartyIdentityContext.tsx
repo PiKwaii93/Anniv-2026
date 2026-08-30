@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { useGuests } from '../guests/GuestsContext'
 import { supabase } from '../../lib/supabase'
@@ -111,6 +112,8 @@ function PartyIdentityProvider({
 }: {
   children: ReactNode
 }) {
+  const location = useLocation()
+
   const {
     guests,
     loading: guestsLoading,
@@ -123,6 +126,11 @@ function PartyIdentityProvider({
   const [error, setError] = useState('')
   const [migrationConflict, setMigrationConflict] =
     useState(false)
+
+  const identityEnabled =
+    !location.pathname.startsWith('/admin') &&
+    location.pathname !== '/screen' &&
+    location.pathname !== '/qr'
 
   const availablePlayers = useMemo<PartyIdentityPlayer[]>(
     () => {
@@ -248,9 +256,18 @@ function PartyIdentityProvider({
   )
 
   useEffect(() => {
-    if (guestsLoading) return
+    if (!identityEnabled) {
+      setLoading(false)
+      return
+    }
+
+    if (guestsLoading) {
+      setLoading(true)
+      return
+    }
 
     let cancelled = false
+    setLoading(true)
 
     const restore = async () => {
       const globalIdentity = parseStoredIdentity(
@@ -312,6 +329,7 @@ function PartyIdentityProvider({
     claimStoredIdentity,
     clearLocalIdentity,
     guestsLoading,
+    identityEnabled,
   ])
 
   const claimIdentity = useCallback(
