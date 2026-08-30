@@ -71,11 +71,15 @@ function DirectorAnnouncementDock() {
     [duration],
   )
 
+  const selectedDurationSeconds = selectedDuration
+    ? selectedDuration.seconds
+    : 15
+
   const broadcast = async () => {
     const ok = await publish({
       message,
       kind,
-      durationSeconds: selectedDuration?.seconds ?? 15,
+      durationSeconds: selectedDurationSeconds,
     })
 
     if (ok) {
@@ -89,7 +93,7 @@ function DirectorAnnouncementDock() {
     await publish({
       message: preset.message,
       kind: preset.kind,
-      durationSeconds: selectedDuration?.seconds ?? 15,
+      durationSeconds: selectedDurationSeconds,
     })
   }
 
