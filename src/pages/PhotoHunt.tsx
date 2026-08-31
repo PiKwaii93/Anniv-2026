@@ -44,6 +44,7 @@ function PhotoHunt() {
   const [sending, setSending] = useState(false)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const realtimeConnectedRef = useRef(false)
 
   const clearPreparedPhoto = useCallback(() => {
     setPreparedPhoto((current) => {
@@ -123,15 +124,20 @@ function PhotoHunt() {
         { event: '*', schema: 'public', table: 'photo_hunt_challenges' },
         () => void loadData(),
       )
-      .subscribe()
+      .subscribe((status) => {
+        realtimeConnectedRef.current = status === 'SUBSCRIBED'
+      })
 
-    const fallback = window.setInterval(() => void loadData(), 15000)
+    const fallback = window.setInterval(() => {
+      if (!realtimeConnectedRef.current) void loadData()
+    }, 30000)
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') void loadData()
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
+      realtimeConnectedRef.current = false
       window.clearInterval(fallback)
       document.removeEventListener('visibilitychange', handleVisibility)
       void supabase.removeChannel(channel)
