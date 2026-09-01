@@ -13,7 +13,7 @@ import { supabase } from '../lib/supabase'
 
 import './ContentManager.css'
 
-type ModuleKey = 'bingo' | 'missions' | 'room' | 'iceberg'
+type ModuleKey = 'bingo' | 'missions' | 'room' | 'iceberg' | 'photos'
 type ImportMode = 'merge' | 'restore'
 type VoteMode = 'likely' | 'majority' | 'predict' | 'who_said'
 type Difficulty = 'easy' | 'medium' | 'hard'
@@ -55,11 +55,22 @@ type IcebergRow = {
   is_published: boolean
 }
 
+type PhotoRow = {
+  id: string
+  prompt: string
+  hint: string | null
+  sort_order: number
+  is_active: boolean
+}
+
+type CurrentRow = BingoRow | MissionRow | RoomRow | IcebergRow | PhotoRow
+
 type CurrentContent = {
   bingo: BingoRow[]
   missions: MissionRow[]
   room: RoomRow[]
   iceberg: IcebergRow[]
+  photos: PhotoRow[]
 }
 
 type BingoPackItem = {
@@ -99,9 +110,17 @@ type IcebergPackItem = {
   isPublished: boolean
 }
 
+type PhotoPackItem = {
+  id?: string
+  prompt: string
+  hint: string | null
+  sortOrder: number
+  isActive: boolean
+}
+
 type ContentPack = {
   schema: 'anniv-2026-content-pack'
-  version: 1
+  version: 1 | 2
   exportedAt?: string
   source?: string
   modules: {
@@ -109,6 +128,7 @@ type ContentPack = {
     missions?: MissionPackItem[]
     room?: RoomPackItem[]
     iceberg?: IcebergPackItem[]
+    photos?: PhotoPackItem[]
   }
 }
 
@@ -139,9 +159,10 @@ const moduleMeta: Record<ModuleKey, { label: string; icon: string; detail: strin
   missions: { label: 'Missions', icon: '⌁', detail: 'Missions secrètes' },
   room: { label: 'La Salle', icon: '◉', detail: 'Questions live' },
   iceberg: { label: 'Iceberg', icon: '◇', detail: 'Dossiers publiés' },
+  photos: { label: 'Photo Hunt', icon: '▣', detail: 'Défis photo' },
 }
 
-const moduleKeys: ModuleKey[] = ['bingo', 'missions', 'room', 'iceberg']
+const moduleKeys: ModuleKey[] = ['bingo', 'missions', 'room', 'iceberg', 'photos']
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function normalizeText(value: string) {
@@ -155,11 +176,12 @@ function naturalKey(module: ModuleKey, item: unknown) {
     const row = item as RoomPackItem
     return `${row.mode}|${normalizeText(row.prompt)}`
   }
+  if (module === 'photos') return normalizeText((item as PhotoPackItem).prompt)
   const row = item as IcebergPackItem
   return `${row.level}|${normalizeText(row.title)}`
 }
 
-function asPackItem(module: ModuleKey, row: BingoRow | MissionRow | RoomRow | IcebergRow) {
+function asPackItem(module: ModuleKey, row: CurrentRow) {
   if (module === 'bingo') {
     const item = row as BingoRow
     return { id: item.id, text: item.text, sortOrder: item.sort_order, isActive: item.is_active } satisfies BingoPackItem
@@ -188,6 +210,16 @@ function asPackItem(module: ModuleKey, row: BingoRow | MissionRow | RoomRow | Ic
       sortOrder: item.sort_order,
       isActive: item.is_active,
     } satisfies RoomPackItem
+  }
+  if (module === 'photos') {
+    const item = row as PhotoRow
+    return {
+      id: item.id,
+      prompt: item.prompt,
+      hint: item.hint,
+      sortOrder: item.sort_order,
+      isActive: item.is_active,
+    } satisfies PhotoPackItem
   }
   const item = row as IcebergRow
   return {
@@ -251,6 +283,17 @@ function validateItem(module: ModuleKey, item: unknown, index: number) {
     if (typeof row.title !== 'string' || !row.title.trim()) errors.push(`${prefix} : titre vide.`)
   }
 
+  if (module === 'photos') {
+    if (typeof row.prompt !== 'string' || row.prompt.trim().length < 3 || row.prompt.trim().length > 240) {
+      errors.push(`${prefix} : défi de 3 à 240 caractères requis.`)
+    }
+    if (row.hint !== null && row.hint !== undefined && typeof row.hint !== 'string') {
+      errors.push(`${prefix} : indice invalide.`)
+    } else if (typeof row.hint === 'string' && row.hint.trim().length > 240) {
+      errors.push(`${prefix} : indice limité à 240 caractères.`)
+    }
+  }
+
   if ('sortOrder' in row && !Number.isInteger(row.sortOrder)) errors.push(`${prefix} : sortOrder doit être entier.`)
   return errors
 }
@@ -260,7 +303,7 @@ function validatePack(raw: unknown): { pack: ContentPack | null; errors: string[
   const pack = raw as Partial<ContentPack>
   const errors: string[] = []
   if (pack.schema !== 'anniv-2026-content-pack') errors.push('Schéma inconnu : anniv-2026-content-pack attendu.')
-  if (pack.version !== 1) errors.push('Version de sauvegarde non supportée : version 1 attendue.')
+  if (pack.version !== 1 && pack.version !== 2) errors.push('Version de sauvegarde non supportée : version 1 ou 2 attendue.')
   if (!pack.modules || typeof pack.modules !== 'object' || Array.isArray(pack.modules)) {
     errors.push('La section modules est absente ou invalide.')
     return { pack: null, errors }
@@ -301,7 +344,7 @@ function validatePack(raw: unknown): { pack: ContentPack | null; errors: string[
 function buildPack(current: CurrentContent): ContentPack {
   return {
     schema: 'anniv-2026-content-pack',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     source: window.location.origin,
     modules: {
@@ -309,6 +352,7 @@ function buildPack(current: CurrentContent): ContentPack {
       missions: current.missions.map((row) => asPackItem('missions', row) as MissionPackItem),
       room: current.room.map((row) => asPackItem('room', row) as RoomPackItem),
       iceberg: current.iceberg.map((row) => asPackItem('iceberg', row) as IcebergPackItem),
+      photos: current.photos.map((row) => asPackItem('photos', row) as PhotoPackItem),
     },
   }
 }
@@ -331,7 +375,13 @@ function csvCell(value: unknown) {
 
 function ContentManager() {
   const fileRef = useRef<HTMLInputElement>(null)
-  const [current, setCurrent] = useState<CurrentContent>({ bingo: [], missions: [], room: [], iceberg: [] })
+  const [current, setCurrent] = useState<CurrentContent>({
+    bingo: [],
+    missions: [],
+    room: [],
+    iceberg: [],
+    photos: [],
+  })
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -340,19 +390,26 @@ function ContentManager() {
   const [fileName, setFileName] = useState('')
   const [parseErrors, setParseErrors] = useState<string[]>([])
   const [mode, setMode] = useState<ImportMode>('merge')
-  const [selected, setSelected] = useState<Record<ModuleKey, boolean>>({ bingo: true, missions: true, room: true, iceberg: true })
+  const [selected, setSelected] = useState<Record<ModuleKey, boolean>>({
+    bingo: true,
+    missions: true,
+    room: true,
+    iceberg: true,
+    photos: true,
+  })
   const [lastSummary, setLastSummary] = useState<ImportSummary | null>(null)
 
   const loadContent = useCallback(async () => {
-    const [bingo, missions, room, iceberg] = await Promise.all([
+    const [bingo, missions, room, iceberg, photos] = await Promise.all([
       supabase.from('bingo_prompts').select('id, text, sort_order, is_active').order('sort_order'),
       supabase.from('secret_mission_prompts').select('id, text, difficulty, sort_order, is_active').order('sort_order'),
       supabase.from('live_vote_questions').select('id, mode, prompt, options, correct_player_key, suspects, reveal_note, timer_seconds, sort_order, is_active').order('sort_order'),
       supabase.from('iceberg_entries').select('id, level, title, description, sort_order, is_published').order('level').order('sort_order'),
+      supabase.from('photo_hunt_challenges').select('id, prompt, hint, sort_order, is_active').order('sort_order').order('created_at'),
     ])
 
-    if (bingo.error || missions.error || room.error || iceberg.error) {
-      console.error('Unable to load content manager:', bingo.error, missions.error, room.error, iceberg.error)
+    if (bingo.error || missions.error || room.error || iceberg.error || photos.error) {
+      console.error('Unable to load content manager:', bingo.error, missions.error, room.error, iceberg.error, photos.error)
       setError('Impossible de charger tout le contenu à sauvegarder.')
     } else {
       setCurrent({
@@ -360,6 +417,7 @@ function ContentManager() {
         missions: (missions.data ?? []) as MissionRow[],
         room: (room.data ?? []) as RoomRow[],
         iceberg: (iceberg.data ?? []) as IcebergRow[],
+        photos: (photos.data ?? []) as PhotoRow[],
       })
       setError('')
     }
@@ -372,7 +430,7 @@ function ContentManager() {
     const result = {} as Record<ModuleKey, PreviewStats>
     moduleKeys.forEach((module) => {
       const incoming = pack?.modules[module] ?? []
-      const existingRows = current[module] as Array<BingoRow | MissionRow | RoomRow | IcebergRow>
+      const existingRows = current[module] as CurrentRow[]
       const existing = existingRows.map((row) => asPackItem(module, row) as Record<string, unknown>)
       const byId = new Map(existing.map((item) => [String(item.id), item]))
       const byNatural = new Map(existing.map((item) => [naturalKey(module, item), item]))
@@ -454,7 +512,7 @@ function ContentManager() {
   }
 
   const exportCsv = (module: ModuleKey) => {
-    const rows = (current[module] as Array<BingoRow | MissionRow | RoomRow | IcebergRow>).map((row) => asPackItem(module, row) as Record<string, unknown>)
+    const rows = (current[module] as CurrentRow[]).map((row) => asPackItem(module, row) as Record<string, unknown>)
     const columns = rows.length ? Object.keys(rows[0]) : ['id']
     const csv = [columns.map(csvCell).join(','), ...rows.map((row) => columns.map((column) => csvCell(row[column])).join(','))].join('\n')
     download(`anniv-2026-${module}.csv`, `\ufeff${csv}`, 'text/csv;charset=utf-8')
@@ -520,7 +578,7 @@ function ContentManager() {
           <div><p className="content-manager__eyebrow">01 · Sauvegarder</p><h2>Exporter le contenu actuel</h2></div>
           <button type="button" className="content-primary" disabled={loading} onClick={exportJson}>↓ Sauvegarde JSON complète</button>
         </div>
-        <p className="content-panel__description">Le JSON conserve les identifiants et tous les champs nécessaires à une restauration. Les CSV sont des copies pratiques pour relecture ou édition externe.</p>
+        <p className="content-panel__description">Le JSON v2 conserve les identifiants et tous les champs nécessaires à une restauration, Photo Hunt compris. Les anciens JSON v1 restent importables. Les CSV sont des copies pratiques pour relecture ou édition externe.</p>
         <div className="content-module-grid">
           {moduleKeys.map((module) => (
             <article className="content-module-card" key={module}>
@@ -537,7 +595,7 @@ function ContentManager() {
         <input ref={fileRef} className="content-file-input" type="file" accept="application/json,.json" onChange={handleFile} />
         <div className="content-dropzone" role="button" tabIndex={0} onDragOver={(event) => event.preventDefault()} onDrop={handleDrop} onClick={() => fileRef.current?.click()} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') fileRef.current?.click() }}>
           <strong>{fileName || 'Dépose un fichier .json ici'}</strong>
-          <span>{pack ? 'Pack valide · prévisualisation prête' : 'ou clique pour choisir une sauvegarde · 2 Mo max'}</span>
+          <span>{pack ? `Pack v${pack.version} valide · prévisualisation prête` : 'ou clique pour choisir une sauvegarde · 2 Mo max'}</span>
         </div>
 
         {parseErrors.length > 0 && (
@@ -590,7 +648,7 @@ function ContentManager() {
             <div className="content-apply">
               <div>
                 <strong>{mode === 'merge' ? 'Fusion transactionnelle' : 'Restauration non destructive'}</strong>
-                <span>{selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} sélectionné{selectedModules.length !== 1 ? 's' : ''}. Aucune donnée de jeu, score ou identité n’est importée.</span>
+                <span>{selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} sélectionné{selectedModules.length !== 1 ? 's' : ''}. Aucune donnée de jeu, score, identité ou photo envoyée n’est importée.</span>
               </div>
               <button type="button" className={mode === 'restore' ? 'content-primary content-primary--danger' : 'content-primary'} disabled={busy || selectedModules.length === 0 || totalErrors > 0} onClick={() => void applyImport()}>{busy ? 'Application…' : mode === 'merge' ? 'Fusionner le pack' : 'Restaurer ce pack'}</button>
             </div>
