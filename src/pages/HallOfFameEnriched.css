@@ -1,0 +1,48 @@
+.hall-podium { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.hall-rankings { grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); }
+.hall-winner--photos::after { background: #ff9ab7; }
+.hall-winner h2 { overflow-wrap: anywhere; }
+.hall-ranking__row strong { white-space: normal; overflow-wrap: anywhere; }
+.hall-photo-stats, .hall-memories { width: 100%; max-width: 1180px; margin: 0 auto 40px; }
+.hall-photo-stats { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px 28px; color: #a6afc0; }
+.hall-photo-stats p { margin: 0; }
+.hall-photo-stats strong { color: #ffb4cc; font-size: 2rem; }
+.hall-photo-stats > span { font-size: .75rem; }
+.hall-memories { margin-top: 42px; }
+.hall-memories > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 20px; }
+.hall-memories h2 { margin: 8px 0 0; font-size: clamp(1.7rem, 4vw, 3rem); letter-spacing: -.04em; }
+.hall-memories a { color: #ffb4cc; font-size: .8rem; }
+.hall-memories__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.hall-memories figure { margin: 0; overflow: hidden; border-radius: 18px; background: #12151d; border: 1px solid #ffffff12; }
+.hall-memories__image { display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #171a23; color: #9ba4b6; }
+.hall-memories figcaption { padding: 14px; font-size: .8rem; overflow-wrap: anywhere; }
+.hall-memories figcaption p { margin: 6px 0 0; color: #a0a9ba; line-height: 1.5; }
+.hall-screen--enriched .hall-screen__layout { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(24px, 4vw, 64px); min-height: calc(100dvh - 150px); }
+.hall-screen--enriched .hall-screen__hero h1 { font-size: clamp(4rem, 9vw, 10rem); }
+.hall-screen--enriched .hall-screen__champion strong { font-size: clamp(1.6rem, 3vw, 3.8rem); overflow-wrap: anywhere; }
+.hall-screen__slide { min-height: min(48vh, 480px); animation: hall-reveal .45s ease both; }
+.hall-screen__slide h2 { margin: 0 0 18px; color: #bac6e7; font-size: clamp(1rem, 1.6vw, 2rem); letter-spacing: -.02em; }
+.hall-screen__awards > p { color: #9aa8ca; font-size: .9rem; }
+.hall-screen__awards article { padding: 12px 0; border-bottom: 1px solid #ffffff14; }
+.hall-screen__awards strong { display: block; font-size: clamp(1.4rem, 2.8vw, 3.4rem); line-height: 1.05; overflow-wrap: anywhere; letter-spacing: -.04em; }
+.hall-screen__awards article span { display: block; margin-top: 6px; color: #b6bfcf; font-size: clamp(.8rem, 1vw, 1.2rem); }
+.hall-screen__memories { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hall-screen__memories figure { position: relative; margin: 0; border-radius: 14px; overflow: hidden; background: #171a23; }
+.hall-screen__memories figure > img, .hall-screen__memories figure > div { display: grid; place-items: center; width: 100%; height: clamp(100px, 19vh, 230px); object-fit: cover; }
+.hall-screen__memories figcaption { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 12px 10px; background: linear-gradient(transparent, #000c); overflow-wrap: anywhere; font-weight: 700; }
+.hall-screen--enriched .hall-screen__stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hall-screen--enriched .hall-screen__stats article { min-height: 110px; }
+.hall-screen__controls { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 16px; color: #a5b4d7; font-size: .75rem; }
+.hall-screen__controls button { min-width: 44px; min-height: 36px; border: 1px solid #ffffff24; border-radius: 9px; background: #ffffff08; color: #e0e6f4; cursor: pointer; }
+.hall-screen__controls button:focus-visible { outline: 2px solid #a8b9ff; outline-offset: 3px; }
+.hall-screen__error { color: #ffbdc8; font-size: .8rem; }
+@keyframes hall-reveal { from { opacity: .3; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 700px) {
+  .hall-memories__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hall-screen--enriched .hall-screen__layout { grid-template-columns: 1fr; }
+  .hall-screen__slide { min-height: 0; }
+  .hall-screen--enriched .hall-screen__stats { grid-template-columns: 1fr 1fr; }
+  .hall-screen__topline { flex-wrap: wrap; }
+}
+@media (max-width: 380px) { .hall-memories__grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .hall-screen__slide { animation: none; } }

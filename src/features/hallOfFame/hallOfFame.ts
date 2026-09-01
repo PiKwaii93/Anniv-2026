@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { summarizeHallPhotos, type HallPhoto, type HallPhotoSummary } from './highlights'
 
 export type HallRankingRow = {
   name: string
@@ -37,6 +38,8 @@ export type HallPopularRound = {
 }
 
 export type HallOfFameData = {
+  photos: HallPhotoSummary | null
+  photoError?: string
   participants: number
   beerPong: HallBeerPongState
   missions: {
@@ -62,6 +65,7 @@ export type HallBeerPongSummary = {
 }
 
 export const emptyHallOfFame: HallOfFameData = {
+  photos: null,
   participants: 0,
   beerPong: {},
   missions: {
@@ -79,14 +83,37 @@ export const emptyHallOfFame: HallOfFameData = {
   },
 }
 
-export async function fetchHallOfFame(): Promise<HallOfFameData> {
-  const { data, error } = await supabase.rpc('get_party_hall_of_fame')
+async function fetchHallPhotos(): Promise<HallPhotoSummary> {
+  const rows: HallPhoto[] = []
+  const pageSize = 500
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from('photo_hunt_submissions')
+      .select('id, player_key, player_name, storage_path, caption, status')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1)
+    if (error) throw error
+    rows.push(...(data ?? []))
+    if ((data?.length ?? 0) < pageSize) break
+  }
+  return summarizeHallPhotos(rows)
+}
+
+export async function fetchHallOfFame(includePhotos = true): Promise<HallOfFameData> {
+  const [{ data, error }, photoResult] = await Promise.all([
+    supabase.rpc('get_party_hall_of_fame'),
+    includePhotos
+      ? fetchHallPhotos().then((photos) => ({ photos, photoError: '' }))
+        .catch(() => ({ photos: null, photoError: 'Les souvenirs Photo Hunt n’ont pas pu être synchronisés.' }))
+      : Promise.resolve({ photos: null, photoError: '' }),
+  ])
 
   if (error) {
     throw error
   }
 
-  return (data ?? emptyHallOfFame) as HallOfFameData
+  return { ...(data ?? emptyHallOfFame), ...photoResult } as HallOfFameData
 }
 
 export function getBeerPongHallSummary(
