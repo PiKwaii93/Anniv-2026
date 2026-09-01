@@ -25,6 +25,7 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './PhotoHunt.css'
+import './PhotoHuntPolish.css'
 
 type PreparedPhoto = CompressedPhoto & {
   previewUrl: string
@@ -37,6 +38,7 @@ function PhotoHunt() {
   const [gallery, setGallery] = useState<PhotoHuntSubmission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [selectedChallenge, setSelectedChallenge] = useState<PhotoHuntChallenge | null>(null)
   const [preparedPhoto, setPreparedPhoto] = useState<PreparedPhoto | null>(null)
   const [caption, setCaption] = useState('')
@@ -148,6 +150,12 @@ function PhotoHunt() {
     if (preparedPhoto?.previewUrl) URL.revokeObjectURL(preparedPhoto.previewUrl)
   }, [preparedPhoto])
 
+  useEffect(() => {
+    if (!success) return
+    const timeout = window.setTimeout(() => setSuccess(''), 7000)
+    return () => window.clearTimeout(timeout)
+  }, [success])
+
   const submissionByChallenge = useMemo(
     () => new Map(ownSubmissions.map((submission) => [submission.challengeId, submission])),
     [ownSubmissions],
@@ -168,6 +176,7 @@ function PhotoHunt() {
 
   const approvedCount = ownSubmissions.filter((submission) => submission.status === 'approved').length
   const pendingCount = ownSubmissions.filter((submission) => submission.status === 'pending').length
+  const rejectedCount = ownSubmissions.filter((submission) => submission.status === 'rejected').length
   const challengeById = useMemo(
     () => new Map(challenges.map((challenge) => [challenge.id, challenge])),
     [challenges],
@@ -179,6 +188,7 @@ function PhotoHunt() {
     clearPreparedPhoto()
     setCaption('')
     setError('')
+    setSuccess('')
     setSelectedChallenge(challenge)
   }
 
@@ -219,8 +229,10 @@ function PhotoHunt() {
   const sendPhoto = async () => {
     if (!identity || !selectedChallenge || !preparedPhoto || sending) return
 
+    const challengeName = selectedChallenge.prompt
     setSending(true)
     setError('')
+    setSuccess('')
 
     try {
       const { data: slotData, error: slotError } = await supabase.rpc(
@@ -275,6 +287,7 @@ function PhotoHunt() {
       clearPreparedPhoto()
       setCaption('')
       setSelectedChallenge(null)
+      setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est privée jusqu’à validation par la régie.`)
       await loadData()
     } catch (uploadError) {
       console.error('Unable to submit Photo Hunt image:', uploadError)
@@ -312,7 +325,42 @@ function PhotoHunt() {
         </div>
       </header>
 
+      {success && (
+        <div className="photo-hunt__success" role="status">
+          <span>✓</span>
+          <div>
+            <strong>Bien reçu par la régie</strong>
+            <p>{success}</p>
+          </div>
+        </div>
+      )}
+
       {error && <div className="photo-hunt__error">{error}</div>}
+
+      {(pendingCount > 0 || rejectedCount > 0) && (
+        <section className="photo-hunt__status-panel" aria-label="État de tes photos">
+          <div>
+            <p>Mes envois</p>
+            <h2>Où en sont tes photos ?</h2>
+          </div>
+          <div className="photo-hunt__status-cards">
+            {pendingCount > 0 && (
+              <div className="photo-hunt__status-card photo-hunt__status-card--pending">
+                <strong>{pendingCount}</strong>
+                <span>en validation</span>
+                <p>La photo reste privée. Dès qu’elle est publiée, elle rejoint automatiquement le mur.</p>
+              </div>
+            )}
+            {rejectedCount > 0 && (
+              <div className="photo-hunt__status-card photo-hunt__status-card--rejected">
+                <strong>{rejectedCount}</strong>
+                <span>à refaire</span>
+                <p>Tu peux retenter ces défis avec une nouvelle photo. Rien n’est bloqué.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {spotlight.length > 0 && (
         <section className="photo-hunt__section">
@@ -357,11 +405,11 @@ function PhotoHunt() {
             const status = submission?.status
             const label =
               status === 'approved'
-                ? 'Validée ✓'
+                ? 'Publiée ✓'
                 : status === 'pending'
-                  ? 'En validation'
+                  ? 'En validation · privée'
                   : status === 'rejected'
-                    ? 'À refaire'
+                    ? 'Refusée · retente'
                     : 'Disponible'
 
             return (
