@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 
 import App from './App'
+import { applyDayJLocalReset } from './dayJReset'
 
 import { AnnouncementProvider } from './features/announcements/AnnouncementContext'
 import { AuthProvider } from './features/auth/AuthContext'
@@ -16,6 +17,8 @@ import './BingoGlobal.css'
 import './MissionGlobal.css'
 import './LiveVoteGlobal.css'
 import './PartyMotion.css'
+
+applyDayJLocalReset()
 
 createRoot(
   document.getElementById('root')!,
