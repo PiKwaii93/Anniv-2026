@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -170,6 +171,12 @@ function PartyIdentityProvider({
     [availablePlayers],
   )
 
+  // Guest synchronization replaces its array periodically. Keep the current
+  // lookup in a ref so that this does not recreate the identity-restore
+  // callback and briefly remount every public route.
+  const playerByKeyRef = useRef(playerByKey)
+  playerByKeyRef.current = playerByKey
+
   const seedModuleStorage = useCallback(
     (stored: StoredIdentity) => {
       const serialized = JSON.stringify(stored)
@@ -200,7 +207,7 @@ function PartyIdentityProvider({
       stored: StoredIdentity,
       quiet = false,
     ) => {
-      const player = playerByKey.get(stored.playerKey)
+      const player = playerByKeyRef.current.get(stored.playerKey)
 
       if (!player) {
         if (!quiet) {
@@ -252,7 +259,7 @@ function PartyIdentityProvider({
       setError('')
       return true
     },
-    [playerByKey, seedModuleStorage],
+    [seedModuleStorage],
   )
 
   useEffect(() => {
@@ -336,7 +343,7 @@ function PartyIdentityProvider({
     async (playerKey: string) => {
       if (busy) return false
 
-      const player = playerByKey.get(playerKey)
+      const player = playerByKeyRef.current.get(playerKey)
       if (!player) {
         setError('Choisis une personne dans la liste.')
         return false
@@ -365,7 +372,7 @@ function PartyIdentityProvider({
       setBusy(false)
       return ok
     },
-    [busy, claimStoredIdentity, playerByKey],
+    [busy, claimStoredIdentity],
   )
 
   const releaseIdentity = useCallback(async () => {
