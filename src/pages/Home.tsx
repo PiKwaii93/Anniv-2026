@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
+import HomeIdentityOnboarding from '../features/identity/HomeIdentityOnboarding'
+import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import {
   isPartyModuleVisible,
   type PartyPhase,
@@ -61,6 +63,14 @@ type PublicModuleDefinition = {
   tag: string
   path: string
   className: string
+}
+
+type PersonalAction = {
+  key: string
+  eyebrow: string
+  title: string
+  detail: string
+  path: string
 }
 
 const publicModules: PublicModuleDefinition[] = [
@@ -149,6 +159,7 @@ const emptyStats: HomeStats = {
 
 function Home() {
   const { isAdmin } = useAuth()
+  const { identity } = usePartyIdentity()
   const { guests } = useGuests()
   const { settings, loading: partyLoading } = useParty()
   const [stats, setStats] = useState<HomeStats>(emptyStats)
@@ -275,98 +286,199 @@ function Home() {
       })
   }, [isAdmin, settings])
 
+  const personalActions = useMemo<PersonalAction[]>(() => {
+    if (!identity || isAdmin) return []
+
+    const actions: PersonalAction[] = []
+    const featured = visibleModules.find(
+      (module) => module.key === String(settings.featuredModule),
+    )
+
+    if (featured) {
+      actions.push({
+        key: `featured-${featured.key}`,
+        eyebrow: 'Maintenant',
+        title: featured.title,
+        detail: 'C’est ce qui se passe en ce moment.',
+        path: featured.path,
+      })
+    }
+
+    if (
+      settings.missionsVisible &&
+      featured?.key !== 'missions'
+    ) {
+      actions.push({
+        key: 'missions',
+        eyebrow: 'Pour toi',
+        title: 'Ta mission secrète',
+        detail: 'Récupère ton objectif sans te faire griller.',
+        path: '/missions',
+      })
+    }
+
+    if (
+      settings.bingoVisible &&
+      featured?.key !== 'bingo'
+    ) {
+      actions.push({
+        key: 'bingo',
+        eyebrow: 'Toute la soirée',
+        title: 'Ton Bingo',
+        detail: 'Observe, coche et tente le carton plein.',
+        path: '/bingo',
+      })
+    }
+
+    if (
+      actions.length < 3 &&
+      settings.photosVisible &&
+      featured?.key !== 'photos'
+    ) {
+      actions.push({
+        key: 'photos',
+        eyebrow: 'Souvenirs',
+        title: 'Photo Hunt',
+        detail: 'Choisis un défi et envoie ta meilleure photo.',
+        path: '/photos',
+      })
+    }
+
+    return actions.slice(0, 3)
+  }, [identity, isAdmin, settings, visibleModules])
+
   const phase = phaseCopy[settings.phase]
   const showHallOfFame = settings.phase === 'ended' || isAdmin
+  const knownGuest = Boolean(identity && !isAdmin)
 
   return (
-    <main className="home">
-      <div className="home__glow home__glow--one" />
-      <div className="home__glow home__glow--two" />
+    <>
+      <HomeIdentityOnboarding />
 
-      <section className="hero">
-        <p className="hero__eyebrow">2026</p>
-        <h1 className="hero__title">ANNIV<span>2026</span></h1>
-        <p className="hero__description">Bienvenue sur l&apos;application officielle de la soirée.</p>
-      </section>
+      <main className={knownGuest ? 'home home--personalized' : 'home'}>
+        <div className="home__glow home__glow--one" />
+        <div className="home__glow home__glow--two" />
 
-      <section className={`home-party-state home-party-state--${settings.phase}`} aria-label="État de la soirée">
-        <div className="home-party-state__status">
-          <span className="home-party-state__dot" />
-          <span>État de la soirée</span>
-        </div>
-        <strong>{partyLoading ? 'Synchronisation...' : phase.label}</strong>
-        <p>{phase.detail}</p>
-      </section>
+        <section className="hero">
+          <p className="hero__eyebrow">
+            {knownGuest ? `Salut ${identity?.playerName}` : '2026'}
+          </p>
+          <h1 className="hero__title">ANNIV<span>2026</span></h1>
+          <p className="hero__description">
+            {knownGuest
+              ? 'Ton QG pour jouer, suivre le live et retrouver ce qui te concerne pendant la soirée.'
+              : 'Bienvenue sur l’application officielle de la soirée.'}
+          </p>
+        </section>
 
-      <section className="modules" aria-label="Modules">
-        {showHallOfFame && (
-          <Link
-            to="/hall-of-fame"
-            className={`module-card module-card--hall${settings.phase === 'ended' ? ' module-card--hall-live' : ''}`}
-          >
-            <div className="module-card__top">
-              <span className="module-card__tag">
-                {settings.phase === 'ended' ? 'Palmarès final' : 'Aperçu admin'}
-              </span>
-              <span className="module-card__arrow">↗</span>
-            </div>
-            <div>
-              <span className="module-card__featured-pill">
-                Hall of Fame
-              </span>
-              <h2>Les gagnants de la soirée</h2>
-              <p>Champions Beer Pong, agents, mentalistes et grands chiffres.</p>
-              <span className="module-card__status">
-                {settings.phase === 'ended'
-                  ? 'Le palmarès est ouvert à tout le monde'
-                  : 'Données provisoires · visible uniquement par l’admin'}
+        {knownGuest && (
+          <section className="home-personal-hub" aria-label={`Espace de ${identity?.playerName}`}>
+            <div className="home-personal-hub__heading">
+              <div>
+                <span>Ton espace</span>
+                <h2>Qu’est-ce qu’on fait ?</h2>
+              </div>
+              <span className="home-personal-hub__identity">
+                {identity?.playerName.slice(0, 1).toUpperCase()}
               </span>
             </div>
-          </Link>
+
+            <div className="home-personal-hub__actions">
+              {personalActions.map((action) => (
+                <Link
+                  key={action.key}
+                  to={action.path}
+                  className="home-personal-action"
+                >
+                  <small>{action.eyebrow}</small>
+                  <strong>{action.title}</strong>
+                  <span>{action.detail}</span>
+                  <b>→</b>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
-        {visibleModules.map((module) => {
-          const featured = module.key === settings.featuredModule
-          const visible = isPartyModuleVisible(settings, module.key)
-          return (
+        <section className={`home-party-state home-party-state--${settings.phase}`} aria-label="État de la soirée">
+          <div className="home-party-state__status">
+            <span className="home-party-state__dot" />
+            <span>État de la soirée</span>
+          </div>
+          <strong>{partyLoading ? 'Synchronisation...' : phase.label}</strong>
+          <p>{phase.detail}</p>
+        </section>
+
+        <section className="modules" aria-label="Modules">
+          {showHallOfFame && (
             <Link
-              key={module.path}
-              to={module.path}
-              className={`module-card ${module.className}${featured ? ' module-card--featured' : ''}${!visible ? ' module-card--public-hidden' : ''}`}
+              to="/hall-of-fame"
+              className={`module-card module-card--hall${settings.phase === 'ended' ? ' module-card--hall-live' : ''}`}
             >
               <div className="module-card__top">
                 <span className="module-card__tag">
-                  {!visible && isAdmin ? 'Masqué public' : featured ? 'À la une' : module.tag}
+                  {settings.phase === 'ended' ? 'Palmarès final' : 'Aperçu admin'}
                 </span>
                 <span className="module-card__arrow">↗</span>
               </div>
               <div>
-                {featured && <span className="module-card__featured-pill">Maintenant</span>}
-                <h2>{module.title}</h2>
-                <p>{module.subtitle}</p>
-                <span className="module-card__status">{moduleStatus(module.key)}</span>
+                <span className="module-card__featured-pill">
+                  Hall of Fame
+                </span>
+                <h2>Les gagnants de la soirée</h2>
+                <p>Champions Beer Pong, agents, mentalistes et grands chiffres.</p>
+                <span className="module-card__status">
+                  {settings.phase === 'ended'
+                    ? 'Le palmarès est ouvert à tout le monde'
+                    : 'Données provisoires · visible uniquement par l’admin'}
+                </span>
               </div>
             </Link>
-          )
-        })}
+          )}
 
-        <Link to="/admin" className="module-card module-card--admin">
-          <div className="module-card__top">
-            <span className="module-card__tag">Privé</span>
-            <span className="module-card__arrow">↗</span>
-          </div>
-          <div>
-            <h2>Admin</h2>
-            <p>Gestion de la soirée</p>
-            <span className="module-card__status">Control Room</span>
-          </div>
-        </Link>
-      </section>
+          {visibleModules.map((module) => {
+            const featured = module.key === settings.featuredModule
+            const visible = isPartyModuleVisible(settings, module.key)
+            return (
+              <Link
+                key={module.path}
+                to={module.path}
+                className={`module-card ${module.className}${featured ? ' module-card--featured' : ''}${!visible ? ' module-card--public-hidden' : ''}`}
+              >
+                <div className="module-card__top">
+                  <span className="module-card__tag">
+                    {!visible && isAdmin ? 'Masqué public' : featured ? 'À la une' : module.tag}
+                  </span>
+                  <span className="module-card__arrow">↗</span>
+                </div>
+                <div>
+                  {featured && <span className="module-card__featured-pill">Maintenant</span>}
+                  <h2>{module.title}</h2>
+                  <p>{module.subtitle}</p>
+                  <span className="module-card__status">{moduleStatus(module.key)}</span>
+                </div>
+              </Link>
+            )
+          })}
 
-      <footer className="home__footer">
-        <span>Birthday App</span><span>•</span><span>2026</span>
-      </footer>
-    </main>
+          <Link to="/admin" className="module-card module-card--admin">
+            <div className="module-card__top">
+              <span className="module-card__tag">Privé</span>
+              <span className="module-card__arrow">↗</span>
+            </div>
+            <div>
+              <h2>Admin</h2>
+              <p>Gestion de la soirée</p>
+              <span className="module-card__status">Control Room</span>
+            </div>
+          </Link>
+        </section>
+
+        <footer className="home__footer">
+          <span>Birthday App</span><span>•</span><span>2026</span>
+        </footer>
+      </main>
+    </>
   )
 }
 
