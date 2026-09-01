@@ -13,6 +13,7 @@
 
 .photo-hunt-admin__hero,
 .photo-hunt-admin__metrics,
+.photo-hunt-admin__contributors,
 .photo-hunt-admin__panel,
 .photo-hunt-admin__error {
   width: min(1220px, 100%);
@@ -54,9 +55,11 @@
 .photo-hunt-admin__hero-actions button,
 .photo-hunt-admin__csv,
 .photo-hunt-admin__filter,
+.photo-hunt-admin__batch-bar button,
 .photo-hunt-admin__submission-actions button,
 .photo-hunt-admin__challenge-actions button,
-.photo-hunt-admin__new-challenge button {
+.photo-hunt-admin__new-challenge button,
+.photo-hunt-admin__select {
   color: #dce1e9;
   background: rgba(255, 255, 255, 0.028);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -103,6 +106,96 @@
   font-weight: 750;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.photo-hunt-admin__contributors {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 12px;
+  padding: 15px;
+  background: linear-gradient(135deg, rgba(255, 137, 170, 0.045), rgba(255, 255, 255, 0.018));
+  border: 1px solid rgba(255, 145, 176, 0.11);
+  border-radius: 16px;
+}
+
+.photo-hunt-admin__contributors-heading {
+  align-self: center;
+}
+
+.photo-hunt-admin__contributors-heading span,
+.photo-hunt-admin__contributors-heading strong,
+.photo-hunt-admin__contributors-heading small {
+  display: block;
+}
+
+.photo-hunt-admin__contributors-heading span {
+  color: #b77b8d;
+  font-size: 0.54rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.photo-hunt-admin__contributors-heading strong {
+  margin-top: 4px;
+  font-size: 0.82rem;
+}
+
+.photo-hunt-admin__contributors-heading small {
+  margin-top: 5px;
+  max-width: 250px;
+  color: #68717f;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.photo-hunt-admin__contributors-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.photo-hunt-admin__contributors-list > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 11px;
+}
+
+.photo-hunt-admin__contributor-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  color: #2a1018;
+  background: #ffadc5;
+  border-radius: 9px;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.photo-hunt-admin__contributors-list strong,
+.photo-hunt-admin__contributors-list span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-hunt-admin__contributors-list strong {
+  font-size: 0.67rem;
+}
+
+.photo-hunt-admin__contributors-list div > div > span {
+  margin-top: 2px;
+  color: #68717f;
+  font-size: 0.54rem;
 }
 
 .photo-hunt-admin__error {
@@ -167,6 +260,43 @@
   border-color: #ffabc3;
 }
 
+.photo-hunt-admin__batch-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin: -2px 0 14px;
+  padding: 10px;
+  background: rgba(255, 184, 204, 0.035);
+  border: 1px solid rgba(255, 166, 192, 0.13);
+  border-radius: 13px;
+}
+
+.photo-hunt-admin__batch-bar > button,
+.photo-hunt-admin__batch-bar > div button {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.photo-hunt-admin__batch-bar > span {
+  color: #7e8793;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.photo-hunt-admin__batch-bar > div {
+  display: flex;
+  gap: 6px;
+}
+
+.photo-hunt-admin__batch-bar .photo-hunt-admin__batch-approve {
+  color: #baf0d3;
+  border-color: rgba(74, 209, 151, 0.22);
+  background: rgba(74, 209, 151, 0.06);
+}
+
 .photo-hunt-admin__moderation-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -174,12 +304,14 @@
 }
 
 .photo-hunt-admin__submission {
+  position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background: #090c11;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 16px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .photo-hunt-admin__submission--pending {
@@ -192,6 +324,35 @@
 
 .photo-hunt-admin__submission--rejected {
   opacity: 0.72;
+}
+
+.photo-hunt-admin__submission--selected {
+  border-color: rgba(255, 166, 192, 0.55);
+  box-shadow: 0 0 0 2px rgba(255, 153, 184, 0.12);
+  transform: translateY(-1px);
+}
+
+.photo-hunt-admin__select {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #fff;
+  background: rgba(5, 7, 10, 0.86);
+  backdrop-filter: blur(12px);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.photo-hunt-admin__select[aria-pressed='true'] {
+  color: #250c15;
+  background: #ffadc5;
+  border-color: #ffadc5;
 }
 
 .photo-hunt-admin__submission-image {
@@ -404,6 +565,14 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .photo-hunt-admin__contributors {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-hunt-admin__contributors-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .photo-hunt-admin__new-challenge {
     grid-template-columns: 1fr 1fr;
   }
@@ -420,7 +589,8 @@ button:disabled {
   }
 
   .photo-hunt-admin__metrics,
-  .photo-hunt-admin__moderation-grid {
+  .photo-hunt-admin__moderation-grid,
+  .photo-hunt-admin__contributors-list {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -431,6 +601,15 @@ button:disabled {
 
   .photo-hunt-admin__filters {
     justify-content: flex-start;
+  }
+
+  .photo-hunt-admin__batch-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-hunt-admin__batch-bar > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .photo-hunt-admin__new-challenge {
@@ -444,5 +623,14 @@ button:disabled {
   .photo-hunt-admin__challenge-actions {
     grid-column: 1 / -1;
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .photo-hunt-admin__contributors-list,
+  .photo-hunt-admin__metrics,
+  .photo-hunt-admin__moderation-grid,
+  .photo-hunt-admin__batch-bar > div {
+    grid-template-columns: 1fr;
   }
 }
