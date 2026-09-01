@@ -70,10 +70,27 @@ type MissionPromptRow = {
   is_active: boolean
 }
 
+type PhotoHuntChallengeRow = {
+  id: string
+  is_active: boolean
+}
+
+type PhotoHuntSubmissionStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+
+type PhotoHuntSubmissionRow = {
+  id: string
+  status: PhotoHuntSubmissionStatus
+}
+
 type RpcResult = {
   ok: boolean
   code?: string
 }
+
+type DirectorModule = PartyModule | 'photos'
 
 const phaseOptions: Array<{
   value: PartyPhase
@@ -85,7 +102,7 @@ const phaseOptions: Array<{
 ]
 
 const moduleOptions: Array<{
-  value: PartyModule
+  value: DirectorModule
   label: string
   shortLabel: string
   href: string
@@ -121,6 +138,12 @@ const moduleOptions: Array<{
     href: '/iceberg',
   },
   {
+    value: 'photos',
+    label: 'Photo Hunt',
+    shortLabel: 'Photos',
+    href: '/photos',
+  },
+  {
     value: 'guests',
     label: 'Invités',
     shortLabel: 'Invités',
@@ -136,7 +159,7 @@ const roomModeCopy: Record<RoomMode, string> = {
 }
 
 function visibilityPatch(
-  module: PartyModule,
+  module: DirectorModule,
   visible: boolean,
 ): Partial<PartySettings> {
   switch (module) {
@@ -150,6 +173,8 @@ function visibilityPatch(
       return { missionsVisible: visible }
     case 'room':
       return { roomVisible: visible }
+    case 'photos':
+      return { photosVisible: visible }
     case 'guests':
       return { guestsVisible: visible }
   }
@@ -188,6 +213,10 @@ function DirectorMode() {
     useState<MissionScoreRow[]>([])
   const [missionPromptCount, setMissionPromptCount] =
     useState(0)
+  const [photoChallenges, setPhotoChallenges] =
+    useState<PhotoHuntChallengeRow[]>([])
+  const [photoSubmissions, setPhotoSubmissions] =
+    useState<PhotoHuntSubmissionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busyAction, setBusyAction] =
@@ -212,6 +241,8 @@ function DirectorMode() {
       roomPlayerResult,
       missionScoreResult,
       missionPromptResult,
+      photoChallengeResult,
+      photoSubmissionResult,
     ] = await Promise.all([
       supabase
         .from('beer_pong_state')
@@ -232,6 +263,12 @@ function DirectorMode() {
       supabase
         .from('secret_mission_prompts')
         .select('id, is_active'),
+      supabase
+        .from('photo_hunt_challenges')
+        .select('id, is_active'),
+      supabase
+        .from('photo_hunt_submissions')
+        .select('id, status'),
     ])
 
     let hasError = false
@@ -296,6 +333,30 @@ function DirectorMode() {
       )
     }
 
+    if (photoChallengeResult.error) {
+      console.error(
+        'Unable to load Director Photo Hunt challenges:',
+        photoChallengeResult.error,
+      )
+      hasError = true
+    } else {
+      setPhotoChallenges(
+        (photoChallengeResult.data ?? []) as PhotoHuntChallengeRow[],
+      )
+    }
+
+    if (photoSubmissionResult.error) {
+      console.error(
+        'Unable to load Director Photo Hunt submissions:',
+        photoSubmissionResult.error,
+      )
+      hasError = true
+    } else {
+      setPhotoSubmissions(
+        (photoSubmissionResult.data ?? []) as PhotoHuntSubmissionRow[],
+      )
+    }
+
     setError(
       hasError
         ? 'Certaines données live n’ont pas pu être synchronisées.'
@@ -337,6 +398,24 @@ function DirectorMode() {
           event: '*',
           schema: 'public',
           table: 'secret_mission_scoreboard',
+        },
+        () => void loadLiveData(),
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'photo_hunt_submissions',
+        },
+        () => void loadLiveData(),
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'photo_hunt_challenges',
         },
         () => void loadLiveData(),
       )
@@ -459,8 +538,20 @@ function DirectorMode() {
     0,
   )
 
+  const activePhotoChallengeCount = photoChallenges.filter(
+    (challenge) => challenge.is_active,
+  ).length
+  const pendingPhotoCount = photoSubmissions.filter(
+    (submission) => submission.status === 'pending',
+  ).length
+  const approvedPhotoCount = photoSubmissions.filter(
+    (submission) => submission.status === 'approved',
+  ).length
+  const photoHuntFeatured =
+    (settings.featuredModule as string | null) === 'photos'
+
   const currentFeatured = moduleOptions.find(
-    (module) => module.value === settings.featuredModule,
+    (module) => module.value === (settings.featuredModule as string | null),
   )
 
   const runRoomRpc = async (name: string) => {
@@ -494,9 +585,9 @@ function DirectorMode() {
     await loadLiveData()
   }
 
-  const featureModule = async (module: PartyModule) => {
+  const featureModule = async (module: DirectorModule) => {
     const patch: Partial<PartySettings> = {
-      featuredModule: module,
+      featuredModule: module as PartyModule,
     }
 
     if (!isPartyModuleVisible(settings, module)) {
@@ -509,7 +600,7 @@ function DirectorMode() {
     await updateSettings(patch)
   }
 
-  const toggleModule = async (module: PartyModule) => {
+  const toggleModule = async (module: DirectorModule) => {
     const currentlyVisible =
       isPartyModuleVisible(settings, module)
 
@@ -519,7 +610,7 @@ function DirectorMode() {
 
     if (
       currentlyVisible &&
-      settings.featuredModule === module
+      (settings.featuredModule as string | null) === module
     ) {
       patch.featuredModule = null
     }
@@ -583,7 +674,7 @@ function DirectorMode() {
             </h1>
             <p className="director-header__description">
               Les commandes qui comptent pendant la soirée,
-              sans naviguer entre six pages d’administration.
+              sans naviguer entre les pages d’administration.
             </p>
           </div>
 
@@ -678,7 +769,7 @@ function DirectorMode() {
         <div className="director-featured__modules">
           {moduleOptions.map((module) => {
             const active =
-              settings.featuredModule === module.value
+              (settings.featuredModule as string | null) === module.value
             return (
               <button
                 key={module.value}
@@ -918,6 +1009,68 @@ function DirectorMode() {
           </div>
         </article>
 
+        <article className="director-panel">
+          <div className="director-panel__top">
+            <div>
+              <p className="director-eyebrow">Chasse photo</p>
+              <h2>Photo Hunt</h2>
+            </div>
+            <span
+              className={
+                pendingPhotoCount > 0
+                  ? 'director-status director-status--live'
+                  : 'director-status director-status--ready'
+              }
+            >
+              {pendingPhotoCount > 0
+                ? `${pendingPhotoCount} à valider`
+                : `${approvedPhotoCount} publiée${approvedPhotoCount !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          <div className="director-stat-grid">
+            <div>
+              <strong>{activePhotoChallengeCount}</strong>
+              <span>défis actifs</span>
+            </div>
+            <div>
+              <strong>{pendingPhotoCount}</strong>
+              <span>à valider</span>
+            </div>
+            <div>
+              <strong>{approvedPhotoCount}</strong>
+              <span>publiées</span>
+            </div>
+          </div>
+
+          <p className="director-panel__note">
+            {pendingPhotoCount > 0
+              ? `${pendingPhotoCount} photo${pendingPhotoCount !== 1 ? 's' : ''} attend${pendingPhotoCount !== 1 ? 'ent' : ''} la régie.`
+              : approvedPhotoCount > 0
+                ? `${approvedPhotoCount} photo${approvedPhotoCount !== 1 ? 's' : ''} sur le mur collectif.`
+                : 'Aucune photo publiée pour le moment.'}
+          </p>
+
+          <div className="director-panel__footer">
+            <button
+              type="button"
+              className={
+                photoHuntFeatured
+                  ? 'director-feature director-feature--active'
+                  : 'director-feature'
+              }
+              disabled={partySaving}
+              onClick={() => void featureModule('photos')}
+            >
+              {photoHuntFeatured
+                ? '✓ À la une'
+                : 'Mettre à la une'}
+            </button>
+            <Link to="/admin/photos">Modérer ↗</Link>
+            <Link to="/photos">Vue publique ↗</Link>
+          </div>
+        </article>
+
         <article className="director-panel director-panel--public">
           <div className="director-panel__top">
             <div>
@@ -984,6 +1137,14 @@ function DirectorMode() {
               <strong>{missionCompleted}</strong>
             </div>
             <div>
+              <span>Photos publiées</span>
+              <strong>{approvedPhotoCount}</strong>
+            </div>
+            <div>
+              <span>Photos à valider</span>
+              <strong>{pendingPhotoCount}</strong>
+            </div>
+            <div>
               <span>Dernière synchro</span>
               <strong>
                 {lastSync
@@ -1031,6 +1192,13 @@ function DirectorMode() {
           <div>
             <small>Contenu</small>
             <strong>Gérer les missions</strong>
+          </div>
+        </Link>
+        <Link to="/admin/photos" className="director-shortcut">
+          <span>▣</span>
+          <div>
+            <small>Photo Hunt</small>
+            <strong>Modérer les photos</strong>
           </div>
         </Link>
         <Link to="/admin" className="director-shortcut">
