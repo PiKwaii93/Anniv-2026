@@ -1,0 +1,148 @@
+.photo-hunt__success,
+.photo-hunt__status-panel {
+  width: min(1160px, 100%);
+  margin-inline: auto;
+}
+
+.photo-hunt__success {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  color: #d9f8e9;
+  background: rgba(58, 202, 139, 0.075);
+  border: 1px solid rgba(74, 219, 157, 0.2);
+  border-radius: 15px;
+  box-shadow: 0 18px 60px rgba(22, 93, 65, 0.08);
+}
+
+.photo-hunt__success > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  color: #09251a;
+  background: #aef2d0;
+  border-radius: 9px;
+  font-weight: 900;
+}
+
+.photo-hunt__success strong,
+.photo-hunt__success p {
+  display: block;
+}
+
+.photo-hunt__success strong {
+  font-size: 0.8rem;
+}
+
+.photo-hunt__success p {
+  margin: 4px 0 0;
+  color: #84a899;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.photo-hunt__status-panel {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.36fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 18px;
+}
+
+.photo-hunt__status-panel > div:first-child {
+  align-self: center;
+}
+
+.photo-hunt__status-panel > div:first-child p {
+  margin: 0;
+  color: #7c5a66;
+  font-size: 0.56rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.photo-hunt__status-panel > div:first-child h2 {
+  margin: 5px 0 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.15rem, 2.4vw, 1.65rem);
+  letter-spacing: -0.035em;
+}
+
+.photo-hunt__status-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.photo-hunt__status-card {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 13px;
+}
+
+.photo-hunt__status-card strong,
+.photo-hunt__status-card span {
+  display: block;
+}
+
+.photo-hunt__status-card strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.photo-hunt__status-card span {
+  margin-top: 5px;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.photo-hunt__status-card p {
+  margin: 8px 0 0;
+  color: #707987;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.photo-hunt__status-card--pending {
+  border-color: rgba(255, 193, 91, 0.15);
+  background: rgba(255, 193, 91, 0.028);
+}
+
+.photo-hunt__status-card--pending strong,
+.photo-hunt__status-card--pending span {
+  color: #dfbc72;
+}
+
+.photo-hunt__status-card--rejected {
+  border-color: rgba(230, 112, 133, 0.15);
+  background: rgba(230, 112, 133, 0.025);
+}
+
+.photo-hunt__status-card--rejected strong,
+.photo-hunt__status-card--rejected span {
+  color: #e28b9a;
+}
+
+@media (max-width: 700px) {
+  .photo-hunt__status-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-hunt__status-cards {
+    grid-template-columns: 1fr;
+  }
+}

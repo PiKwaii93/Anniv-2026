@@ -1,0 +1,86 @@
+.photo-hunt-screen__rotation {
+  display: block !important;
+  position: relative;
+  overflow: hidden;
+  margin-top: 22px !important;
+  padding: 12px 13px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 154, 183, 0.12);
+  border-radius: 13px;
+}
+
+.photo-hunt-screen__rotation strong,
+.photo-hunt-screen__rotation span {
+  display: block;
+  max-width: none !important;
+}
+
+.photo-hunt-screen__rotation strong {
+  color: #e7c1cc;
+  font-size: clamp(0.66rem, 0.8vw, 0.88rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.photo-hunt-screen__rotation span {
+  margin-top: 4px;
+  color: #68717e !important;
+  font-size: clamp(0.58rem, 0.7vw, 0.76rem) !important;
+  line-height: 1.35 !important;
+}
+
+.photo-hunt-screen__rotation i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, #ff9ab7, #8d83ff);
+  transform-origin: left center;
+  animation: photo-hunt-screen-progress 10s linear both;
+}
+
+.photo-hunt-screen__wall {
+  animation: photo-hunt-screen-wall-in 430ms ease both;
+}
+
+.photo-hunt-screen__photo {
+  animation: photo-hunt-screen-photo-in 440ms ease both;
+}
+
+.photo-hunt-screen__photo:nth-child(2) { animation-delay: 45ms; }
+.photo-hunt-screen__photo:nth-child(3) { animation-delay: 90ms; }
+.photo-hunt-screen__photo:nth-child(4) { animation-delay: 135ms; }
+.photo-hunt-screen__photo:nth-child(5) { animation-delay: 180ms; }
+.photo-hunt-screen__photo:nth-child(6) { animation-delay: 225ms; }
+.photo-hunt-screen__photo:nth-child(7) { animation-delay: 270ms; }
+.photo-hunt-screen__photo:nth-child(8) { animation-delay: 315ms; }
+
+@keyframes photo-hunt-screen-wall-in {
+  from { opacity: 0.72; }
+  to { opacity: 1; }
+}
+
+@keyframes photo-hunt-screen-photo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes photo-hunt-screen-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-hunt-screen__rotation i,
+  .photo-hunt-screen__wall,
+  .photo-hunt-screen__photo {
+    animation: none !important;
+  }
+}

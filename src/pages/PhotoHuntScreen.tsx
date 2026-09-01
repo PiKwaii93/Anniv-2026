@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -13,11 +14,45 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntScreen.css'
+import './PhotoHuntScreenPolish.css'
+
+const WALL_SIZE = 8
+const ROTATION_MS = 10000
+
+function diversifyPhotos(photos: PhotoHuntSubmission[]) {
+  const buckets = new Map<string, PhotoHuntSubmission[]>()
+  const playerOrder: string[] = []
+
+  photos.forEach((photo) => {
+    if (!buckets.has(photo.player_key)) {
+      buckets.set(photo.player_key, [])
+      playerOrder.push(photo.player_key)
+    }
+    buckets.get(photo.player_key)?.push(photo)
+  })
+
+  const diversified: PhotoHuntSubmission[] = []
+  let remaining = photos.length
+
+  while (remaining > 0) {
+    playerOrder.forEach((playerKey) => {
+      const bucket = buckets.get(playerKey)
+      const photo = bucket?.shift()
+      if (!photo) return
+      diversified.push(photo)
+      remaining -= 1
+    })
+  }
+
+  return diversified
+}
 
 function PhotoHuntScreen() {
   const [photos, setPhotos] = useState<PhotoHuntSubmission[]>([])
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const realtimeConnectedRef = useRef(false)
 
   const load = useCallback(async () => {
     const [photoResult, challengeResult] = await Promise.all([
@@ -27,7 +62,7 @@ function PhotoHuntScreen() {
         .eq('status', 'approved')
         .order('moderated_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
-        .limit(8),
+        .limit(32),
       supabase
         .from('photo_hunt_challenges')
         .select('id, prompt, hint, sort_order, is_active')
@@ -61,12 +96,28 @@ function PhotoHuntScreen() {
         { event: '*', schema: 'public', table: 'photo_hunt_submissions' },
         () => void load(),
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'photo_hunt_challenges' },
+        () => void load(),
+      )
+      .subscribe((status) => {
+        realtimeConnectedRef.current = status === 'SUBSCRIBED'
+      })
 
-    const fallback = window.setInterval(() => void load(), 15000)
+    const fallback = window.setInterval(() => {
+      if (!realtimeConnectedRef.current) void load()
+    }, 30000)
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void load()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
+      realtimeConnectedRef.current = false
       window.clearInterval(fallback)
+      document.removeEventListener('visibilitychange', handleVisibility)
       void supabase.removeChannel(channel)
     }
   }, [load])
@@ -75,6 +126,37 @@ function PhotoHuntScreen() {
     () => new Map(challenges.map((challenge) => [challenge.id, challenge])),
     [challenges],
   )
+
+  const diversifiedPhotos = useMemo(
+    () => diversifyPhotos(photos),
+    [photos],
+  )
+
+  const pageCount = Math.max(1, Math.ceil(diversifiedPhotos.length / WALL_SIZE))
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount - 1))
+  }, [pageCount])
+
+  useEffect(() => {
+    if (pageCount <= 1) return
+
+    const interval = window.setInterval(() => {
+      setPage((current) => (current + 1) % pageCount)
+    }, ROTATION_MS)
+
+    return () => window.clearInterval(interval)
+  }, [pageCount])
+
+  const visiblePhotos = useMemo(() => {
+    if (diversifiedPhotos.length <= WALL_SIZE) return diversifiedPhotos
+
+    const start = page * WALL_SIZE
+    return Array.from(
+      { length: Math.min(WALL_SIZE, diversifiedPhotos.length) },
+      (_, index) => diversifiedPhotos[(start + index) % diversifiedPhotos.length],
+    )
+  }, [diversifiedPhotos, page])
 
   if (loading) {
     return (
@@ -91,7 +173,10 @@ function PhotoHuntScreen() {
 
       <header className="photo-hunt-screen__topline">
         <div><span /> Photo Hunt · mur live</div>
-        <b>{photos.length} dernière{photos.length !== 1 ? 's' : ''} photo{photos.length !== 1 ? 's' : ''}</b>
+        <b>
+          {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
+          {pageCount > 1 ? ` · mur ${page + 1}/${pageCount}` : ''}
+        </b>
       </header>
 
       {photos.length === 0 ? (
@@ -113,11 +198,21 @@ function PhotoHuntScreen() {
               <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
               <span>Scanne pour participer</span>
             </div>
+            {pageCount > 1 && (
+              <div className="photo-hunt-screen__rotation">
+                <strong>Rotation auto</strong>
+                <span>Le mur change toutes les 10 s et mélange les participants.</span>
+                <i key={page} />
+              </div>
+            )}
           </div>
 
-          <div className={`photo-hunt-screen__wall photo-hunt-screen__wall--${Math.min(photos.length, 8)}`}>
-            {photos.map((photo, index) => (
-              <article key={photo.id} className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1}`}>
+          <div
+            key={page}
+            className={`photo-hunt-screen__wall photo-hunt-screen__wall--${Math.min(visiblePhotos.length, WALL_SIZE)}`}
+          >
+            {visiblePhotos.map((photo, index) => (
+              <article key={`${page}:${photo.id}`} className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1}`}>
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
