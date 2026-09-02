@@ -17,6 +17,7 @@ const fixture = {
 }
 globalThis.__partyExtrasRender = { data: structuredClone(fixture), error: '', busy: false, act: async () => { throw new Error('Rendering must never write') } }
 const mocks = {
+  '/spotify/useSpotify': 'export function useSpotify() { return { data: {client_id:null, connected:false, dispatches:{}, devices:[], redirect_uri: "https://anniv-2026-pi.vercel.app/admin/spotify/callback"}, busy:false, error:"", notice:"", run:async()=>false, refresh:async()=>{} } }',
   '/party-extras/usePartyExtras': 'export function usePartyExtras() { return globalThis.__partyExtrasRender }',
   '/identity/PartyIdentityContext': 'export function usePartyIdentity() { return { identity: { playerKey: "fixture", playerName: "Invité test", sessionToken: "fixture" } } }',
 }
@@ -53,6 +54,8 @@ try {
   assert.match(pair, /Passer ce défi/)
   const lockedAdmin = render('PartyExtrasAdmin', { capsule: { ...fixture.capsule, count: 2 } })
   assert.match(lockedAdmin, /2 lettres scellées/)
+  assert.match(lockedAdmin, /Client ID Spotify/)
+  assert.match(lockedAdmin, /Enregistrer le Client ID/)
   assert.doesNotMatch(lockedAdmin, /Exporter les lettres/)
   const openedAdmin = render('PartyExtrasAdmin', { capsule: { own: null, count: 1, revealed: true, entries: [{ player_name: 'Test', message: '<script>alert(1)</script>', memory: '', prediction: '' }] } })
   assert.match(openedAdmin, /Exporter les lettres/)

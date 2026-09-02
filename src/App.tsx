@@ -30,6 +30,7 @@ const Capsule = lazy(() => import('./pages/Capsule'))
 const Jukebox = lazy(() => import('./pages/Jukebox'))
 const Duos = lazy(() => import('./pages/Duos'))
 const PartyExtrasAdmin = lazy(() => import('./pages/PartyExtrasAdmin'))
+const SpotifyCallback = lazy(() => import('./pages/SpotifyCallback'))
 
 const Admin = lazy(
   () => import('./pages/Admin'),
@@ -248,6 +249,7 @@ function App() {
           <Route path="/jukebox" element={<PartyIdentityGate><Jukebox /></PartyIdentityGate>} />
           <Route path="/duos" element={<PartyIdentityGate><Duos /></PartyIdentityGate>} />
           <Route path="/admin/party-extras" element={<AdminRoute><PartyExtrasAdmin /></AdminRoute>} />
+          <Route path="/admin/spotify/callback" element={<AdminRoute><SpotifyCallback /></AdminRoute>} />
           <Route
             path="/"
             element={<Home />}

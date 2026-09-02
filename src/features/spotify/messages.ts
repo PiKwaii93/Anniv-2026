@@ -1,0 +1,21 @@
+export const messages: Record<string, string> = {
+  NOT_ADMIN: 'Reconnecte-toi à la régie pour utiliser Spotify.',
+  INVALID_CLIENT: 'Copie le Client ID de ton application Spotify : 32 caractères, sans espace.',
+  DISCONNECT_FIRST: 'Déconnecte Spotify avant de changer le Client ID.',
+  OAUTH_EXPIRED: 'Cette connexion a expiré ou a déjà été utilisée. Relance « Connecter Spotify ».',
+  SPOTIFY_RECONNECT: 'Spotify demande une nouvelle autorisation. Clique sur « Reconnecter Spotify ».',
+  SPOTIFY_FORBIDDEN: 'Spotify refuse cette commande. Vérifie Premium et l’accès de ton compte à l’application dans le tableau de bord Spotify.',
+  SPOTIFY_RATE_LIMIT: 'Spotify limite temporairement les commandes. Attends une minute avant de réessayer.',
+  DEVICE_OFFLINE: 'Le PC sélectionné est introuvable. Ouvre Spotify dessus, puis actualise les appareils.',
+  SELECT_DEVICE: 'Sélectionne d’abord ton PC dans les appareils Spotify.',
+  START_ON_PC: 'Lance d’abord un morceau dans Spotify sur le PC sélectionné. La file pourra ensuite recevoir les propositions.',
+  SPOTIFY_BUSY: 'Une autre commande Spotify est en cours. Réessaie dans quelques instants.',
+  TRACK_LINK_REQUIRED: 'Ajoute un lien vers un morceau Spotify précis, pas un album ni une playlist.',
+  TRACK_UNAVAILABLE: 'Ce morceau ne peut pas être joué avec ce compte. Choisis une autre version.',
+  SONG_NOT_READY: 'Cette proposition n’est plus disponible pour un envoi. Actualise la liste.',
+  ALREADY_DISPATCHED: 'Ce morceau a déjà été envoyé ou attend une vérification. Aucun doublon n’a été ajouté.',
+  QUEUE_UNCERTAIN: 'Spotify n’a pas confirmé l’envoi. Vérifie sa file sur le PC avant de déclarer le morceau présent ou absent ci-dessous.',
+  COMMAND_UNCERTAIN: 'La commande a peut-être été exécutée. Regarde Spotify avant de cliquer à nouveau.',
+  INVALID_INPUT: 'Vérifie les champs avant de réessayer.',
+}
+export const spotifyMessage = (code: string) => messages[code] ?? 'Spotify ne répond pas pour le moment. Réessaie dans quelques instants.'

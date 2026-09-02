@@ -53,6 +53,7 @@ export function downloadText(filename: string, text: string) {
 }
 
 const errors: Record<string, string> = {
+  SPOTIFY_ALREADY_SENT: 'Ce titre a déjà été envoyé à Spotify. Retire-le directement de la file Spotify si nécessaire.',
   IDENTITY_REQUIRED: 'Ton identification a expiré. Reviens à l’accueil pour choisir ton prénom.',
   NOT_ADMIN: 'Reconnecte-toi à la régie pour continuer.',
   CAPSULE_CLOSED: 'La capsule ne reçoit plus de lettres. Ton brouillon reste ici.',
