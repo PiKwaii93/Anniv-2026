@@ -143,7 +143,7 @@ export function PartyIdentityGate({
         </p>
         <h1>Qui es-tu ?</h1>
         <p className="party-identity-gate__intro">
-          Choisis ton nom une seule fois. Ce téléphone sera ensuite reconnu automatiquement dans Missions secrètes et La Salle.
+          Choisis ton nom une seule fois. Ce téléphone sera ensuite reconnu automatiquement dans les activités de la soirée.
         </p>
         <IdentityPicker />
       </section>

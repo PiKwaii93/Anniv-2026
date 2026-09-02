@@ -17,6 +17,7 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
+import PartyExtrasHomeCards from '../features/party-extras/PartyExtrasHomeCards'
 
 import './HomeDynamic.css'
 
@@ -410,6 +411,7 @@ function Home() {
         </section>
 
         <section className="modules" aria-label="Modules">
+          <PartyExtrasHomeCards />
           {showHallOfFame && (
             <Link
               to="/hall-of-fame"

@@ -862,6 +862,7 @@ function AdminDashboard() {
         </div>
 
         <div className="control-shortcuts__grid">
+          <Link to="/admin/party-extras" className="control-shortcut"><span>Les petits plus</span><strong>Capsule · Jukebox · Duos · Générique ↗</strong></Link>
           <Link to="/guests" className="control-shortcut">
             <span>Liste publique</span>
             <strong>Voir les invités</strong>
