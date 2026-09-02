@@ -8,11 +8,20 @@ export type SpotifyState = {
   playback: null | { is_playing: boolean; device_id: string; device_name: string; title: string; artists: string; url: string | null }
 }
 export async function spotifyAction<T = { ok: boolean; url?: string; title?: string }>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('spotify-jukebox', { body: { ...payload, action } })
+  const { data, error, response } = await supabase.functions.invoke('spotify-jukebox', { body: { ...payload, action } })
   if (error) {
     let code = ''
     if (error.context instanceof Response) { try { code = (await error.context.json()).error ?? '' } catch { /* Not all gateway errors contain JSON. */ } }
-    throw new Error(messages[code] ?? 'Spotify ne répond pas pour le moment. Réessaie dans quelques instants.')
+    if (!Object.hasOwn(messages, code)) {
+      code = response?.status === 401 ? 'NOT_ADMIN'
+        : error.name === 'FunctionsFetchError' ? 'BRIDGE_NETWORK'
+        : error.name === 'FunctionsRelayError' ? 'BRIDGE_RELAY'
+        : error.name === 'SyntaxError' ? 'BRIDGE_RESPONSE' : 'BRIDGE_ERROR'
+    }
+    const labels: Record<string, string> = { status: 'Actualisation', play: 'Lecture', pause: 'Pause', next: 'Morceau suivant', queue: 'Envoi du morceau', device: 'Choix du PC', connect: 'Connexion', callback: 'Connexion', disconnect: 'Déconnexion', configure: 'Configuration', resolve: 'Vérification de la file' }
+    // Do not log the SDK error object: it can contain request headers or bodies.
+    console.warn('spotify_request_failed', { action: Object.hasOwn(labels, action) ? action : 'unknown', code, status: response?.status })
+    throw new Error(`${labels[action] ?? 'Spotify'} : ${messages[code]}`)
   }
   return data as T
 }

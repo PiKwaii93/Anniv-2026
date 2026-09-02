@@ -28,8 +28,8 @@ export async function challenge(verifier: string) {
 
 // Boundary types represent trusted database and Spotify JSON, never forwarded wholesale to clients.
 type Json = Record<string, any>
-type Dependencies = { authenticate: (jwt: string) => Promise<string | null>; rpc: (admin: string, op: string, payload: Json, lease: string) => Promise<Json>; fetcher?: typeof fetch }
-export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependencies) {
+type Dependencies = { authenticate: (jwt: string) => Promise<string | null>; rpc: (admin: string, op: string, payload: Json, lease: string) => Promise<Json>; fetcher?: typeof fetch; report?: (event: Json) => void }
+export function createHandler({ authenticate, rpc, fetcher = fetch, report = (event) => console.warn(JSON.stringify(event)) }: Dependencies) {
   return async (request: Request): Promise<Response> => {
     const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store', 'Content-Type': 'application/json' }
     const respond = (data: Json, status = 200) => new Response(JSON.stringify(data), { status, headers })
@@ -38,6 +38,9 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
     let admin: string | null = null
     const lease = crypto.randomUUID()
     let acquired = false
+    let action = 'unknown'
+    // Only fixed action names and error codes are logged, never tokens, bodies or URLs.
+    const diagnostic = (code: string, stage: string, status?: number) => report({ event: 'spotify_bridge', action, stage, code, ...(status === undefined ? {} : { status }) })
     try {
       const jwt = request.headers.get('Authorization')?.match(/^Bearer (.+)$/i)?.[1]
       if (!jwt || !(admin = await authenticate(jwt))) throw new BridgeError('NOT_ADMIN', 401)
@@ -46,6 +49,7 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
       let body: Json
       try { body = JSON.parse(raw) } catch { throw new BridgeError('INVALID_INPUT') }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BridgeError('INVALID_INPUT')
+      if (['configure', 'disconnect', 'connect', 'callback', 'status', 'device', 'resolve', 'play', 'pause', 'next', 'queue'].includes(body.action)) action = body.action
       const db = (op: string, payload: Json = {}) => rpc(admin!, op, payload, lease)
       const config = await db('acquire')
       acquired = true
@@ -85,6 +89,7 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
           tokens = { access_token: fresh.access_token, refresh_token: fresh.refresh_token ?? tokens.refresh_token, expires_at: Date.now() + fresh.expires_in * 1000 }
           await db('tokens', tokens)
         } catch (error) {
+          diagnostic(error instanceof BridgeError ? error.code : 'SPOTIFY_UNAVAILABLE', 'token_refresh')
           if (body.action === 'status') return respond({ ...publicConfig, devices: [], playback: null, warning: error instanceof BridgeError ? error.code : 'SPOTIFY_UNAVAILABLE' })
           throw error
         }
@@ -92,7 +97,16 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
       const spotify = async (path: string, method = 'GET', payload?: Json) => {
         const response = await fetchSpotify(`${API}${path}`, { method, headers: { Authorization: `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json' }, ...(payload ? { body: JSON.stringify(payload) } : {}) })
         if (!response.ok) throw spotifyHttpError(response.status)
-        return response.status === 204 ? null : response.json()
+        // Playback commands acknowledge success without a JSON document. Reading one
+        // can report an error after Spotify has already applied the command.
+        if (method !== 'GET') {
+          diagnostic('SPOTIFY_ACCEPTED', 'playback_command', response.status)
+          return null
+        }
+        if (response.status === 204) return null
+        const text = await response.text()
+        if (!text.trim()) return null
+        try { return JSON.parse(text) } catch { throw new BridgeError('SPOTIFY_INVALID_RESPONSE') }
       }
       const devices = async () => ((await spotify('/me/player/devices'))?.devices ?? []).filter((d: Json) => d.id && !d.is_restricted)
       if (body.action === 'status') {
@@ -100,6 +114,7 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
           const [list, playback] = await Promise.all([devices(), spotify('/me/player')])
           return respond({ ...publicConfig, devices: list.map((d: Json) => ({ id: d.id, name: d.name, type: d.type, is_active: d.is_active })), playback: playback ? { is_playing: playback.is_playing, device_id: playback.device?.id, device_name: playback.device?.name, title: playback.item?.name ?? '', artists: (playback.item?.artists ?? []).map((a: Json) => a.name).join(', '), url: playback.item?.external_urls?.spotify ?? null } : null })
         } catch (error) {
+          diagnostic(error instanceof BridgeError ? error.code : 'SPOTIFY_UNAVAILABLE', 'status')
           return respond({ ...publicConfig, devices: [], playback: null, warning: error instanceof BridgeError ? error.code : 'SPOTIFY_UNAVAILABLE' })
         }
       }
@@ -146,6 +161,7 @@ export function createHandler({ authenticate, rpc, fetcher = fetch }: Dependenci
     } catch (error) {
       const allowed = ['NOT_ADMIN','INVALID_INPUT','INVALID_CLIENT','OAUTH_EXPIRED','SPOTIFY_BUSY','DISCONNECT_FIRST','SONG_NOT_READY','ALREADY_DISPATCHED','TRACK_LINK_REQUIRED']
       const code = error instanceof BridgeError ? error.code : allowed.find((code) => String((error as Error)?.message).includes(code)) ?? 'SPOTIFY_UNAVAILABLE'
+      diagnostic(code, 'request', error instanceof BridgeError ? error.status : 400)
       return respond({ error: code }, error instanceof BridgeError ? error.status : code === 'NOT_ADMIN' ? 403 : 400)
     } finally {
       if (acquired && admin) { try { await rpc(admin, 'release', {}, lease) } catch { /* The lease expires automatically. */ } }
