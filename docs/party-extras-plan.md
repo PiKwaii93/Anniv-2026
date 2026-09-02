@@ -8,3 +8,7 @@ Anniversaire : 24 octobre 2026 à 21 h 30, Europe/Paris.
 4. Générique : automatique en fin de soirée si activé, prénoms, photos publiées et récompenses, pause/suivant et retour au Hall of Fame. Relance depuis la régie. Aucun message privé sur la TV.
 
 Trois routes invitées, cartes sur l'accueil et une régie commune accessible depuis le Directeur et le tableau de bord. Paramètres d'ouverture et visibilité indépendants. Stockage isolé et RPC contrôlées avec l'identité existante. Tests SQL transactionnels sans données persistantes, tests métier, build et lint avant préproduction et production.
+
+Vérification : `node --test tests/*.test.mjs`, `node tests/party-extras-render.mjs`, `npm run build`. Le script de rendu remplace les hooks par des données en mémoire et ne contacte pas Supabase. `EXTRAS_REVIEW_PATH=/tmp/extras-review.html node tests/party-extras-render.mjs` produit une vue des pages à 390 px. Le test SQL s'exécute dans une transaction suivie de ROLLBACK.
+
+Les tables privées ont RLS activé sans politique autorisant la lecture directe, et aucun privilège client sur les tables. Le signal informatif Supabase « RLS Enabled No Policy » est donc attendu. Les fonctions publiques sont des wrappers invoker ; les fonctions internes contrôlent les sessions invitées ou l'identité admin avant toute opération.

@@ -17,6 +17,7 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
+import PartyExtrasHomeCards from '../features/party-extras/PartyExtrasHomeCards'
 
 import './HomeDynamic.css'
 
@@ -484,4 +485,3 @@ function Home() {
 }
 
 export default Home
-import PartyExtrasHomeCards from '../features/party-extras/PartyExtrasHomeCards'
