@@ -3,7 +3,8 @@ import { spotifyAction, type SpotifyState } from './api'
 
 export function useSpotify() {
   const [data, setData] = useState<SpotifyState | null>(null)
-  const [error, setError] = useState('')
+  const [commandError, setCommandError] = useState('')
+  const [statusError, setStatusError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const mounted = useRef(false)
@@ -11,8 +12,11 @@ export function useSpotify() {
   const load = useCallback(async () => {
     try {
       const state = await spotifyAction<SpotifyState>('status')
-      if (mounted.current) setData(state)
-    } catch (cause) { if (mounted.current) setError((cause as Error).message) }
+      if (mounted.current) {
+        setData(state)
+        setStatusError('')
+      }
+    } catch (cause) { if (mounted.current) setStatusError((cause as Error).message) }
   }, [])
   const refresh = useCallback(async () => {
     if (pending.current) return
@@ -29,7 +33,7 @@ export function useSpotify() {
   }, [refresh])
   const run = async (action: string, payload: Record<string, unknown> = {}) => {
     if (pending.current) return false
-    pending.current = true; setBusy(true); setError(''); setNotice('')
+    pending.current = true; setBusy(true); setCommandError(''); setNotice('')
     try {
       const result = await spotifyAction(action, payload)
       if (action === 'connect' && result.url) {
@@ -42,11 +46,11 @@ export function useSpotify() {
       await load()
       return true
     } catch (cause) {
-      if (mounted.current) setError((cause as Error).message)
+      if (mounted.current) setCommandError((cause as Error).message)
       await load()
       return false
     } finally { pending.current = false; if (mounted.current) setBusy(false) }
   }
-  return { data, busy, error, notice, refresh, run }
+  return { data, busy, error: commandError || statusError, notice, refresh, run }
 }
 export type SpotifyController = ReturnType<typeof useSpotify>
