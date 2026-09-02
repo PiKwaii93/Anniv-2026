@@ -1,3 +1,5 @@
+import { normalizeMusicText, rankTrackChoices } from './catalog.ts'
+
 export const REDIRECT_URI = 'https://anniv-2026-pi.vercel.app/admin/spotify/callback'
 const SCOPES = 'user-read-playback-state user-modify-playback-state'
 const API = 'https://api.spotify.com/v1'
@@ -49,7 +51,7 @@ export function createHandler({ authenticate, rpc, fetcher = fetch, report = (ev
       let body: Json
       try { body = JSON.parse(raw) } catch { throw new BridgeError('INVALID_INPUT') }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BridgeError('INVALID_INPUT')
-      if (['configure', 'disconnect', 'connect', 'callback', 'status', 'device', 'resolve', 'play', 'pause', 'next', 'queue'].includes(body.action)) action = body.action
+      if (['configure', 'disconnect', 'connect', 'callback', 'status', 'device', 'resolve', 'play', 'pause', 'next', 'queue', 'search'].includes(body.action)) action = body.action
       const db = (op: string, payload: Json = {}) => rpc(admin!, op, payload, lease)
       const config = await db('acquire')
       acquired = true
@@ -109,6 +111,17 @@ export function createHandler({ authenticate, rpc, fetcher = fetch, report = (ev
         try { return JSON.parse(text) } catch { throw new BridgeError('SPOTIFY_INVALID_RESPONSE') }
       }
       const devices = async () => ((await spotify('/me/player/devices'))?.devices ?? []).filter((d: Json) => d.id && !d.is_restricted)
+      const searchSong = async (song: Json) => {
+        const title = body.search_title ?? song.title
+        const artist = body.search_artist ?? song.artist ?? ''
+        if (typeof title !== 'string' || typeof artist !== 'string' || !title.trim() || title.length > 100 || artist.length > 100) throw new BridgeError('INVALID_INPUT')
+        const query = normalizeMusicText(`${title} ${artist}`)
+        if (!query) throw new BridgeError('INVALID_INPUT')
+        const params = new URLSearchParams({ q: query, type: 'track', limit: '10', market: 'FR' })
+        const result = await spotify(`/search?${params}`)
+        if (!Array.isArray(result?.tracks?.items)) throw new BridgeError('SPOTIFY_INVALID_RESPONSE')
+        return rankTrackChoices(result.tracks.items, title, artist)
+      }
       if (body.action === 'status') {
         try {
           const [list, playback] = await Promise.all([devices(), spotify('/me/player')])
@@ -125,6 +138,12 @@ export function createHandler({ authenticate, rpc, fetcher = fetch, report = (ev
         return respond({ ok: true })
       }
       if (body.action === 'resolve') { await db('resolve', { song_id: body.song_id, resolution: body.resolution }); return respond({ ok: true }) }
+      if (body.action === 'search') {
+        if (typeof body.song_id !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.song_id)) throw new BridgeError('INVALID_INPUT')
+        const song = await db('song', { song_id: body.song_id })
+        const result = await searchSong(song)
+        return respond({ ok: false, needs_choice: true, song_id: body.song_id, choices: result.choices })
+      }
       if (!config.device_id) throw new BridgeError('SELECT_DEVICE')
       if (!(await devices()).some((d: Json) => d.id === config.device_id)) throw new BridgeError('DEVICE_OFFLINE')
       const target = `device_id=${encodeURIComponent(config.device_id)}`
@@ -138,8 +157,20 @@ export function createHandler({ authenticate, rpc, fetcher = fetch, report = (ev
       if (body.action === 'queue') {
         if (typeof body.song_id !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.song_id)) throw new BridgeError('INVALID_INPUT')
         const song = await db('song', { song_id: body.song_id })
-        const uri = spotifyTrackUri(body.link || song.link)
-        if (!uri) throw new BridgeError('TRACK_LINK_REQUIRED')
+        if (config.dispatches?.[body.song_id]) throw new BridgeError('ALREADY_DISPATCHED')
+        let uri: string | null = null
+        if (body.track_id !== undefined) {
+          if (typeof body.track_id !== 'string' || !/^[a-zA-Z0-9]{22}$/.test(body.track_id)) throw new BridgeError('INVALID_INPUT')
+          uri = `spotify:track:${body.track_id}`
+        } else if (body.link) {
+          uri = spotifyTrackUri(body.link)
+          if (!uri) throw new BridgeError('TRACK_LINK_REQUIRED')
+        } else if (body.search_title === undefined && body.search_artist === undefined) uri = spotifyTrackUri(song.link)
+        if (!uri) {
+          const result = await searchSong(song)
+          if (!result.automatic) return respond({ ok: false, needs_choice: true, song_id: body.song_id, choices: result.choices })
+          uri = `spotify:track:${result.automatic.id}`
+        }
         const track = await spotify(`/tracks/${uri.split(':')[2]}`)
         if (!track || track.is_playable === false || track.is_local) throw new BridgeError('TRACK_UNAVAILABLE')
         const playback = await spotify('/me/player')

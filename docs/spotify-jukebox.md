@@ -10,7 +10,11 @@ La régie `/admin/party-extras#spotify` pilote Spotify sur un appareil explicite
 4. Copier le Client ID dans la régie, enregistrer et cliquer sur Connecter Spotify. Aucun Client Secret n'est nécessaire (Authorization Code + PKCE).
 5. Ouvrir Spotify sur le PC, lancer un premier morceau, actualiser les appareils dans la régie et sélectionner le PC.
 
-Les boutons Lecture/Pause/Suivant visent toujours cet appareil. Pour envoyer un titre, fournir un lien Spotify vers un morceau précis. Les liens de playlists/albums/autres services ne sont pas convertis automatiquement. « Accepter et envoyer sur le PC » publie une proposition seulement après confirmation de l'ajout à la file. « Accepter sans envoyer » conserve la modération/vote séparée. L'ordre déjà envoyé est celui de Spotify. Les statuts manuels « Marquer » du site restent distincts de la lecture Spotify réelle affichée en haut de la régie.
+Les boutons Lecture/Pause/Suivant visent toujours cet appareil. Les invités saisissent un titre et, s’ils le connaissent, l’artiste. Aucun lien ni compte Spotify invité n’est requis.
+
+Depuis la régie sur téléphone, « Accepter et envoyer sur le PC » recherche le morceau sur Spotify. Une correspondance exacte et unique est envoyée directement. Sinon, jusqu’à cinq résultats (titre, artistes, album, durée) sont proposés : rien n’est envoyé avant le choix de l’organisateur. La recherche peut être précisée sur place. Aucun résultat n’est une invitation à préciser le texte, pas à chercher un lien sur le PC. La recherche utilise le compte Spotify déjà connecté, sans nouvelle autorisation ni secret.
+
+La proposition n’est publiée qu’après confirmation de l’ajout à la file. « Accepter sans envoyer » conserve la modération/vote séparée. L’ordre déjà envoyé est celui de Spotify. Les statuts manuels « Marquer » du site restent distincts de la lecture Spotify réelle affichée en haut de la régie. Les anciens liens vers un titre Spotify restent reconnus ; les liens vers d’autres services sont remplacés par la recherche titre/artiste.
 
 Un envoi incertain n'est pas répété automatiquement. L'organisateur vérifie la file sur le PC et déclare le titre présent ou absent. Un titre déjà envoyé est protégé contre les doublons et le refus tardif dans la régie. Le retirer de la file se fait dans Spotify. Déconnecter du site supprime les autorisations stockées et la sélection de l'appareil ; cela n'arrête pas la musique déjà en cours dans Spotify.
 

@@ -15,7 +15,7 @@ export function ExtrasPage({ title, eyebrow, intro, error, children, admin = fal
 export function SongCard({ song, children }: { song: Song; children?: ReactNode }) {
   const link = safeMusicLink(song.link)
   return <article className={`extras-song extras-song--${song.status}`}>
-    <div className="extras-song__body"><span className="extras-pill">{songStatus[song.status]}</span><h3>{song.title}</h3><p>{song.artist}</p><small>{song.mine ? 'Ta proposition' : `Proposé par ${song.player_name}`} · {song.votes} vote{song.votes === 1 ? '' : 's'}</small>{link && <a href={link} target="_blank" rel="noreferrer">Ouvrir le morceau ↗</a>}</div>
+    <div className="extras-song__body"><span className="extras-pill">{songStatus[song.status]}</span><h3>{song.title}</h3>{song.artist && <p>{song.artist}</p>}<small>{song.mine ? 'Ta proposition' : `Proposé par ${song.player_name}`} · {song.votes} vote{song.votes === 1 ? '' : 's'}</small>{link && <a href={link} target="_blank" rel="noreferrer">Ouvrir le morceau ↗</a>}</div>
     <div className="extras-actions">{children}</div>
   </article>
 }

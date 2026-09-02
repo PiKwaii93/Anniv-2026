@@ -14,18 +14,20 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   name: 'spotify-api-fixture',
   enforce: 'pre',
   resolveId(id, importer) {
+    if (id.endsWith('virtual:spotify-ui')) return '\0spotify-ui'
     if (id === './api' && importer?.endsWith('/spotify/useSpotify.ts')) return '\0spotify-api-fixture'
   },
   load(id) {
+    if (id === '\0spotify-ui') return `export {useSpotify} from ${JSON.stringify(resolve('src/features/spotify/useSpotify.ts'))}; export {default as SpotifySongAction} from ${JSON.stringify(resolve('src/features/spotify/SpotifySongAction.tsx'))};`
     if (id === '\0spotify-api-fixture') return 'export const spotifyAction = (...args) => globalThis.__spotifyAction(...args)'
   },
-}], build: { ssr: resolve('src/features/spotify/useSpotify.ts'), write: false, minify: false } })
+}], build: { ssr: 'virtual:spotify-ui', write: false, minify: false } })
 await mkdir(resolve('node_modules/.cache'), { recursive: true })
 await writeFile(cache, bundle.output.find((item) => item.type === 'chunk').code)
-const { useSpotify } = await import(pathToFileURL(cache).href)
+const { useSpotify, SpotifySongAction } = await import(pathToFileURL(cache).href)
 after(() => rm(cache))
 
-let dom, root, controller, poll
+let dom, root, controller, poll, showCard, refreshes
 let replies = []
 const requests = []
 const state = { connected: true, device_id: 'pc', device_name: 'PC', devices: [], dispatches: {}, playback: null }
@@ -35,7 +37,7 @@ const unavailable = new Error('Spotify ne répond pas pour le moment.')
 function Probe() {
   const current = useSpotify()
   useLayoutEffect(() => { controller = current })
-  return null
+  return showCard ? React.createElement(SpotifySongAction, { song: { id: 'song', title: 'Unstoppable', artist: '', link: '', status: 'pending' }, controller: current, refresh: async () => { refreshes++ } }) : null
 }
 async function mount(...responses) {
   replies.push(...responses)
@@ -51,6 +53,7 @@ beforeEach(() => {
   Object.defineProperty(document, 'visibilityState', { value: 'visible' })
   root = createRoot(document.getElementById('root'))
   replies = []; requests.length = 0
+  showCard = false; refreshes = 0
   globalThis.__spotifyAction = async (action) => {
     requests.push(action)
     const next = replies.shift()
@@ -112,4 +115,35 @@ test('a failed status refresh cannot replace the explanation of a failed command
   replies.push({ action: 'play', value: { ok: true } }, status())
   await act(async () => assert.equal(await controller.run('play'), true))
   assert.equal(controller.error, '')
+})
+test('ambiguous search displays choices without claiming success or refreshing guest data', async () => {
+  await mount(status())
+  const choices = [{ id: 'a'.repeat(22), title: 'Song', artists: 'Artist', album: '', duration_ms: 200000, url: 'https://open.spotify.com/track/' + 'a'.repeat(22) }]
+  replies.push({ action: 'queue', value: { ok: false, needs_choice: true, song_id: 'song', choices } })
+  await act(async () => assert.equal(await controller.run('queue', { song_id: 'song' }), false))
+  assert.deepEqual(controller.choices.song, choices)
+  assert.equal(controller.notice, '')
+  assert.equal(controller.error, '')
+  replies.push({ action: 'queue', value: { ok: true, title: 'Song' } }, status())
+  await act(async () => assert.equal(await controller.run('queue', { song_id: 'song', track_id: choices[0].id }), true))
+  assert.match(controller.notice, /Song.*a rejoint la file/)
+})
+test('admin can resolve an ambiguous title and send it without entering a Spotify URL', async () => {
+  showCard = true
+  await mount(status())
+  const send = () => [...document.querySelectorAll('button')].find((button) => button.textContent === 'Accepter et envoyer sur le PC')
+  assert.equal(send().disabled, false)
+  assert.equal(document.querySelector('input[type="url"]'), null)
+  const choices = [{ id: 'a'.repeat(22), title: 'Unstoppable', artists: 'The Score', album: 'Atlas', duration_ms: 200000, url: 'https://open.spotify.com/track/' + 'a'.repeat(22) }]
+  replies.push({ action: 'queue', value: { ok: false, needs_choice: true, song_id: 'song', choices } })
+  await act(async () => send().click())
+  assert.equal(refreshes, 0)
+  assert.equal(send().disabled, true)
+  assert.match(document.body.textContent, /rien n’a encore été envoyé/)
+  await act(async () => document.querySelector('input[type="radio"]').click())
+  assert.equal(send().disabled, false)
+  replies.push({ action: 'queue', value: { ok: true, title: 'Unstoppable' } }, status())
+  await act(async () => send().click())
+  assert.equal(refreshes, 1)
+  assert.equal(requests.filter((action) => action === 'queue').length, 2)
 })
