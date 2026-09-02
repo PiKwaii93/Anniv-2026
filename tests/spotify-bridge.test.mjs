@@ -12,7 +12,7 @@ function harness(overrides = {}) {
     rpc: async (_admin, op, payload) => {
       ops.push({ op, payload })
       if (op === 'acquire') return { ...config, ...overrides.config }
-      if (op === 'song') return { link: `https://open.spotify.com/track/${trackId}` }
+      if (op === 'song') return overrides.song ?? { link: `https://open.spotify.com/track/${trackId}` }
       if (op === 'consume') { if (payload.state !== 'valid') throw new Error('OAUTH_EXPIRED'); return { verifier: 'PRIVATE_VERIFIER', client_id: config.client_id } }
       return {}
     },
@@ -21,6 +21,7 @@ function harness(overrides = {}) {
       if (overrides.fetcher) { const response = await overrides.fetcher(url, options); if (response) return response }
       if (url.endsWith('/devices')) return Response.json({ devices: [{ id: 'pc', name: 'PC', is_restricted: false }] })
       if (url.endsWith('/me/player')) return Response.json({ device: { id: overrides.active ?? 'pc' }, is_playing: true, item: { name: 'Track', artists: [] } })
+      if (url.includes('/search?')) return Response.json({ tracks: { items: overrides.tracks ?? [] } })
       if (url.includes('/tracks/')) return Response.json({ name: 'Track', is_playable: true })
       return new Response(null, { status: 204 })
     },
@@ -114,4 +115,57 @@ test('invalid Spotify JSON has a distinct error and diagnostics contain no secre
   assert.equal((await h.call('status')).body.warning, 'SPOTIFY_INVALID_RESPONSE')
   assert.deepEqual(h.diagnostics, [{ event: 'spotify_bridge', action: 'status', stage: 'status', code: 'SPOTIFY_INVALID_RESPONSE' }])
   assert.ok(!JSON.stringify(h.diagnostics).includes('PRIVATE'))
+})
+
+const candidate = (id = trackId, title = 'Blinding Lights', artist = 'The Weeknd') => ({ id, name: title, artists: [{ name: artist }], album: { name: 'After Hours' }, duration_ms: 200000 })
+test('title-only proposal searches Spotify and queues a unique exact match', async () => {
+  const h = harness({ song: { title: 'Blinding Lights', artist: '', link: '' }, tracks: [candidate()] })
+  assert.equal((await h.call('queue', { song_id: songId })).status, 200)
+  const search = new URL(h.network.find(({ url }) => url.includes('/search?')).url)
+  assert.equal(search.searchParams.get('q'), 'blinding lights')
+  assert.equal(search.searchParams.get('type'), 'track')
+  assert.equal(search.searchParams.get('limit'), '10')
+  assert.equal(h.network.filter(({ url }) => url.includes('/queue?')).length, 1)
+  assert.ok(h.ops.some(({ op }) => op === 'sent'))
+})
+test('ambiguous titles return choices without claiming or sending the song', async () => {
+  const h = harness({ song: { title: 'Unstoppable', artist: '', link: '' }, tracks: [candidate(trackId, 'Unstoppable', 'The Score'), candidate('a'.repeat(22), 'Unstoppable', 'Sia')] })
+  const result = await h.call('queue', { song_id: songId })
+  assert.equal(result.body.needs_choice, true)
+  assert.equal(result.body.choices.length, 2)
+  assert.ok(!h.ops.some(({ op }) => ['claim_song', 'sent'].includes(op)))
+  assert.ok(!h.network.some(({ url }) => url.includes('/queue?')))
+  assert.ok(!JSON.stringify(result.body).includes('PRIVATE'))
+})
+test('an explicit candidate selection queues without searching again', async () => {
+  const h = harness({ song: { title: 'Unstoppable', artist: '', link: '' } })
+  assert.equal((await h.call('queue', { song_id: songId, track_id: trackId })).status, 200)
+  assert.ok(!h.network.some(({ url }) => url.includes('/search?')))
+  assert.ok(h.network.some(({ url }) => url.includes('/queue?')))
+})
+test('no result keeps the proposal pending and allows an in-app corrected search', async () => {
+  const h = harness({ song: { title: 'Typo', artist: '', link: '' } })
+  assert.deepEqual((await h.call('queue', { song_id: songId })).body.choices, [])
+  assert.ok(!h.ops.some(({ op }) => op === 'claim_song'))
+  const result = await h.call('search', { song_id: songId, search_title: 'Correct title', search_artist: 'Artist' })
+  assert.equal(result.body.needs_choice, true)
+  assert.equal(new URL(h.network.at(-1).url).searchParams.get('q'), 'correct title artist')
+  assert.ok(!h.network.some(({ url }) => url.includes('/queue?')))
+})
+test('search does not require an active playback device and never sends music', async () => {
+  const h = harness({ config: { device_id: null }, song: { title: 'Blinding Lights', artist: '', link: '' }, tracks: [candidate()] })
+  assert.equal((await h.call('search', { song_id: songId })).body.choices.length, 1)
+  assert.ok(!h.network.some(({ url }) => url.includes('/devices') || url.includes('/queue?')))
+})
+test('Spotify search rejection is visible and never falls back to an arbitrary track', async () => {
+  const h = harness({ song: { title: 'Blinding Lights', artist: '', link: '' }, fetcher: async (url) => url.includes('/search?') ? new Response(null, { status: 429 }) : null })
+  assert.equal((await h.call('queue', { song_id: songId })).body.error, 'SPOTIFY_RATE_LIMIT')
+  assert.ok(!h.ops.some(({ op }) => op === 'claim_song'))
+})
+test('invalid selections and already dispatched requests do not reach search or queue', async () => {
+  const bad = harness()
+  assert.equal((await bad.call('queue', { song_id: songId, track_id: 'not-an-id' })).body.error, 'INVALID_INPUT')
+  const sent = harness({ config: { dispatches: { [songId]: { state: 'sent' } } }, song: { title: 'Anything', artist: '', link: '' } })
+  assert.equal((await sent.call('queue', { song_id: songId })).body.error, 'ALREADY_DISPATCHED')
+  assert.ok(!sent.network.some(({ url }) => url.includes('/search?') || url.includes('/queue?')))
 })

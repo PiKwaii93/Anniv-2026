@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { spotifyAction, type SpotifyState } from './api'
+import { spotifyAction, type SpotifyState, type SpotifyTrackChoice } from './api'
 
 export function useSpotify() {
   const [data, setData] = useState<SpotifyState | null>(null)
@@ -7,6 +7,7 @@ export function useSpotify() {
   const [statusError, setStatusError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [choices, setChoices] = useState<Record<string, SpotifyTrackChoice[]>>({})
   const mounted = useRef(false)
   const pending = useRef(false)
   const load = useCallback(async () => {
@@ -34,8 +35,15 @@ export function useSpotify() {
   const run = async (action: string, payload: Record<string, unknown> = {}) => {
     if (pending.current) return false
     pending.current = true; setBusy(true); setCommandError(''); setNotice('')
+    if (action === 'search' && typeof payload.song_id === 'string') {
+      setChoices((current) => { const next = { ...current }; delete next[payload.song_id as string]; return next })
+    }
     try {
       const result = await spotifyAction(action, payload)
+      if (result.needs_choice && result.song_id && result.choices) {
+        if (mounted.current) setChoices((current) => ({ ...current, [result.song_id!]: result.choices! }))
+        return false
+      }
       if (action === 'connect' && result.url) {
         const url = new URL(result.url)
         if (url.origin !== 'https://accounts.spotify.com' || url.pathname !== '/authorize') throw new Error('Adresse de connexion Spotify invalide.')
@@ -51,6 +59,6 @@ export function useSpotify() {
       return false
     } finally { pending.current = false; if (mounted.current) setBusy(false) }
   }
-  return { data, busy, error: commandError || statusError, notice, refresh, run }
+  return { data, busy, choices, error: commandError || statusError, notice, refresh, run }
 }
 export type SpotifyController = ReturnType<typeof useSpotify>
