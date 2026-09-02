@@ -4,9 +4,10 @@ import { createHandler, spotifyTrackUri, challenge, REDIRECT_URI } from '../supa
 const trackId = '4iV5W9uYEdYUVa79Axb7Rh'
 const songId = '11111111-1111-4111-8111-111111111111'
 function harness(overrides = {}) {
-  const ops = [], network = []
+  const ops = [], network = [], diagnostics = []
   const config = { client_id: 'a'.repeat(32), device_id: 'pc', device_name: 'PC test', tokens: { access_token: 'PRIVATE_ACCESS', refresh_token: 'PRIVATE_REFRESH', expires_at: Date.now() + 3600000 }, dispatches: {} }
   const handler = createHandler({
+    report: (event) => diagnostics.push(event),
     authenticate: async (jwt) => jwt === 'test-admin' ? 'admin-id' : null,
     rpc: async (_admin, op, payload) => {
       ops.push({ op, payload })
@@ -28,7 +29,7 @@ function harness(overrides = {}) {
     const response = await handler(new Request('https://example.test/functions/v1/spotify-jukebox', { method: 'POST', headers: { Authorization: `Bearer ${jwt}` }, body: JSON.stringify({ action, ...payload }) }))
     return { status: response.status, body: await response.json() }
   }
-  return { call, ops, network }
+  return { call, ops, network, diagnostics }
 }
 test('track URLs accept Spotify tracks, reject spoofed hosts, playlists and credentials', () => {
   assert.equal(spotifyTrackUri(`https://open.spotify.com/intl-fr/track/${trackId}?si=abc`), `spotify:track:${trackId}`)
@@ -83,4 +84,34 @@ test('explicit rejection permits a later retry and preserves the proposal', asyn
   const h = harness({ fetcher: async (url) => url.includes('/queue?') ? new Response('{}', { status: 403 }) : null })
   assert.equal((await h.call('queue', { song_id: songId })).body.error, 'SPOTIFY_FORBIDDEN')
   assert.ok(h.ops.some((op) => op.op === 'failed')); assert.ok(!h.ops.some((op) => op.op === 'sent'))
+})
+for (const action of ['play', 'pause', 'next']) {
+  for (const status of [200, 202, 204]) {
+    test(`${action} accepts HTTP ${status} with no response body without repeating the command`, async () => {
+      const h = harness({ fetcher: async (url) => url.includes(`/me/player/${action}?`) ? new Response(null, { status }) : null })
+      const result = await h.call(action)
+      assert.equal(result.status, 200)
+      assert.deepEqual(result.body, { ok: true })
+      assert.equal(h.network.filter(({ url }) => url.includes(`/me/player/${action}?`)).length, 1)
+      assert.deepEqual(h.diagnostics, [{ event: 'spotify_bridge', action, stage: 'playback_command', code: 'SPOTIFY_ACCEPTED', status }])
+    })
+  }
+}
+test('an empty playback response keeps devices available without raising a warning', async () => {
+  const h = harness({ fetcher: async (url) => url.endsWith('/me/player') ? new Response('', { status: 200 }) : null })
+  const result = await h.call('status')
+  assert.equal(result.status, 200)
+  assert.equal(result.body.warning, undefined)
+  assert.equal(result.body.devices[0].id, 'pc')
+  assert.equal(result.body.playback, null)
+})
+test('playback controls still report explicit Spotify rejection', async () => {
+  const h = harness({ fetcher: async (url) => url.includes('/me/player/pause?') ? new Response(null, { status: 403 }) : null })
+  assert.equal((await h.call('pause')).body.error, 'SPOTIFY_FORBIDDEN')
+})
+test('invalid Spotify JSON has a distinct error and diagnostics contain no secrets', async () => {
+  const h = harness({ fetcher: async (url) => url.endsWith('/me/player/devices') ? new Response('PRIVATE_INVALID_BODY', { status: 200 }) : null })
+  assert.equal((await h.call('status')).body.warning, 'SPOTIFY_INVALID_RESPONSE')
+  assert.deepEqual(h.diagnostics, [{ event: 'spotify_bridge', action: 'status', stage: 'status', code: 'SPOTIFY_INVALID_RESPONSE' }])
+  assert.ok(!JSON.stringify(h.diagnostics).includes('PRIVATE'))
 })
