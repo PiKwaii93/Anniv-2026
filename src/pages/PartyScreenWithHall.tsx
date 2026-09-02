@@ -7,7 +7,7 @@ import {
 
 import { useParty } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
-import HallOfFameScreen from './HallOfFameScreen'
+import PartyEndingScreen from './PartyEndingScreen'
 import PartyScreen from './PartyScreen'
 import PartyScreenAuto from './PartyScreenAuto'
 import PhotoHuntScreen from './PhotoHuntScreen'
@@ -86,7 +86,7 @@ function PartyScreenWithHall() {
   }, [loadRoomPhase])
 
   if (!loading && settings.phase === 'ended') {
-    return <HallOfFameScreen />
+    return <PartyEndingScreen />
   }
 
   const roomIsLive = roomPhase === 'open' || roomPhase === 'revealed'

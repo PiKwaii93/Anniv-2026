@@ -26,6 +26,11 @@ import {
 
 import Home from './pages/Home'
 
+const Capsule = lazy(() => import('./pages/Capsule'))
+const Jukebox = lazy(() => import('./pages/Jukebox'))
+const Duos = lazy(() => import('./pages/Duos'))
+const PartyExtrasAdmin = lazy(() => import('./pages/PartyExtrasAdmin'))
+
 const Admin = lazy(
   () => import('./pages/Admin'),
 )
@@ -239,6 +244,10 @@ function App() {
 
       <Suspense fallback={<RouteLoading />}>
         <Routes>
+          <Route path="/capsule" element={<PartyIdentityGate><Capsule /></PartyIdentityGate>} />
+          <Route path="/jukebox" element={<PartyIdentityGate><Jukebox /></PartyIdentityGate>} />
+          <Route path="/duos" element={<PartyIdentityGate><Duos /></PartyIdentityGate>} />
+          <Route path="/admin/party-extras" element={<AdminRoute><PartyExtrasAdmin /></AdminRoute>} />
           <Route
             path="/"
             element={<Home />}

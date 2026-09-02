@@ -410,6 +410,7 @@ function Home() {
         </section>
 
         <section className="modules" aria-label="Modules">
+          <PartyExtrasHomeCards />
           {showHallOfFame && (
             <Link
               to="/hall-of-fame"
@@ -483,3 +484,4 @@ function Home() {
 }
 
 export default Home
+import PartyExtrasHomeCards from '../features/party-extras/PartyExtrasHomeCards'
