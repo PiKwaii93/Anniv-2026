@@ -3,22 +3,29 @@ import { Link } from 'react-router-dom'
 import { ExtrasPage, SongCard } from '../features/party-extras/ExtrasUI'
 import { downloadText, letterExport, revealDate, songExport, type Song, type SongStatus } from '../features/party-extras/model'
 import { usePartyExtras } from '../features/party-extras/usePartyExtras'
+import SpotifyPanel from '../features/spotify/SpotifyPanel'
+import SpotifySongAction from '../features/spotify/SpotifySongAction'
+import { useSpotify, type SpotifyController } from '../features/spotify/useSpotify'
 
 function Toggle({ label, checked, disabled, change }: { label: string; checked: boolean; disabled: boolean; change: (value: boolean) => void }) {
   return <label className="extras-toggle"><span>{label}</span><input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => change(event.target.checked)} /></label>
 }
 
-function SongModeration({ song, busy, change }: { song: Song; busy: boolean; change: (status: SongStatus) => void }) {
+function SongModeration({ song, busy, change, spotify, refresh }: { song: Song; busy: boolean; change: (status: SongStatus) => void; spotify: SpotifyController; refresh: () => Promise<unknown> }) {
+  const dispatch = spotify.data?.dispatches[song.id]
+  busy = busy || spotify.busy
   return <SongCard song={song}>
-    {['pending', 'rejected', 'played'].includes(song.status) && <button disabled={busy} onClick={() => change('queued')}>{song.status === 'pending' ? 'Accepter' : 'Remettre en sélection'}</button>}
-    {['pending', 'queued'].includes(song.status) && <button className="secondary" disabled={busy} onClick={() => change('rejected')}>Refuser</button>}
+    {!dispatch && ['pending', 'rejected', 'played'].includes(song.status) && <button disabled={busy} onClick={() => change('queued')}>{song.status === 'pending' ? spotify.data?.connected ? 'Accepter sans envoyer' : 'Accepter' : 'Remettre en sélection'}</button>}
+    {!dispatch && ['pending', 'queued'].includes(song.status) && <button className="secondary" disabled={busy} onClick={() => change('rejected')}>Refuser</button>}
     {song.status === 'queued' && <button disabled={busy} onClick={() => change('playing')}>Marquer en cours</button>}
     {['queued', 'playing'].includes(song.status) && <button className="secondary" disabled={busy} onClick={() => change('played')}>Marquer jouée</button>}
+    {spotify.data?.connected && ['pending', 'queued'].includes(song.status) && <SpotifySongAction song={song} controller={spotify} refresh={refresh} />}
   </SongCard>
 }
 
 export default function PartyExtrasAdmin() {
-  const { data, error, busy, act } = usePartyExtras()
+  const { data, error, busy, act, refresh } = usePartyExtras()
+  const spotify = useSpotify()
   const [notice, setNotice] = useState('')
   const action = async (name: string, payload: Record<string, unknown> = {}) => {
     setNotice('')
@@ -27,7 +34,8 @@ export default function PartyExtrasAdmin() {
   const setting = (key: string, value: boolean) => void action('admin_settings', { [key]: value })
   const settings = data?.settings
   return <ExtrasPage title="Les petits plus." eyebrow="Régie · Anniv 2026" intro="Les lettres de demain, la bande-son d’aujourd’hui, les rencontres et le dernier mot de la soirée." error={error} admin>
-    <nav className="extras-tabs" aria-label="Les quatre nouveautés"><a href="#capsule">Capsule</a><a href="#jukebox">Jukebox</a><a href="#duos">Duos</a><a href="#credits">Générique</a></nav>
+    <nav className="extras-tabs" aria-label="Régie des activités"><a href="#spotify">Spotify</a><a href="#capsule">Capsule</a><a href="#jukebox">Jukebox</a><a href="#duos">Duos</a><a href="#credits">Générique</a></nav>
+    <SpotifyPanel controller={spotify} />
     <div role="status" aria-live="polite">{notice && <p className="extras-notice">{notice}</p>}</div>
     {!data || !settings ? <p className="extras-loading">Chargement de la régie…</p> : <>
       <div className="extras-grid">
@@ -62,13 +70,13 @@ export default function PartyExtrasAdmin() {
       <section id="jukebox" className="extras-panel"><p className="extras-eyebrow">04 · La bande-son</p><h2>Jukebox participatif</h2>
         <Toggle label="Visible sur le site" checked={settings.jukebox_visible} disabled={busy} change={(value) => setting('jukebox_visible', value)} />
         <Toggle label="Accepter les propositions et votes" checked={settings.jukebox_open} disabled={busy} change={(value) => setting('jukebox_open', value)} />
-        <p>Accepte une proposition pour la soumettre aux votes. Ouvre son lien pour l’écouter dans ton application musicale, puis marque-la en cours. Ce bouton met à jour le site ; il ne lance pas la musique.</p>
+        <p>{spotify.data?.connected ? 'Accepte et envoie un titre dans la file Spotify du PC, ou accepte-le sans envoi pour recueillir les votes. Un lien Spotify précis est nécessaire pour chaque envoi. Les boutons « Marquer » mettent uniquement à jour le statut sur le site.' : 'Accepte une proposition pour la soumettre aux votes. Connecte Spotify ci-dessus pour envoyer les titres au PC, ou ouvre leurs liens dans ton application musicale.'}</p>
         <div className="extras-actions"><button className="secondary" disabled={!data.songs.some((song) => ['queued', 'playing', 'played'].includes(song.status))} onClick={() => downloadText('jukebox-anniv-2026.txt', songExport(data.songs))}>Exporter la sélection</button><Link className="extras-link" to="/jukebox">Voir la page invitée ↗</Link></div>
         <h3>À valider · {data.songs.filter((song) => song.status === 'pending').length}</h3>
         {!data.songs.some((song) => song.status === 'pending') && <p className="extras-empty">Aucune proposition en attente.</p>}
-        {data.songs.filter((song) => song.status === 'pending').map((song) => <SongModeration key={song.id} song={song} busy={busy} change={(status) => void action('admin_song', { id: song.id, status })} />)}
-        <h3>La sélection</h3>{data.songs.filter((song) => ['queued', 'playing'].includes(song.status)).map((song) => <SongModeration key={song.id} song={song} busy={busy} change={(status) => void action('admin_song', { id: song.id, status })} />)}
-        <details><summary>Déjà jouées et non retenues</summary>{data.songs.filter((song) => ['played', 'rejected'].includes(song.status)).map((song) => <SongModeration key={song.id} song={song} busy={busy} change={(status) => void action('admin_song', { id: song.id, status })} />)}</details>
+        {data.songs.filter((song) => song.status === 'pending').map((song) => <SongModeration key={song.id} song={song} busy={busy} spotify={spotify} refresh={refresh} change={(status) => void action('admin_song', { id: song.id, status })} />)}
+        <h3>La sélection</h3>{data.songs.filter((song) => ['queued', 'playing'].includes(song.status)).map((song) => <SongModeration key={song.id} song={song} busy={busy} spotify={spotify} refresh={refresh} change={(status) => void action('admin_song', { id: song.id, status })} />)}
+        <details><summary>Déjà jouées et non retenues</summary>{data.songs.filter((song) => ['played', 'rejected'].includes(song.status)).map((song) => <SongModeration key={song.id} song={song} busy={busy} spotify={spotify} refresh={refresh} change={(status) => void action('admin_song', { id: song.id, status })} />)}</details>
       </section>
     </>}
   </ExtrasPage>

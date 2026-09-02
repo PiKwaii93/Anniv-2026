@@ -1,0 +1,3 @@
+[functions.spotify-jukebox]
+verify_jwt = true
+entrypoint = "./functions/spotify-jukebox/index.ts"
