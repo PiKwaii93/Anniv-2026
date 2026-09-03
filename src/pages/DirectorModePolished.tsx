@@ -1,8 +1,5 @@
 import { Link } from 'react-router-dom'
 
-import DirectorAnnouncementDock from '../features/announcements/DirectorAnnouncementDock'
-import DirectorScenesDock from '../features/party/DirectorScenesDock'
-import PhotoHuntDirectorDock from '../features/photo-hunt/PhotoHuntDirectorDock'
 import DirectorMode from './DirectorMode'
 
 import './DirectorModePolish.css'
@@ -13,21 +10,6 @@ function DirectorModePolished() {
     <>
       <Link to="/admin/party-extras" className="extras-admin-link">Capsule · Jukebox · Duos · Générique — ouvrir la régie ↗</Link>
       <DirectorMode />
-      <DirectorScenesDock />
-      <DirectorAnnouncementDock />
-      <PhotoHuntDirectorDock />
-      <Link
-        to="/screen"
-        target="_blank"
-        rel="noreferrer"
-        className="director-tv-launch"
-      >
-        <span>▣</span>
-        <div>
-          <small>Grand écran</small>
-          <strong>Ouvrir l’écran TV ↗</strong>
-        </div>
-      </Link>
     </>
   )
 }

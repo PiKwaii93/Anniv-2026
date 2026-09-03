@@ -1,6 +1,9 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -20,6 +23,10 @@ import {
 
 import './AdminPartyDock.css'
 import './AdminDirectorLaunch.css'
+import './AdminRegie.css'
+import type { DirectorTool } from './DirectorTools'
+
+const DirectorTools = lazy(() => import('./DirectorTools'))
 
 const phaseOptions: Array<{
   value: PartyPhase
@@ -89,9 +96,44 @@ function AdminPartyDock() {
     updateSettings,
   } = useParty()
   const [open, setOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const [panel, setPanel] = useState<DirectorTool>(null)
+  const dockRef = useRef<HTMLDivElement>(null)
+  const launcherRef = useRef<HTMLButtonElement>(null)
+
+  const closeTools = () => {
+    setToolsOpen(false)
+    setPanel(null)
+    launcherRef.current?.focus()
+  }
+
+  useEffect(() => {
+    if (!toolsOpen) return
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !dockRef.current?.contains(event.target)) {
+        setToolsOpen(false)
+        setPanel(null)
+      }
+    }
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setToolsOpen(false)
+        setPanel(null)
+        launcherRef.current?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', escape)
+    }
+  }, [toolsOpen])
 
   useEffect(() => {
     setOpen(false)
+    setToolsOpen(false)
+    setPanel(null)
   }, [location.pathname])
 
   const currentPhase = phaseOptions.find((option) => option.value === settings.phase) ?? phaseOptions[0]
@@ -128,6 +170,31 @@ function AdminPartyDock() {
 
   return (
     <>
+      <div className="admin-regie" ref={dockRef} inert={open}>
+        <button
+          ref={launcherRef}
+          type="button"
+          className="admin-regie__launcher"
+          aria-expanded={toolsOpen}
+          aria-controls="admin-regie-tools"
+          onClick={() => { setToolsOpen(value => !value); setPanel(null) }}
+        >
+          <span aria-hidden="true">⌘</span>
+          <strong>Régie</strong>
+          <small>{currentPhase.label}</small>
+          <span aria-hidden="true">{toolsOpen ? '×' : '⌃'}</span>
+        </button>
+        {toolsOpen && <section id="admin-regie-tools" className="admin-regie__panel" aria-label="Outils de régie">
+          <header className="admin-regie__header">
+            <div><small>ANNIV 2026</small><h2>La régie</h2></div>
+            <button type="button" aria-label="Fermer la régie" onClick={closeTools}>×</button>
+          </header>
+          <div className="admin-regie__tools">
+            {location.pathname === '/admin/live' && (
+              <Suspense fallback={<p role="status">Chargement des commandes…</p>}>
+                <DirectorTools panel={panel} setPanel={setPanel} />
+              </Suspense>
+            )}
       <Link
         to="/admin/content"
         className={
@@ -160,12 +227,15 @@ function AdminPartyDock() {
         type="button"
         className={`party-dock party-dock--${settings.phase}`}
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => { setOpen(true); setToolsOpen(false); setPanel(null) }}
       >
         <span className="party-dock__dot" />
         <span>Mode soirée</span>
         <strong>{loading ? 'Synchronisation...' : currentPhase.label}</strong>
       </button>
+          </div>
+        </section>}
+      </div>
 
       {open && (
         <div className="party-drawer-backdrop" role="presentation" onClick={() => setOpen(false)}>

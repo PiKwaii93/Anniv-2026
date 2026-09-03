@@ -1,0 +1,82 @@
+/* One positioning owner: every command and subpanel below stays in normal flow. */
+.admin-regie {
+  position: fixed;
+  z-index: 85;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: min(390px, calc(100vw - max(14px, env(safe-area-inset-left)) - max(14px, env(safe-area-inset-right))));
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 10px;
+  pointer-events: none;
+}
+.admin-regie > * { pointer-events: auto; }
+.admin-regie, .admin-regie * { box-sizing: border-box; }
+.admin-regie__launcher {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid #929af366;
+  border-radius: 14px;
+  background: #171b2bf5;
+  color: #f3f3ff;
+  box-shadow: 0 8px 28px #0006;
+  font: inherit;
+  cursor: pointer;
+}
+.admin-regie__launcher strong { font-size: .85rem; }
+.admin-regie__launcher small { font-size: .7rem; color: #b5bfce; }
+.admin-regie__panel {
+  max-height: calc(100dvh - 86px - max(14px, env(safe-area-inset-top)) - max(14px, env(safe-area-inset-bottom)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  color: #edf0fa;
+  border: 1px solid #8895be44;
+  border-radius: 18px;
+  background: #0d1019;
+  box-shadow: 0 18px 60px #0009;
+}
+.admin-regie__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.admin-regie__header small { color: #959eb4; font-size: .62rem; letter-spacing: .12em; }
+.admin-regie__header h2 { margin: 3px 0 0; font-size: 1.2rem; }
+.admin-regie__header > button { width: 44px; height: 44px; border: 1px solid #ffffff20; border-radius: 10px; color: #e2e7f5; background: #ffffff08; font: inherit; font-size: 1.3rem; cursor: pointer; }
+.admin-regie__tools { display: flex; flex-direction: column; gap: 10px; }
+.admin-regie :is(.party-dock, .party-director-launch, .director-scenes-dock, .director-announcement-dock, .photo-director-dock) {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.admin-regie :is(.director-scenes-dock, .director-announcement-dock) { display: flex; flex-direction: column; gap: 8px; }
+.admin-regie :is(.director-scenes-launch, .director-announcement-launch) {
+  width: 100%; min-width: 0; justify-content: flex-start; padding: 10px 12px; box-shadow: none; backdrop-filter: none;
+}
+.admin-regie :is(.director-scenes-launch, .director-announcement-launch) div { display: block; min-width: 0; }
+.admin-regie :is(.director-scenes-panel, .director-announcement-panel) {
+  position: static; inset: auto; width: 100%; max-height: none; overflow: visible; padding: 12px; box-shadow: none; backdrop-filter: none;
+}
+.admin-regie .director-scenes-grid { grid-template-columns: 1fr; }
+.admin-regie .photo-director-dock__main { grid-template-columns: 34px minmax(0, 1fr) auto; padding: 10px 12px; }
+.admin-regie .photo-director-dock__main > div, .admin-regie .photo-director-dock > button { display: block; }
+.admin-regie .photo-director-dock__main b { position: static; min-width: 25px; height: 25px; padding-inline: 6px; font-size: .65rem; }
+.admin-regie .party-dock { grid-template-columns: auto 1fr; }
+.admin-regie :is(button, select, a) { min-height: 44px; }
+.admin-regie :is(.party-director-launch, .director-scenes-launch, .director-announcement-launch, .photo-director-dock__main, .party-dock) strong { font-size: .8rem; overflow-wrap: anywhere; }
+.admin-regie :is(.director-announcement-panel, .director-scenes-panel) :is(button, select, textarea) { font-size: .8rem; }
+.admin-regie .director-announcement-panel textarea { font-size: 1rem; }
+.admin-regie .director-announcement-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-regie .director-announcement-settings select { min-width: 0; }
+.admin-regie :is(.director-announcement-panel__header, .director-scenes-panel__header) > button { flex: 0 0 44px; width: 44px; height: 44px; }
+.admin-regie .director-scene { min-height: 110px; }
+.admin-regie .director-scene > b { position: static; grid-column: 2; justify-self: end; }
+.admin-regie .director-scene__copy em { font-size: .7rem; }
+.admin-regie :is(button, a, select, textarea):focus-visible { outline: 2px solid #dfc98a; outline-offset: 2px; }

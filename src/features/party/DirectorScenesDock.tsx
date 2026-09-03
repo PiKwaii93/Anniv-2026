@@ -79,7 +79,7 @@ const scenes: SceneDefinition[] = [
   },
 ]
 
-function DirectorScenesDock() {
+function DirectorScenesDock({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const {
     settings,
     refresh: refreshParty,
@@ -88,7 +88,6 @@ function DirectorScenesDock() {
     refresh: refreshAnnouncement,
   } = useAnnouncement()
 
-  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState<SceneKey | null>(null)
   const [error, setError] = useState('')
   const [lastScene, setLastScene] = useState<SceneKey | null>(null)
@@ -157,8 +156,21 @@ function DirectorScenesDock() {
 
   return (
     <div className="director-scenes-dock">
+      <button
+        type="button"
+        className={open ? 'director-scenes-launch director-scenes-launch--open' : 'director-scenes-launch'}
+        aria-expanded={open}
+        aria-controls="regie-scenes-panel"
+        onClick={() => setOpen(!open)}
+      >
+        <span>🎬</span>
+        <div>
+          <small>{activeDefinition ? activeDefinition.label : 'Régie express'}</small>
+          <strong>Scènes</strong>
+        </div>
+      </button>
       {open && (
-        <section className="director-scenes-panel" aria-label="Scènes du Mode Directeur">
+        <section id="regie-scenes-panel" className="director-scenes-panel" aria-label="Scènes du Mode Directeur">
           <div className="director-scenes-panel__header">
             <div>
               <small>Régie express</small>
@@ -203,18 +215,6 @@ function DirectorScenesDock() {
         </section>
       )}
 
-      <button
-        type="button"
-        className={open ? 'director-scenes-launch director-scenes-launch--open' : 'director-scenes-launch'}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span>🎬</span>
-        <div>
-          <small>Régie express</small>
-          <strong>{activeDefinition ? activeDefinition.label : 'Scènes'}</strong>
-        </div>
-      </button>
     </div>
   )
 }

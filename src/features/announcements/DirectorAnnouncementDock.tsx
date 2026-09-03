@@ -52,7 +52,7 @@ const durationOptions: Array<{
   { value: 'persistent', label: 'Jusqu’au retrait', seconds: null },
 ]
 
-function DirectorAnnouncementDock() {
+function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const {
     announcement,
     visible,
@@ -61,7 +61,6 @@ function DirectorAnnouncementDock() {
     publish,
     clear,
   } = useAnnouncement()
-  const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [kind, setKind] = useState<AnnouncementKind>('info')
   const [duration, setDuration] = useState('15')
@@ -99,9 +98,23 @@ function DirectorAnnouncementDock() {
 
   return (
     <div className="director-announcement-dock">
+      <button
+        type="button"
+        className={visible ? 'director-announcement-launch director-announcement-launch--active' : 'director-announcement-launch'}
+        aria-expanded={open}
+        aria-controls="regie-announcement-panel"
+        onClick={() => setOpen(!open)}
+      >
+        <span>📣</span>
+        <div>
+          <small>{visible ? 'Annonce active' : 'Diffusion'}</small>
+          <strong>{visible ? 'Gérer l’annonce' : 'Envoyer une annonce'}</strong>
+        </div>
+      </button>
       {open && (
         <section
           className="director-announcement-panel"
+          id="regie-announcement-panel"
           aria-label="Diffuser une annonce live"
         >
           <div className="director-announcement-panel__header">
@@ -148,6 +161,7 @@ function DirectorAnnouncementDock() {
           </div>
 
           <textarea
+            aria-label="Message de l’annonce"
             value={message}
             maxLength={240}
             rows={3}
@@ -207,22 +221,6 @@ function DirectorAnnouncementDock() {
         </section>
       )}
 
-      <button
-        type="button"
-        className={
-          visible
-            ? 'director-announcement-launch director-announcement-launch--active'
-            : 'director-announcement-launch'
-        }
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span>📣</span>
-        <div>
-          <small>{visible ? 'Annonce active' : 'Diffusion'}</small>
-          <strong>{visible ? 'Gérer l’annonce' : 'Envoyer une annonce'}</strong>
-        </div>
-      </button>
     </div>
   )
 }
