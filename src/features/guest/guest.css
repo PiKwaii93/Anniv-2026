@@ -6,7 +6,6 @@
 .guest-dialog .photo-hunt-composer { width: 100%; max-height: none; padding: 0; background: none; border: 0; overflow: visible; box-shadow: none; }
 .guest-app .photo-hunt__spotlight { grid-template-columns: 1fr; }
 .guest-app .photo-hunt__spotlight-card { min-height: 160px; padding: 22px; }
-.guest-app .photo-hunt__challenge-list { grid-template-columns: 1fr; }
 .guest-app .bingo-cell { min-width: 0; padding: 24px 8px 20px; min-height: 124px; }
 .guest-app .bingo-cell .bingo-cell__text { font-size: 14px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .guest-app .bingo-cell__number { font-size: 12px; }
@@ -75,6 +74,10 @@
 .guest-tabs { display: flex; gap: 6px; padding: 5px; margin: 0 0 22px; border: 1px solid #353641; background: #101116; border-radius: 15px; }
 .guest-tabs button, .guest-tabs a { min-height: 46px; flex: 1; border: 0; border-radius: 10px; color: #bec0cd; background: transparent; padding: 10px 8px; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; text-align: center; cursor: pointer; }
 .guest-tabs [aria-pressed="true"], .guest-tabs [aria-current] { color: #f3e3b6; background: #29291f; }
+.guest-app .photo-hunt > .guest-tabs { width: min(1160px, 100%); margin-inline: auto; }
+.guest-connection { max-width: 960px; margin: 0 auto 12px; padding: 12px 16px; border: 1px solid #766344; border-radius: 12px; background: #30281c; color: #f2dca9; font-size: 14px; line-height: 1.5; }
+.guest-connection:empty { display: none; }
+@media (max-width: 1000px) { .guest-connection { margin-inline: 16px; } }
 .guest-app [hidden] { display: none !important; }
 /* Guest scope deliberately excludes TV and preparation tools. */
 .guest-app main { padding-bottom: 32px; }

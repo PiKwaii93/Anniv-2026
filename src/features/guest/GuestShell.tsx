@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext'
 import { activeGuestTab, guestTabs } from './navigation'
 import { useLiveRoom } from './useLiveRoom'
 import { GuestContext } from './GuestContext'
+import ConnectionNotice from './ConnectionNotice'
 import './guest.css'
 
 export default function GuestShell({ children }: { children: ReactNode }) {
@@ -29,6 +30,7 @@ export default function GuestShell({ children }: { children: ReactNode }) {
         <Link className="guest-brand" to="/" aria-label="Anniv 2026 · accueil">ANNIV <span>2026</span></Link>
         <PartyIdentityBadge key={pathname} inline />
       </header>
+      <ConnectionNotice />
       {settings.phase === 'live' && settings.roomVisible && room?.phase === 'open' && pathname !== '/room' && pathname !== '/' && <Link className="guest-live-link" to="/room"><span className="guest-live-dot" />Un vote est ouvert <strong>Participer →</strong></Link>}
       {children}
       <nav className="guest-nav" aria-label="Navigation principale" inert={onboarding}>
