@@ -352,6 +352,10 @@ function AdminPartyDock() {
                 <span>☏</span>
                 Modérer la discussion
               </Link>
+              <Link to="/admin/guests#sessions" className="party-drawer__qr-link">
+                <span aria-hidden="true">♙</span>
+                Libérer les identités
+              </Link>
               <Link to="/admin/content" className="party-drawer__qr-link">
                 <span>⇅</span>
                 Sauvegarder le contenu

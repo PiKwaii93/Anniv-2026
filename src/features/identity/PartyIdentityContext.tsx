@@ -206,6 +206,7 @@ function PartyIdentityProvider({
     async (
       stored: StoredIdentity,
       quiet = false,
+      isCurrent: () => boolean = () => true,
     ) => {
       const player = playerByKeyRef.current.get(stored.playerKey)
 
@@ -226,6 +227,8 @@ function PartyIdentityProvider({
         },
       )
 
+      if (!isCurrent()) return null
+
       if (rpcError) {
         console.error(
           'Unable to claim global party identity:',
@@ -236,12 +239,14 @@ function PartyIdentityProvider({
             'Impossible de synchroniser ton identité.',
           )
         }
-        return false
+        // A network failure is not a server-side revocation.
+        return null
       }
 
       const result = data as ClaimResult
 
       if (!result.ok) {
+        if (result.code === 'INVALID_SESSION') clearLocalIdentity()
         if (!quiet) {
           setError(identityError(result.code))
         }
@@ -259,7 +264,7 @@ function PartyIdentityProvider({
       setError('')
       return true
     },
-    [seedModuleStorage],
+    [clearLocalIdentity, seedModuleStorage],
   )
 
   useEffect(() => {
@@ -288,9 +293,9 @@ function PartyIdentityProvider({
       )
 
       if (globalIdentity) {
-        const ok = await claimStoredIdentity(globalIdentity, true)
+        const ok = await claimStoredIdentity(globalIdentity, true, () => !cancelled)
 
-        if (!cancelled && !ok) {
+        if (!cancelled && ok === false) {
           clearLocalIdentity()
           setIdentity(null)
         }
@@ -317,9 +322,10 @@ function PartyIdentityProvider({
       const candidate = missionIdentity ?? roomIdentity
 
       if (candidate) {
-        const ok = await claimStoredIdentity(candidate, true)
+        const ok = await claimStoredIdentity(candidate, true, () => !cancelled)
 
-        if (!cancelled && !ok) {
+        if (!cancelled && ok === false) {
+          clearLocalIdentity()
           setIdentity(null)
         }
       }
@@ -338,6 +344,59 @@ function PartyIdentityProvider({
     guestsLoading,
     identityEnabled,
   ])
+
+  // Validate without claiming: a closed/private tab must never reclaim a
+  // server-revoked identity. Offline failures leave local credentials intact.
+  useEffect(() => {
+    if (!identityEnabled || guestsLoading || loading || busy) return
+    let cancelled = false
+    let checking = false
+    const check = async () => {
+      if (checking || document.visibilityState === 'hidden' || !navigator.onLine) return
+      const raw = window.localStorage.getItem(PARTY_IDENTITY_STORAGE_KEY)
+      const stored = parseStoredIdentity(raw)
+      if (!stored) {
+        setIdentity(null)
+        return
+      }
+      checking = true
+      try {
+        const { data, error: rpcError } = await supabase.rpc('party_identity_is_valid', {
+          p_player_key: stored.playerKey, p_session_token: stored.sessionToken,
+        })
+        if (cancelled || rpcError || raw !== window.localStorage.getItem(PARTY_IDENTITY_STORAGE_KEY)) return
+        if (data === false) {
+          clearLocalIdentity()
+          setIdentity(null)
+          setMigrationConflict(false)
+          setError('Ta session a été déconnectée. Choisis de nouveau ton prénom pour continuer.')
+        } else if (data === true) {
+          const player = playerByKeyRef.current.get(stored.playerKey)
+          if (player) setIdentity(current => current?.sessionToken === stored.sessionToken && current.playerKey === stored.playerKey
+            ? current : { ...stored, playerName: player.name, detail: player.detail })
+        }
+      } catch {
+        // Temporary network outage: retry on the next tick/focus/online event.
+      } finally { checking = false }
+    }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === PARTY_IDENTITY_STORAGE_KEY || event.key === null) void check()
+    }
+    void check()
+    const timer = window.setInterval(() => void check(), 10_000)
+    window.addEventListener('focus', check)
+    window.addEventListener('online', check)
+    window.addEventListener('storage', onStorage)
+    document.addEventListener('visibilitychange', check)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      window.removeEventListener('focus', check)
+      window.removeEventListener('online', check)
+      window.removeEventListener('storage', onStorage)
+      document.removeEventListener('visibilitychange', check)
+    }
+  }, [identityEnabled, guestsLoading, loading, busy, clearLocalIdentity])
 
   const claimIdentity = useCallback(
     async (playerKey: string) => {
@@ -370,7 +429,7 @@ function PartyIdentityProvider({
 
       const ok = await claimStoredIdentity(stored)
       setBusy(false)
-      return ok
+      return ok === true
     },
     [busy, claimStoredIdentity],
   )

@@ -1,0 +1,13 @@
+.admin-guest-sessions { max-width:1100px; margin:0 auto 28px; padding:24px; border:1px solid #48414a; border-radius:18px; background:#141419; scroll-margin-top:80px; }
+.admin-guest-sessions h2 { margin:6px 0 12px; font-size:1.3rem; color:#f5f5f7; }
+.admin-guest-sessions p { color:#b9bac4; line-height:1.6; font-size:.9rem; }
+.admin-guest-sessions button { min-height:44px; padding:12px 16px; border:1px solid #696170; border-radius:10px; background:#24232b; color:#f5f5f7; font:inherit; cursor:pointer; }
+.admin-guest-sessions button:focus-visible { outline:2px solid #dec992; outline-offset:4px; }
+.admin-guest-sessions button:disabled { opacity:.55; cursor:wait; }
+.admin-guest-sessions .guest-sessions-trigger { color:#ffb7be; border-color:#875760; }
+.guest-sessions-confirm { margin-top:18px; padding:18px; border:1px solid #875760; border-radius:12px; background:#271c22; color:#f5f5f7; }
+.guest-sessions-confirm > div { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; }
+.admin-guest-sessions .guest-sessions-danger { background:#ffd0d6; color:#47151f; font-weight:700; }
+.admin-guest-sessions .guest-sessions-error { color:#ffb7be; }
+.admin-guest-sessions .guest-sessions-notice { color:#b9e9cf; }
+@media(max-width:600px) { .admin-guest-sessions { padding:18px; } .guest-sessions-confirm > div { flex-direction:column; } .guest-sessions-trigger { width:100%; } }

@@ -6,6 +6,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useGuests } from '../features/guests/GuestsContext'
+import AdminGuestSessions from '../features/identity/AdminGuestSessions'
 import type {
   Guest,
   GuestStatus,
@@ -415,6 +416,8 @@ function Admin() {
           {synchronizationError}
         </div>
       )}
+
+      <AdminGuestSessions />
 
       <section className="admin-stats">
         <article className="stat-card">
