@@ -69,7 +69,7 @@ function HomeIdentityOnboarding() {
     setWelcoming(true)
     welcomeTimer.current = window.setTimeout(() => {
       setWelcoming(false)
-    }, 1400)
+    }, 150)
   }
 
   if (welcoming && identity) {
@@ -96,11 +96,10 @@ function HomeIdentityOnboarding() {
 
         <p className="home-onboarding__eyebrow">Première étape</p>
         <h1 id="home-onboarding-title">
-          C’est qui,
-          <span>toi ?</span>
+          Choisis ton prénom.
         </h1>
         <p className="home-onboarding__intro">
-          Choisis ton prénom une seule fois. Ensuite, ce téléphone te reconnaît automatiquement dans les jeux de la soirée.
+          Une seule fois, et ce téléphone te reconnaîtra pour la soirée.
         </p>
 
         {migrationConflict && (
@@ -113,7 +112,6 @@ function HomeIdentityOnboarding() {
           <span>Ton prénom</span>
           <input
             value={search}
-            autoFocus
             autoComplete="off"
             placeholder="Tape ton prénom…"
             onChange={(event) => {
@@ -148,7 +146,7 @@ function HomeIdentityOnboarding() {
 
         {matches.length === 0 && (
           <p className="home-onboarding__empty">
-            Aucun participant ne correspond à cette recherche.
+            Aucun prénom trouvé. Essaie sans accent ou demande à Maxence de vérifier ton inscription.
           </p>
         )}
 

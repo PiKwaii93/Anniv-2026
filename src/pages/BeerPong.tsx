@@ -8,6 +8,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/AuthContext'
+import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 
@@ -438,6 +439,7 @@ function BeerPong() {
     loading: authLoading,
   } = useAuth()
 
+  const { identity: partyIdentity } = usePartyIdentity()
   const [state, setState] = useState<BeerPongState>(initialState)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -1306,11 +1308,19 @@ function BeerPong() {
           </h1>
 
           <p className="beer-header__description">
-            Équipes de 2, draft libre et élimination directe.
+            Ton équipe, tes adversaires et les résultats du tournoi.
           </p>
         </div>
       </header>
 
+      {state.draftValidated && partyIdentity && (() => {
+        const team = state.teams.find(item => item.playerIds.includes(partyIdentity.playerKey))
+        if (!team) return null
+        const match = state.rounds.flat().find(item => !item.winnerTeamId && (item.teamAId === team.id || item.teamBId === team.id))
+        const opponentId = match && (match.teamAId === team.id ? match.teamBId : match.teamAId)
+        const opponent = opponentId ? teamById.get(opponentId) : null
+        return <section className="guest-now"><p className="guest-eyebrow">Ton équipe</p><h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></section>
+      })()}
       {synchronizationError && (
         <div className="beer-sync-error">
           {synchronizationError}

@@ -5,6 +5,7 @@ import {
   useState,
 } from 'react'
 import { Link } from 'react-router-dom'
+import { rememberMission } from '../features/guest/activityMemory'
 
 import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
@@ -569,6 +570,9 @@ function SecretMissions() {
   }
 
   const mission = missionState?.mission
+  useEffect(() => {
+    if (identity && missionState?.ok) rememberMission(identity.playerKey, !!mission)
+  }, [identity, missionState?.ok, mission])
 
   return (
     <main className="missions-page">
@@ -797,12 +801,12 @@ function SecretMissions() {
           </section>
 
           <p className="missions-privacy-note">
-            Ne recharge pas la page pour changer de mission : elle est volontairement liée à ton identité. Un seul joker est disponible pour toute la soirée.
+            Un seul joker pour la soirée. Ta mission reste la même lorsque tu reviens.
           </p>
         </>
       )}
 
-      <section className="missions-leaderboard">
+      <details className="missions-leaderboard"><summary>Voir le classement des missions</summary>
         <div className="missions-section-heading">
           <div>
             <p className="missions-eyebrow">
@@ -847,7 +851,7 @@ function SecretMissions() {
             ))}
           </div>
         )}
-      </section>
+      </details>
     </main>
   )
 }

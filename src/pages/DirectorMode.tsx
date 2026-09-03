@@ -17,6 +17,7 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './DirectorMode.css'
+import TvStatus from '../features/party/TvStatus'
 
 type BeerPongState = {
   selectedPlayerIds?: string[]
@@ -702,6 +703,7 @@ function DirectorMode() {
         </div>
       )}
 
+      <TvStatus />
       <section className="director-command-bar">
         <div className="director-command-bar__phase">
           <span>État de la soirée</span>
@@ -742,7 +744,7 @@ function DirectorMode() {
         </div>
       </section>
 
-      <section className="director-featured">
+      <details className="director-featured"><summary>Choisir le module à mettre en avant</summary>
         <div className="director-section-heading">
           <div>
             <p className="director-eyebrow">À la une</p>
@@ -790,7 +792,7 @@ function DirectorMode() {
             )
           })}
         </div>
-      </section>
+      </details>
 
       <section className="director-grid">
         <article className="director-panel director-panel--room director-panel--wide">
@@ -1009,7 +1011,7 @@ function DirectorMode() {
           </div>
         </article>
 
-        <article className="director-panel">
+        <article className="director-panel director-panel--photos">
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Chasse photo</p>
@@ -1071,7 +1073,7 @@ function DirectorMode() {
           </div>
         </article>
 
-        <article className="director-panel director-panel--public">
+        <details className="director-panel director-panel--public"><summary>Préparation · visibilité des modules</summary>
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Accès</p>
@@ -1103,9 +1105,9 @@ function DirectorMode() {
               )
             })}
           </div>
-        </article>
+        </details>
 
-        <article className="director-panel director-panel--health">
+        <details className="director-panel director-panel--health"><summary>Statistiques de la soirée</summary>
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Vue rapide</p>
@@ -1169,7 +1171,7 @@ function DirectorMode() {
           >
             {loading ? 'Synchronisation…' : 'Rafraîchir maintenant'}
           </button>
-        </article>
+        </details>
       </section>
 
       <section className="director-shortcuts">

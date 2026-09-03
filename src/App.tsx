@@ -14,7 +14,6 @@ import {
 import LiveAnnouncementOverlay from './features/announcements/LiveAnnouncementOverlay'
 import { useAuth } from './features/auth/AuthContext'
 import {
-  PartyIdentityBadge,
   PartyIdentityGate,
 } from './features/identity/PartyIdentityUI'
 import AdminPartyDock from './features/party/AdminPartyDock'
@@ -25,6 +24,9 @@ import {
 } from './features/party/PartyContext'
 
 import Home from './pages/Home'
+import GuestShell from './features/guest/GuestShell'
+import { isGuestPath } from './features/guest/navigation'
+const Play = lazy(() => import('./pages/Play'))
 
 const Capsule = lazy(() => import('./pages/Capsule'))
 const Jukebox = lazy(() => import('./pages/Jukebox'))
@@ -237,14 +239,22 @@ function AdminRoute({
 }
 
 function App() {
+  const { pathname } = useLocation()
+  const content = <AppRoutes />
   return (
     <>
       <AdminPartyDock />
       <LiveAnnouncementOverlay />
-      <PartyIdentityBadge />
+      {isGuestPath(pathname) ? <GuestShell>{content}</GuestShell> : content}
+    </>
+  )
+}
 
+function AppRoutes() {
+  return (
       <Suspense fallback={<RouteLoading />}>
         <Routes>
+          <Route path="/play" element={<Play />} />
           <Route path="/capsule" element={<PartyIdentityGate><Capsule /></PartyIdentityGate>} />
           <Route path="/jukebox" element={<PartyIdentityGate><Jukebox /></PartyIdentityGate>} />
           <Route path="/duos" element={<PartyIdentityGate><Duos /></PartyIdentityGate>} />
@@ -436,7 +446,6 @@ function App() {
           />
         </Routes>
       </Suspense>
-    </>
   )
 }
 

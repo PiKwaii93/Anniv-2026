@@ -140,7 +140,7 @@ test('admin no longer has a search form or candidate selector for an unresolved 
 const guestTrack = { id: 'a'.repeat(22), title: 'Diamonds', artists: 'Rihanna', album: 'Unapologetic', duration_ms: 225000, url: 'https://open.spotify.com/track/' + 'a'.repeat(22) }
 const guestProps = { identity: { playerKey: 'guest:test', sessionToken: 'private-session' }, song: { id: 'legacy-song', title: 'diamond', artist: '' }, onSent: async () => { refreshes++ } }
 const clickSearch = async () => act(async () => document.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })))
-const sendButton = () => [...document.querySelectorAll('button')].find(button => button.textContent.includes('Choisir et ajouter'))
+const sendButton = () => [...document.querySelectorAll('button')].find(button => button.textContent.includes('Ajouter à la file Spotify'))
 test('guest chooses the artist and sends directly, without any admin request', async () => {
   await act(async () => root.render(React.createElement(GuestSongPicker, guestProps)))
   replies.push({ action: 'guest_search', value: { ok: true, choices: [{ ...guestTrack, id: 'b'.repeat(22), artists: 'Another artist' }, guestTrack] } })

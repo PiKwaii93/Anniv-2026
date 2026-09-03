@@ -151,7 +151,7 @@ export function PartyIdentityGate({
   )
 }
 
-export function PartyIdentityBadge() {
+export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
   const location = useLocation()
   const {
     identity,
@@ -167,8 +167,7 @@ export function PartyIdentityBadge() {
   const hidden =
     location.pathname.startsWith('/admin') ||
     location.pathname === '/screen' ||
-    location.pathname === '/qr' ||
-    location.pathname === '/hall-of-fame'
+    location.pathname === '/qr'
 
   if (hidden || loading) return null
 
@@ -189,7 +188,7 @@ export function PartyIdentityBadge() {
   }
 
   return (
-    <div className="party-identity-badge-wrap">
+    <div className={`party-identity-badge-wrap${inline ? ' party-identity-badge-wrap--inline' : ''}`}>
       {open && (
         <section className="party-identity-popover">
           <div className="party-identity-popover__header">
