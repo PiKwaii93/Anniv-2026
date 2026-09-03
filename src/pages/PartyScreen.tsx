@@ -10,6 +10,7 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
+import PhotoHuntScreen from './PhotoHuntScreen'
 
 import './PartyScreen.css'
 
@@ -362,6 +363,13 @@ function PartyScreen() {
     )
   }
 
+  // The router and this screen receive room updates independently. After a
+  // skip, we can see "idle" before the router replaces us with the photo wall.
+  // Handle Photos here too: it has no entry in the legacy moduleCopy table.
+  if (String(activeModule) === 'photos') {
+    return <PhotoHuntScreen />
+  }
+
   if (activeModule === 'room' && roomState.phase === 'open') {
     return (
       <main className="party-screen party-screen--room party-screen--room-open">
@@ -583,7 +591,7 @@ function PartyScreen() {
     )
   }
 
-  if (activeModule) {
+  if (activeModule && moduleCopy[activeModule]) {
     const copy = moduleCopy[activeModule]
 
     return (
