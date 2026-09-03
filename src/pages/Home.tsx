@@ -9,6 +9,7 @@ import { useGuestOverview } from '../features/guest/GuestContext'
 import { activities } from '../features/guest/navigation'
 import { supabase } from '../lib/supabase'
 import { hasMissionToResume } from '../features/guest/activityMemory'
+import ChatHomeLink from '../features/chat/ChatHomeLink'
 
 type PersonalState = { scope: string; pending: number; retry: number; mission: boolean }
 
@@ -68,6 +69,7 @@ export default function Home() {
       <header className="guest-heading"><p>Anniv 2026 <span className={`guest-phase guest-phase--${phase}`}>{loading ? 'Connexion…' : phase === 'live' ? 'En direct' : phase === 'ended' ? 'Les souvenirs' : 'Avant la soirée'}</span></p><h1>{identity ? `Salut ${identity.playerName}.` : 'Bienvenue.'}</h1></header>
       <section className={`guest-now${liveQuestion ? ' guest-now--live' : ''}`} aria-label="Maintenant"><p className="guest-eyebrow">{phase === 'ended' ? 'Merci à tous' : 'Maintenant'}</p><h2>{now.title}</h2><p>{now.detail}</p><Link to={now.path} className="guest-primary">{now.action} <span aria-hidden="true">→</span></Link></section>
       {personalLinks.length > 0 && <section className="guest-section"><h2>Pour toi</h2><div className="guest-activity-list">{personalLinks.map(item => <Link className="guest-activity" key={item.title} to={item.path}><span className="guest-activity__icon" aria-hidden="true">{item.icon}</span><div><h3>{item.title}</h3><p>{item.detail}</p></div><span aria-hidden="true">→</span></Link>)}</div></section>}
+      <ChatHomeLink />
       <section className="guest-section"><h2>Souvenirs & rencontres</h2><div className="guest-discover">
         {extras?.settings.capsule_visible && <Link to="/capsule"><span aria-hidden="true">✉</span><strong>La capsule</strong><small>Quelques mots pour plus tard</small></Link>}
         {settings.icebergVisible && <Link to="/iceberg"><span aria-hidden="true">△</span><strong>L’Iceberg</strong><small>Les histoires entre nous</small></Link>}

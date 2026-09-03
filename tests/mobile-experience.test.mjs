@@ -5,10 +5,15 @@ import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import React, { act } from 'react'
-import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { JSDOM } from 'jsdom'
 import { build } from 'vite'
+
+// Initialize React's browser event support before Vite changes NODE_ENV.
+const bootstrapDOM=new JSDOM('<div></div>')
+globalThis.window=bootstrapDOM.window;globalThis.document=bootstrapDOM.window.document
+const { createRoot }=await import('react-dom/client')
+bootstrapDOM.window.close();delete globalThis.window;delete globalThis.document
 
 const mocks = {
   '/lib/supabase': 'export const supabase = new Proxy({}, {get(_, key) {return globalThis.__mobile.db[key]}})',
@@ -25,6 +30,7 @@ const entries = {
   Home: 'src/pages/Home.tsx', Play: 'src/pages/Play.tsx', Bingo: 'src/pages/Bingo.tsx',
   Capsule: 'src/pages/Capsule.tsx', Photos: 'src/pages/PhotoHunt.tsx', Shell: 'src/features/guest/GuestShell.tsx',
   Connection: 'src/features/guest/ConnectionNotice.tsx',
+  Chat: 'src/pages/PartyChat.tsx',
 }
 const bundle = await build({configFile:false,logLevel:'error',plugins:[{
   name:'mobile-fixtures',enforce:'pre',
@@ -60,7 +66,7 @@ async function render(Component,path='/') {
   assert.ok(q('#root').innerHTML, `Empty component: ${Component.name}; ${errors.map(e=>e.stack).join('\n')}`)
 }
 beforeEach(async()=>{
-  dom=new JSDOM('<div id="root"></div>',{url:'https://party.test/'})
+  dom=new JSDOM('<div id="root"></div>',{url:'https://party.test/',pretendToBeVisual:true})
   globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement
   globalThis.IS_REACT_ACT_ENVIRONMENT=true
   window.scrollTo=()=>{}
@@ -79,6 +85,8 @@ beforeEach(async()=>{
     extras:{data,error:'',busy:false,act:async(action,payload)=>{actions.push({action,payload});return true},refresh:async()=>true},
     ownPhotos:[{challengeId:'c1',status:'pending'}],
     challenges:[{id:'c1',prompt:'Photo ensemble',hint:'',sort_order:0},{id:'c2',prompt:'Photo du gâteau',hint:'',sort_order:1}],
+    chat:{messages:[],unread:0,latest:'0',open:true,more:false,oldest:null},
+    chatFailure:null,sendFailure:null,chatReads:[],
     db:{
       from(table){
         reads.push(table)
@@ -88,7 +96,24 @@ beforeEach(async()=>{
         const query={select(){return query},eq(){return query},order(){return query},limit(){return query},maybeSingle:async()=>value,then(a,b){return Promise.resolve(value).then(a,b)}}
         return query
       },
-      rpc:async(name,args)=>{reads.push(name);assert.equal(name,'get_photo_hunt_player_state','Home must not claim or assign missions');assert.equal(args.p_player_key,fixture.identity.identity.playerKey);return {data:{ok:true,submissions:fixture.ownPhotos},error:null}},
+      rpc(name,args){
+        reads.push(name)
+        let value
+        if(name==='get_party_chat') {
+          fixture.chatReads.push(args)
+          value={data:{...fixture.chat,messages:args.p_summary?[]:fixture.chat.messages},error:fixture.chatFailure}
+        } else if(name==='party_chat_action') {
+          actions.push({name,args})
+          value={data:{ok:true},error:args.p_action==='send'?fixture.sendFailure:null}
+        } else {
+          assert.equal(name,'get_photo_hunt_player_state','Home must not claim or assign missions')
+          assert.equal(args.p_player_key,fixture.identity.identity.playerKey)
+          value={data:{ok:true,submissions:fixture.ownPhotos},error:null}
+        }
+        const request=Promise.resolve(value)
+        request.abortSignal=()=>request
+        return request
+      },
       channel:()=>{const c={on(){return c},subscribe(){return c}};return c},
       removeChannel:async()=>{},
     }
@@ -317,4 +342,171 @@ test('mobile CSS reserves safe areas, readable Bingo and input sizes without aff
   assert.match(css,/\.guest-app \.bingo-cell \.bingo-cell__text \{ font-size: 14px/)
   assert.match(css,/\.guest-app textarea, \.guest-app select \{ font-size: 16px/)
   assert.ok(!css.includes('.party-screen '))
+})
+
+const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine})
+const chatWrites=()=>actions.filter(a=>a.name==='party_chat_action')
+async function editChat(value) {
+  const input=q('#chat-message')
+  await act(async()=>{
+    Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set.call(input,value)
+    input.dispatchEvent(new window.Event('input',{bubbles:true}))
+    input.dispatchEvent(new window.Event('change',{bubbles:true}))
+  })
+}
+const submitChat=()=>act(async()=>q('.chat-composer').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true})))
+
+test('Home chat shortcut shows actual unread count without reading messages or marking them read',async()=>{
+  fixture.chat.unread=7;fixture.chat.latest='7'
+  await render(ui.Home)
+  assert.equal(q('.chat-home-link').getAttribute('href'),'/chat')
+  assert.equal(q('.chat-unread').textContent,'7')
+  assert.equal(fixture.chatReads[0].p_summary,true)
+  assert.deepEqual(chatWrites(),[])
+})
+test('chat never queries messages without a guest identity',async()=>{
+  fixture.identity.identity=null
+  await render(ui.Chat,'/chat')
+  assert.deepEqual(fixture.chatReads,[])
+  assert.deepEqual(chatWrites(),[])
+  assert.ok(button('Envoyer').disabled)
+})
+test('chat renders messages as plain text, timestamps and own-message delete only',async()=>{
+  fixture.chat.messages=[chatMessage('1',false,'<script>alert(1)</script>'),chatMessage('2',true)]
+  fixture.chat.latest='2'
+  await render(ui.Chat,'/chat')
+  assert.equal(document.querySelectorAll('.chat-message').length,2)
+  assert.match(text(),/<script>alert\(1\)<\/script>/)
+  assert.equal(q('.chat-message script'),null)
+  assert.equal(document.querySelectorAll('.chat-message-actions button').length,1)
+  assert.equal(q('time').getAttribute('datetime'),'2026-09-03T20:00:00Z')
+  assert.equal(chatWrites()[0].args.p_action,'read')
+  assert.equal(chatWrites()[0].args.p_payload.id,'2')
+})
+test('empty room is explicit and typing whitespace cannot send',async()=>{
+  await render(ui.Chat,'/chat')
+  assert.match(text(),/Tout commence par un petit mot/)
+  assert.ok(button('Envoyer').disabled)
+  await editChat('   ')
+  await submitChat()
+  assert.deepEqual(chatWrites(),[])
+})
+test('failed send keeps text and retry reuses request ID before clearing on success',async()=>{
+  await render(ui.Chat,'/chat')
+  await editChat('Salut la soirée !')
+  assert.ok(!button('Envoyer').disabled)
+  fixture.sendFailure={message:'network failure'}
+  await submitChat()
+  assert.equal(q('#chat-message').value,'Salut la soirée !')
+  assert.match(q('[role="alert"]').textContent,/Connexion interrompue/)
+  const first=chatWrites().find(a=>a.args.p_action==='send').args
+  assert.equal(first.p_player_key,'guest:fixture')
+  assert.equal(first.p_session_token,'fixture-token')
+  fixture.sendFailure=null
+  await submitChat()
+  const sends=chatWrites().filter(a=>a.args.p_action==='send')
+  assert.equal(sends.length,2)
+  assert.equal(sends[0].args.p_payload.request_id,sends[1].args.p_payload.request_id)
+  assert.equal(q('#chat-message').value,'')
+  assert.match(text(),/Message envoyé/)
+})
+test('length check counts Unicode characters and rejects more than 300',async()=>{
+  await render(ui.Chat,'/chat')
+  await editChat('🙂'.repeat(300))
+  assert.match(text(),/300\/300/)
+  assert.ok(!button('Envoyer').disabled)
+  await editChat('a'.repeat(301))
+  assert.ok(button('Envoyer').disabled)
+  await submitChat()
+  assert.deepEqual(chatWrites(),[])
+})
+test('deletion is explicit and cancels without a mutation',async()=>{
+  fixture.chat.messages=[chatMessage('1',true)]
+  await render(ui.Chat,'/chat')
+  await click(button('Supprimer'))
+  assert.deepEqual(chatWrites(),[])
+  await click(button('Annuler'))
+  assert.deepEqual(chatWrites(),[])
+  await click(button('Supprimer'));await click(button('Confirmer'))
+  assert.equal(chatWrites()[0].args.p_action,'delete')
+  assert.equal(chatWrites()[0].args.p_payload.id,'1')
+})
+test('moderation uses admin reads and offers pause and deletion but no guest composer',async()=>{
+  fixture.auth={isAdmin:true,user:{id:'admin'}}
+  fixture.chat.messages=[chatMessage('1')]
+  const AdminChat=()=>React.createElement(ui.Chat,{admin:true})
+  await render(AdminChat,'/admin/chat')
+  assert.equal(fixture.chatReads[0].p_admin,true)
+  assert.equal(fixture.chatReads[0].p_player_key,null)
+  assert.equal(q('.chat-composer'),null)
+  await click(button('Mettre les envois en pause'))
+  assert.equal(chatWrites()[0].args.p_action,'admin_pause')
+  assert.equal(chatWrites()[0].args.p_payload.paused,true)
+  await click(button('Supprimer'));await click(button('Confirmer'))
+  assert.equal(chatWrites()[1].args.p_action,'admin_delete')
+})
+test('paused discussion keeps history readable and preserves unsent text',async()=>{
+  fixture.chat.messages=[chatMessage('1')]
+  await render(ui.Chat,'/chat')
+  await editChat('À garder')
+  fixture.chat.open=false
+  await act(async()=>window.dispatchEvent(new window.Event('online')))
+  assert.ok(button('Envoyer').disabled)
+  assert.equal(q('#chat-message').value,'À garder')
+  assert.equal(document.querySelectorAll('.chat-message').length,1)
+  assert.match(text(),/Les envois sont en pause/)
+})
+test('identity change clears previous messages and draft',async()=>{
+  fixture.chat.messages=[chatMessage('1',true,'Ancien message')]
+  await render(ui.Chat,'/chat');await editChat('Ancien brouillon')
+  fixture.identity.identity={playerKey:'guest:new',playerName:'Sam',sessionToken:'new-token'}
+  fixture.chat.messages=[]
+  await act(async()=>root.render(React.createElement(MemoryRouter,null,React.createElement(ui.Chat))))
+  assert.equal(q('#chat-message').value,'')
+  assert.ok(!text().includes('Ancien message'))
+  assert.equal(fixture.chatReads.at(-1).p_player_key,'guest:new')
+})
+test('cursor history does not mark new live messages read; return restores latest page',async()=>{
+  fixture.chat={...fixture.chat,messages:[chatMessage('51')],latest:'100',oldest:'51',more:true}
+  await render(ui.Chat,'/chat')
+  actions.length=0
+  fixture.chat.latest='101'
+  await click(button('Messages précédents'))
+  assert.equal(fixture.chatReads.at(-1).p_before,'51')
+  assert.deepEqual(chatWrites(),[])
+  await click(button('Revenir aux derniers messages'))
+  assert.equal(fixture.chatReads.at(-1).p_before,null)
+  assert.equal(chatWrites()[0].args.p_payload.id,'101')
+})
+test('background tabs pause reads; reconnect refreshes but never replays a send',async()=>{
+  Object.defineProperty(document,'visibilityState',{configurable:true,value:'hidden'})
+  await render(ui.Chat,'/chat')
+  assert.equal(fixture.chatReads.length,0)
+  Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'})
+  await act(async()=>document.dispatchEvent(new window.Event('visibilitychange')))
+  assert.equal(fixture.chatReads.length,1)
+  await act(async()=>window.dispatchEvent(new window.Event('online')))
+  assert.equal(fixture.chatReads.length,2)
+  assert.deepEqual(chatWrites(),[])
+})
+test('chat failure is not reported as an empty room and retry restores the view',async()=>{
+  fixture.chatFailure={message:'connection failed'}
+  await render(ui.Chat,'/chat')
+  assert.ok(q('[role="alert"]'))
+  assert.ok(!text().includes('Tout commence par un petit mot'))
+  fixture.chatFailure=null
+  await click(button('Réessayer'))
+  assert.equal(q('[role="alert"]'),null)
+  assert.match(text(),/Tout commence par un petit mot/)
+})
+test('chat remains outside TV routing and the four bottom tabs',async()=>{
+  assert.equal(ui.activeGuestTab('/chat'),'/')
+  assert.equal(ui.guestTabs(fixture.party.settings,fixture.extras.data.settings).length,4)
+  const app=await readFile('src/App.tsx','utf8')
+  assert.match(app,/path="\/chat" element=\{<PartyIdentityGate><PartyChat/)
+  assert.match(app,/path="\/admin\/chat" element=\{<AdminRoute><PartyChat admin/)
+  for(const path of ['src/pages/PartyScreen.tsx','src/pages/PartyScreenWithHall.tsx']) {
+    const screen=await readFile(path,'utf8')
+    assert.ok(!screen.includes('PartyChat'))
+  }
 })

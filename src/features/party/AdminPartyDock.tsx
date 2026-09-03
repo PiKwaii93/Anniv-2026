@@ -209,6 +209,12 @@ function AdminPartyDock() {
         <small>Backup</small>
       </Link>
 
+      <Link to="/admin/chat" className="party-director-launch" aria-label="Modérer la discussion des invités">
+        <span aria-hidden="true">☏</span>
+        <strong>Discussion</strong>
+        <small>Modération</small>
+      </Link>
+
       <Link
         to="/admin/live"
         className={
@@ -341,6 +347,10 @@ function AdminPartyDock() {
               <Link to="/admin/photos" className="party-drawer__qr-link">
                 <span>▧</span>
                 Régie Photo Hunt
+              </Link>
+              <Link to="/admin/chat" className="party-drawer__qr-link">
+                <span>☏</span>
+                Modérer la discussion
               </Link>
               <Link to="/admin/content" className="party-drawer__qr-link">
                 <span>⇅</span>

@@ -1203,6 +1203,10 @@ function DirectorMode() {
             <strong>Modérer les photos</strong>
           </div>
         </Link>
+        <Link to="/admin/chat" className="director-shortcut">
+          <span aria-hidden="true">☏</span>
+          <div><small>Entre invités</small><strong>Modérer la discussion</strong></div>
+        </Link>
         <Link to="/admin" className="director-shortcut">
           <span>⌘</span>
           <div>
