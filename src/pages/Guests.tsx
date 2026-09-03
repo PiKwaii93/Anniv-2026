@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 
 import { useGuests } from '../features/guests/GuestsContext'
 
 function Guests() {
+  const [search, setSearch] = useState('')
   const {
     guests,
     loading,
@@ -47,6 +49,7 @@ function Guests() {
         </div>
       </header>
 
+      <label className="guest-search">Rechercher un invité<input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Son prénom…" /></label>
       {loading ? (
         <div className="empty-state">
           <strong>Chargement...</strong>
@@ -95,7 +98,7 @@ function Guests() {
               })),
             ]
 
-            return people.map((person) => (
+            return people.filter(person => person.name.toLocaleLowerCase('fr').includes(search.trim().toLocaleLowerCase('fr'))).map((person) => (
               <article
                 key={person.id}
                 className="public-guest-card"

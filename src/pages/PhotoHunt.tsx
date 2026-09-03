@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import GuestDialog from '../features/guest/GuestDialog'
 
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import PhotoHuntImage from '../features/photo-hunt/PhotoHuntImage'
@@ -32,6 +33,8 @@ type PreparedPhoto = CompressedPhoto & {
 }
 
 function PhotoHunt() {
+  const [params, setParams] = useSearchParams()
+  const view = ['gallery', 'mine'].includes(params.get('view') ?? '') ? params.get('view')! : 'challenges'
   const { identity } = usePartyIdentity()
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [ownSubmissions, setOwnSubmissions] = useState<PhotoHuntOwnSubmission[]>([])
@@ -171,7 +174,7 @@ function PhotoHunt() {
       const status = submissionByChallenge.get(challenge.id)?.status
       return status !== 'approved' && status !== 'pending'
     })
-    return available.slice(0, 3)
+    return available.slice(0, 1)
   }, [orderedChallenges, submissionByChallenge])
 
   const approvedCount = ownSubmissions.filter((submission) => submission.status === 'approved').length
@@ -193,7 +196,8 @@ function PhotoHunt() {
   }
 
   const closeComposer = () => {
-    if (sending) return
+    if (sending || processing) return
+    if ((preparedPhoto || caption.trim()) && !window.confirm('Fermer sans envoyer cette photo ?')) return
     clearPreparedPhoto()
     setCaption('')
     setSelectedChallenge(null)
@@ -287,6 +291,7 @@ function PhotoHunt() {
       clearPreparedPhoto()
       setCaption('')
       setSelectedChallenge(null)
+      setParams({ view: 'mine' }, { replace: true })
       setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est privée jusqu’à validation par la régie.`)
       await loadData()
     } catch (uploadError) {
@@ -313,17 +318,21 @@ function PhotoHunt() {
       <header className="photo-hunt__hero">
         <Link to="/" className="back-link">← Accueil</Link>
         <p className="photo-hunt__eyebrow">Anniv 2026 · chasse photo</p>
-        <h1>Photo<br /><span>Hunt</span></h1>
+        <h1>Les <span>photos.</span></h1>
         <p>
-          Relève les défis, capture la soirée et alimente le mur photo. Chaque image passe par la régie avant d’être publiée.
+          Un défi, une photo, un souvenir. Les photos sont validées avant publication.
         </p>
 
-        <div className="photo-hunt__stats">
+        <div className="photo-hunt__stats" hidden>
           <div><strong>{approvedCount}</strong><span>validée{approvedCount !== 1 ? 's' : ''}</span></div>
           <div><strong>{pendingCount}</strong><span>en validation</span></div>
           <div><strong>{challenges.length}</strong><span>défis actifs</span></div>
         </div>
       </header>
+
+      <nav className="guest-tabs" aria-label="Parcours photo">
+        {[['challenges', 'Défis'], ['gallery', 'Galerie'], ['mine', `Mes photos${pendingCount ? ` (${pendingCount})` : ''}`]].map(([key, label]) => <button key={key} type="button" aria-pressed={view === key} onClick={() => setParams({ view: key }, { replace: true })}>{label}</button>)}
+      </nav>
 
       {success && (
         <div className="photo-hunt__success" role="status">
@@ -337,7 +346,7 @@ function PhotoHunt() {
 
       {error && <div className="photo-hunt__error">{error}</div>}
 
-      {(pendingCount > 0 || rejectedCount > 0) && (
+      {view === 'mine' && (
         <section className="photo-hunt__status-panel" aria-label="État de tes photos">
           <div>
             <p>Mes envois</p>
@@ -359,15 +368,17 @@ function PhotoHunt() {
               </div>
             )}
           </div>
+          {ownSubmissions.length === 0 && <p className="guest-empty">Tu n’as pas encore envoyé de photo. Choisis un défi pour commencer.</p>}
+          <div className="guest-activity-list">{ownSubmissions.map(submission => <article key={submission.challengeId} className="guest-activity"><div><h3>{challengeById.get(submission.challengeId)?.prompt ?? 'Ton défi photo'}</h3><p>{submission.status === 'approved' ? 'Publiée ✓' : submission.status === 'pending' ? 'En validation · privée' : 'À refaire · tu peux envoyer une nouvelle photo'}</p></div>{submission.status === 'rejected' && challengeById.has(submission.challengeId) && <button type="button" className="guest-primary" onClick={() => openChallenge(challengeById.get(submission.challengeId)!)}>Retenter</button>}</article>)}</div>
         </section>
       )}
 
-      {spotlight.length > 0 && (
+      {view === 'challenges' && spotlight.length > 0 && (
         <section className="photo-hunt__section">
           <div className="photo-hunt__section-title">
             <div>
               <p>Pour toi</p>
-              <h2>3 défis à tenter maintenant</h2>
+              <h2>Ton prochain défi</h2>
             </div>
             <span>Choisis-en un</span>
           </div>
@@ -390,7 +401,7 @@ function PhotoHunt() {
         </section>
       )}
 
-      <section className="photo-hunt__section">
+      {view === 'challenges' && <section className="photo-hunt__section">
         <div className="photo-hunt__section-title">
           <div>
             <p>Checklist</p>
@@ -427,9 +438,9 @@ function PhotoHunt() {
             )
           })}
         </div>
-      </section>
+      </section>}
 
-      <section className="photo-hunt__section photo-hunt__gallery-section">
+      {view === 'gallery' && <section className="photo-hunt__section photo-hunt__gallery-section">
         <div className="photo-hunt__section-title">
           <div>
             <p>Mur collectif</p>
@@ -462,14 +473,12 @@ function PhotoHunt() {
             ))}
           </div>
         )}
-      </section>
+      </section>}
 
       {selectedChallenge && (
-        <div className="photo-hunt-composer-backdrop" role="presentation" onClick={closeComposer}>
+        <GuestDialog titleId="photo-hunt-composer-title" onClose={closeComposer}>
           <section
             className="photo-hunt-composer"
-            role="dialog"
-            aria-modal="true"
             aria-labelledby="photo-hunt-composer-title"
             onClick={(event) => event.stopPropagation()}
           >
@@ -477,7 +486,7 @@ function PhotoHunt() {
               type="button"
               className="photo-hunt-composer__close"
               aria-label="Fermer"
-              disabled={sending}
+              disabled={sending || processing}
               onClick={closeComposer}
             >
               ×
@@ -536,6 +545,7 @@ function PhotoHunt() {
             />
 
             {processing && <p className="photo-hunt-composer__processing">Compression de la photo…</p>}
+            {error && <p className="extras-notice extras-notice--error" role="alert">{error}</p>}
 
             <label className="photo-hunt-composer__caption">
               <span>Légende <small>optionnelle</small></span>
@@ -555,14 +565,14 @@ function PhotoHunt() {
               disabled={!preparedPhoto || processing || sending}
               onClick={() => void sendPhoto()}
             >
-              {sending ? 'Envoi en cours…' : 'Envoyer à la régie →'}
+              {sending ? 'Envoi en cours…' : 'Envoyer ma photo →'}
             </button>
 
             <p className="photo-hunt-composer__privacy">
               La photo reste privée tant qu’un admin ne l’a pas validée.
             </p>
           </section>
-        </div>
+        </GuestDialog>
       )}
     </main>
   )

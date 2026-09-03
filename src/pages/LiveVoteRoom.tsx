@@ -574,7 +574,7 @@ function LiveVoteRoom() {
         </section>
       )}
 
-      <section className="live-room__leaderboard">
+      <details className="live-room__leaderboard"><summary>Voir le classement</summary>
         <div className="live-room__leaderboard-heading">
           <span>Classement La Salle</span>
           <small>Prédictions & enquêtes</small>
@@ -590,7 +590,7 @@ function LiveVoteRoom() {
             </div>
           ))
         )}
-      </section>
+      </details>
     </main>
   )
 }

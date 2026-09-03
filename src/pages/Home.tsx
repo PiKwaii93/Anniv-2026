@@ -1,487 +1,80 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-
 import { useAuth } from '../features/auth/AuthContext'
-import { useGuests } from '../features/guests/GuestsContext'
 import HomeIdentityOnboarding from '../features/identity/HomeIdentityOnboarding'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
-import {
-  isPartyModuleVisible,
-  type PartyPhase,
-  type PartyVisibilityModule,
-  useParty,
-} from '../features/party/PartyContext'
+import { isPartyModuleVisible, useParty } from '../features/party/PartyContext'
+import { usePartyExtras } from '../features/party-extras/usePartyExtras'
+import { useGuestOverview } from '../features/guest/GuestContext'
+import { activities } from '../features/guest/navigation'
 import { supabase } from '../lib/supabase'
-import PartyExtrasHomeCards from '../features/party-extras/PartyExtrasHomeCards'
+import { hasMissionToResume } from '../features/guest/activityMemory'
 
-import './HomeDynamic.css'
+type PersonalState = { scope: string; pending: number; retry: number; mission: boolean }
 
-type BeerPongState = {
-  selectedPlayerIds?: string[]
-  teams?: unknown[]
-  draftValidated?: boolean
-  championTeamId?: string | null
-}
-
-type BeerPongRow = {
-  state: BeerPongState | null
-}
-
-type MissionScoreRow = {
-  completed_count: number
-}
-
-type RoomState = {
-  phase?: 'idle' | 'open' | 'revealed'
-  voteCount?: number
-  prompt?: string
-  stage?: string
-}
-
-type RoomStateRow = {
-  state: RoomState | null
-}
-
-type HomeStats = {
-  iceberg: number
-  bingo: number
-  beerPong: BeerPongState
-  missionPlayers: number
-  missionCompleted: number
-  room: RoomState
-  photos: number
-}
-
-type PublicModuleDefinition = {
-  key: PartyVisibilityModule
-  title: string
-  subtitle: string
-  tag: string
-  path: string
-  className: string
-}
-
-type PersonalAction = {
-  key: string
-  eyebrow: string
-  title: string
-  detail: string
-  path: string
-}
-
-const publicModules: PublicModuleDefinition[] = [
-  {
-    key: 'iceberg',
-    title: 'Iceberg',
-    subtitle: 'Secrets, dossiers & anecdotes',
-    tag: 'À explorer',
-    path: '/iceberg',
-    className: 'module-card--iceberg',
-  },
-  {
-    key: 'beer-pong',
-    title: 'Beer Pong',
-    subtitle: 'Draft, équipes & tournoi',
-    tag: 'Compétition',
-    path: '/beer-pong',
-    className: 'module-card--beer-pong',
-  },
-  {
-    key: 'bingo',
-    title: 'Bingo',
-    subtitle: 'Observe la soirée & coche les scènes',
-    tag: 'Jeu perso',
-    path: '/bingo',
-    className: 'module-card--bingo',
-  },
-  {
-    key: 'missions',
-    title: 'Missions secrètes',
-    subtitle: 'Infiltre la soirée sans te faire griller',
-    tag: 'Infiltration',
-    path: '/missions',
-    className: 'module-card--missions',
-  },
-  {
-    key: 'room',
-    title: 'La Salle',
-    subtitle: 'Votes, prédictions & révélations en direct',
-    tag: 'Live collectif',
-    path: '/room',
-    className: 'module-card--room',
-  },
-  {
-    key: 'photos',
-    title: 'Photo Hunt',
-    subtitle: 'Défis photo & mur de souvenirs',
-    tag: 'Chasse photo',
-    path: '/photos',
-    className: 'module-card--photos',
-  },
-  {
-    key: 'guests',
-    title: 'Invités',
-    subtitle: 'Les participants de la soirée',
-    tag: 'Guest list',
-    path: '/guests',
-    className: 'module-card--guests',
-  },
-]
-
-const phaseCopy: Record<PartyPhase, { label: string; detail: string }> = {
-  preparation: {
-    label: 'Préparation',
-    detail: 'Tout se met en place. Certains modules peuvent encore être masqués.',
-  },
-  live: {
-    label: 'Soirée en cours',
-    detail: 'La soirée est lancée. Les modules évoluent en direct.',
-  },
-  ended: {
-    label: 'Soirée terminée',
-    detail: 'Merci d’être passé. Le Hall of Fame et les souvenirs restent accessibles ici.',
-  },
-}
-
-const emptyStats: HomeStats = {
-  iceberg: 0,
-  bingo: 0,
-  beerPong: {},
-  missionPlayers: 0,
-  missionCompleted: 0,
-  room: { phase: 'idle', voteCount: 0 },
-  photos: 0,
-}
-
-function Home() {
+export default function Home() {
   const { isAdmin } = useAuth()
-  const { identity } = usePartyIdentity()
-  const { guests } = useGuests()
-  const { settings, loading: partyLoading } = useParty()
-  const [stats, setStats] = useState<HomeStats>(emptyStats)
-  const [statsLoading, setStatsLoading] = useState(true)
-
-  const loadStats = useCallback(async () => {
-    const [
-      icebergResult,
-      bingoResult,
-      beerPongResult,
-      missionScoreResult,
-      roomResult,
-      photoResult,
-    ] = await Promise.all([
-      supabase.from('iceberg_entries').select('id', { count: 'exact', head: true }).eq('is_published', true),
-      supabase.from('bingo_prompts').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('beer_pong_state').select('state').eq('id', 'main').maybeSingle(),
-      supabase.from('secret_mission_scoreboard').select('completed_count'),
-      supabase.from('live_vote_public_state').select('state').eq('id', 'main').maybeSingle(),
-      supabase.from('photo_hunt_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-    ])
-
-    if (icebergResult.error) console.error('Unable to load Home Iceberg stats:', icebergResult.error)
-    if (bingoResult.error) console.error('Unable to load Home Bingo stats:', bingoResult.error)
-    if (beerPongResult.error) console.error('Unable to load Home Beer Pong stats:', beerPongResult.error)
-    if (missionScoreResult.error) console.error('Unable to load Home mission stats:', missionScoreResult.error)
-    if (roomResult.error) console.error('Unable to load Home live room stats:', roomResult.error)
-    if (photoResult.error) console.error('Unable to load Home Photo Hunt stats:', photoResult.error)
-
-    const beerPongRow = beerPongResult.data as BeerPongRow | null
-    const missionRows = (missionScoreResult.data ?? []) as MissionScoreRow[]
-    const roomRow = roomResult.data as RoomStateRow | null
-
-    setStats({
-      iceberg: icebergResult.count ?? 0,
-      bingo: bingoResult.count ?? 0,
-      beerPong: beerPongRow?.state ?? {},
-      missionPlayers: missionRows.length,
-      missionCompleted: missionRows.reduce((total, row) => total + row.completed_count, 0),
-      room: roomRow?.state ?? { phase: 'idle', voteCount: 0 },
-      photos: photoResult.count ?? 0,
-    })
-    setStatsLoading(false)
-  }, [])
+  const { identity, loading: identityLoading } = usePartyIdentity()
+  const { settings, loading } = useParty()
+  const { room, extras } = useGuestOverview()
+  const { data: own } = usePartyExtras(identity)
+  const [personal, setPersonal] = useState<PersonalState | null>(null)
+  const playerKey = identity?.playerKey
+  const token = identity?.sessionToken
+  const scope = `${playerKey ?? ''}:${token ?? ''}`
 
   useEffect(() => {
-    void loadStats()
-  }, [loadStats])
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('anniv-2026-home-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'iceberg_entries' }, () => void loadStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bingo_prompts' }, () => void loadStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'beer_pong_state' }, () => void loadStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'secret_mission_scoreboard' }, () => void loadStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_vote_public_state' }, () => void loadStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'photo_hunt_submissions' }, () => void loadStats())
-      .subscribe()
-
-    const refreshInterval = window.setInterval(() => void loadStats(), 30000)
-    return () => {
-      window.clearInterval(refreshInterval)
-      void supabase.removeChannel(channel)
+    if (!playerKey || !token) return
+    let active = true
+    let version = 0
+    const refresh = async () => {
+      const request = ++version
+      const args = { p_player_key: playerKey, p_session_token: token }
+      const photos = settings.photosVisible ? await supabase.rpc('get_photo_hunt_player_state', args) : null
+      if (!active || version !== request) return
+      const submissions: { status: string }[] = photos?.data?.ok ? photos.data.submissions ?? [] : []
+      setPersonal({ scope, pending: submissions.filter(photo => photo.status === 'pending').length, retry: submissions.filter(photo => photo.status === 'rejected').length, mission: hasMissionToResume(playerKey) })
     }
-  }, [loadStats])
+    const visible = () => { if (document.visibilityState === 'visible') void refresh() }
+    void refresh()
+    const timer = window.setInterval(visible, 15000)
+    document.addEventListener('visibilitychange', visible)
+    return () => { active = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible) }
+  }, [playerKey, token, scope, settings.photosVisible, settings.missionsVisible])
 
-  const confirmedGuests = useMemo(
-    () => guests.filter((guest) => guest.status === 'confirmed'),
-    [guests],
-  )
+  const phase = settings.phase
+  const currentPersonal = personal?.scope === scope ? personal : null
+  const liveQuestion = phase === 'live' && settings.roomVisible && room?.phase === 'open'
+  const featured = [...activities, { key: 'photos' as const, path: '/photos', title: 'Photos', detail: 'Un défi à capturer ensemble.', icon: '▧' }, { key: 'iceberg' as const, path: '/iceberg', title: 'Iceberg', detail: 'Les histoires de la soirée.', icon: '△' }, { key: 'guests' as const, path: '/guests', title: 'Les invités', detail: 'Retrouve les participants.', icon: '○' }]
+    .find(item => item.key === String(settings.featuredModule) && isPartyModuleVisible(settings, item.key))
+  const now = phase === 'ended'
+    ? { title: 'C’était nous.', detail: 'Les gagnants et les souvenirs de cette soirée.', path: '/hall-of-fame', action: 'Voir le palmarès' }
+    : liveQuestion
+      ? { title: 'À toi de voter.', detail: room?.prompt || 'Une question est ouverte dans La Salle.', path: '/room', action: 'Participer au vote' }
+      : phase === 'live' && featured
+        ? { title: featured.title, detail: featured.detail, path: featured.path, action: `Ouvrir ${featured.title}` }
+        : { title: phase === 'live' ? 'La soirée est à toi.' : 'On se retrouve bientôt.', detail: phase === 'live' ? 'Un jeu, une photo, un morceau : participe à ton rythme.' : 'Découvre les activités déjà ouvertes.', path: '/play', action: 'Découvrir les jeux' }
+  const personalLinks = [
+    ...(own?.settings.duos_visible && phase !== 'ended' && own.duo?.status === 'active' ? [{ path: '/duos', title: `Ton duo avec ${own.duo.partner}`, detail: own.duo.confirmed ? 'Tu as confirmé · en attente de ton partenaire' : 'Votre défi est prêt.', icon: '↔' }] : []),
+    ...(own?.settings.duos_visible && phase !== 'ended' && own.waiting ? [{ path: '/duos', title: 'Recherche de ton partenaire', detail: 'Tu es dans la file des duos.', icon: '↔' }] : []),
+    ...(currentPersonal?.mission && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions', title: 'Reprendre tes missions', detail: 'Retrouve ta mission discrètement.', icon: '◇' }] : []),
+    ...(currentPersonal?.pending && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.pending} photo${currentPersonal.pending > 1 ? 's' : ''} en validation`, detail: 'Tes envois sont bien reçus.', icon: '▧' }] : []),
+    ...(currentPersonal?.retry && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.retry} photo${currentPersonal.retry > 1 ? 's' : ''} à refaire`, detail: 'Tu peux retenter ces défis.', icon: '▧' }] : []),
+  ]
 
-  const participantCount = useMemo(
-    () => confirmedGuests.reduce((total, guest) => total + 1 + guest.plusOnes.length, 0),
-    [confirmedGuests],
-  )
-
-  const beerPongStatus = useMemo(() => {
-    if (stats.beerPong.championTeamId) return 'Tournoi terminé · champion désigné'
-    if (stats.beerPong.draftValidated) {
-      const teamCount = stats.beerPong.teams?.length ?? 0
-      return `${teamCount} équipe${teamCount > 1 ? 's' : ''} · tournoi en cours`
-    }
-    if ((stats.beerPong.teams?.length ?? 0) > 0) return 'Draft prête à être lancée'
-    const playerCount = stats.beerPong.selectedPlayerIds?.length ?? 0
-    if (playerCount > 0) return `${playerCount} joueur${playerCount > 1 ? 's' : ''} sélectionné${playerCount > 1 ? 's' : ''}`
-    return 'Tournoi pas encore lancé'
-  }, [stats.beerPong])
-
-  const moduleStatus = (module: PartyVisibilityModule) => {
-    if (statsLoading) return 'Synchronisation...'
-
-    switch (module) {
-      case 'iceberg':
-        return `${stats.iceberg} dossier${stats.iceberg !== 1 ? 's' : ''} disponible${stats.iceberg !== 1 ? 's' : ''}`
-      case 'beer-pong':
-        return beerPongStatus
-      case 'bingo':
-        return `${stats.bingo} situation${stats.bingo !== 1 ? 's' : ''} dans le pool`
-      case 'missions':
-        return stats.missionPlayers === 0
-          ? 'Aucun agent actif pour l’instant'
-          : `${stats.missionPlayers} agent${stats.missionPlayers !== 1 ? 's' : ''} · ${stats.missionCompleted} mission${stats.missionCompleted !== 1 ? 's' : ''} réussie${stats.missionCompleted !== 1 ? 's' : ''}`
-      case 'room':
-        if (stats.room.phase === 'open') return `${stats.room.voteCount ?? 0} vote${(stats.room.voteCount ?? 0) !== 1 ? 's' : ''} · round en cours`
-        if (stats.room.phase === 'revealed') return 'Résultats révélés · prochain round bientôt'
-        return 'En attente du prochain vote live'
-      case 'photos':
-        return stats.photos === 0
-          ? 'Le mur attend sa première photo'
-          : `${stats.photos} photo${stats.photos !== 1 ? 's' : ''} publiée${stats.photos !== 1 ? 's' : ''}`
-      case 'guests':
-        return `${participantCount} participant${participantCount !== 1 ? 's' : ''} confirmé${participantCount !== 1 ? 's' : ''}`
-    }
-  }
-
-  const visibleModules = useMemo(() => {
-    return publicModules
-      .filter((module) => isAdmin || isPartyModuleVisible(settings, module.key))
-      .sort((left, right) => {
-        if (left.key === settings.featuredModule) return -1
-        if (right.key === settings.featuredModule) return 1
-        return 0
-      })
-  }, [isAdmin, settings])
-
-  const personalActions = useMemo<PersonalAction[]>(() => {
-    if (!identity || isAdmin) return []
-
-    const actions: PersonalAction[] = []
-    const featured = visibleModules.find(
-      (module) => module.key === String(settings.featuredModule),
-    )
-
-    if (featured) {
-      actions.push({
-        key: `featured-${featured.key}`,
-        eyebrow: 'Maintenant',
-        title: featured.title,
-        detail: 'C’est ce qui se passe en ce moment.',
-        path: featured.path,
-      })
-    }
-
-    if (
-      settings.missionsVisible &&
-      featured?.key !== 'missions'
-    ) {
-      actions.push({
-        key: 'missions',
-        eyebrow: 'Pour toi',
-        title: 'Ta mission secrète',
-        detail: 'Récupère ton objectif sans te faire griller.',
-        path: '/missions',
-      })
-    }
-
-    if (
-      settings.bingoVisible &&
-      featured?.key !== 'bingo'
-    ) {
-      actions.push({
-        key: 'bingo',
-        eyebrow: 'Toute la soirée',
-        title: 'Ton Bingo',
-        detail: 'Observe, coche et tente le carton plein.',
-        path: '/bingo',
-      })
-    }
-
-    if (
-      actions.length < 3 &&
-      settings.photosVisible &&
-      featured?.key !== 'photos'
-    ) {
-      actions.push({
-        key: 'photos',
-        eyebrow: 'Souvenirs',
-        title: 'Photo Hunt',
-        detail: 'Choisis un défi et envoie ta meilleure photo.',
-        path: '/photos',
-      })
-    }
-
-    return actions.slice(0, 3)
-  }, [identity, isAdmin, settings, visibleModules])
-
-  const phase = phaseCopy[settings.phase]
-  const showHallOfFame = settings.phase === 'ended' || isAdmin
-  const knownGuest = Boolean(identity && !isAdmin)
-
-  return (
-    <>
-      <HomeIdentityOnboarding />
-
-      <main className={knownGuest ? 'home home--personalized' : 'home'}>
-        <div className="home__glow home__glow--one" />
-        <div className="home__glow home__glow--two" />
-
-        <section className="hero">
-          <p className="hero__eyebrow">
-            {knownGuest ? `Salut ${identity?.playerName}` : '2026'}
-          </p>
-          <h1 className="hero__title">ANNIV<span>2026</span></h1>
-          <p className="hero__description">
-            {knownGuest
-              ? 'Ton QG pour jouer, suivre le live et retrouver ce qui te concerne pendant la soirée.'
-              : 'Bienvenue sur l’application officielle de la soirée.'}
-          </p>
-        </section>
-
-        {knownGuest && (
-          <section className="home-personal-hub" aria-label={`Espace de ${identity?.playerName}`}>
-            <div className="home-personal-hub__heading">
-              <div>
-                <span>Ton espace</span>
-                <h2>Qu’est-ce qu’on fait ?</h2>
-              </div>
-              <span className="home-personal-hub__identity">
-                {identity?.playerName.slice(0, 1).toUpperCase()}
-              </span>
-            </div>
-
-            <div className="home-personal-hub__actions">
-              {personalActions.map((action) => (
-                <Link
-                  key={action.key}
-                  to={action.path}
-                  className="home-personal-action"
-                >
-                  <small>{action.eyebrow}</small>
-                  <strong>{action.title}</strong>
-                  <span>{action.detail}</span>
-                  <b>→</b>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className={`home-party-state home-party-state--${settings.phase}`} aria-label="État de la soirée">
-          <div className="home-party-state__status">
-            <span className="home-party-state__dot" />
-            <span>État de la soirée</span>
-          </div>
-          <strong>{partyLoading ? 'Synchronisation...' : phase.label}</strong>
-          <p>{phase.detail}</p>
-        </section>
-
-        <section className="modules" aria-label="Modules">
-          <PartyExtrasHomeCards />
-          {showHallOfFame && (
-            <Link
-              to="/hall-of-fame"
-              className={`module-card module-card--hall${settings.phase === 'ended' ? ' module-card--hall-live' : ''}`}
-            >
-              <div className="module-card__top">
-                <span className="module-card__tag">
-                  {settings.phase === 'ended' ? 'Palmarès final' : 'Aperçu admin'}
-                </span>
-                <span className="module-card__arrow">↗</span>
-              </div>
-              <div>
-                <span className="module-card__featured-pill">
-                  Hall of Fame
-                </span>
-                <h2>Les gagnants de la soirée</h2>
-                <p>Champions Beer Pong, agents, mentalistes et grands chiffres.</p>
-                <span className="module-card__status">
-                  {settings.phase === 'ended'
-                    ? 'Le palmarès est ouvert à tout le monde'
-                    : 'Données provisoires · visible uniquement par l’admin'}
-                </span>
-              </div>
-            </Link>
-          )}
-
-          {visibleModules.map((module) => {
-            const featured = module.key === settings.featuredModule
-            const visible = isPartyModuleVisible(settings, module.key)
-            return (
-              <Link
-                key={module.path}
-                to={module.path}
-                className={`module-card ${module.className}${featured ? ' module-card--featured' : ''}${!visible ? ' module-card--public-hidden' : ''}`}
-              >
-                <div className="module-card__top">
-                  <span className="module-card__tag">
-                    {!visible && isAdmin ? 'Masqué public' : featured ? 'À la une' : module.tag}
-                  </span>
-                  <span className="module-card__arrow">↗</span>
-                </div>
-                <div>
-                  {featured && <span className="module-card__featured-pill">Maintenant</span>}
-                  <h2>{module.title}</h2>
-                  <p>{module.subtitle}</p>
-                  <span className="module-card__status">{moduleStatus(module.key)}</span>
-                </div>
-              </Link>
-            )
-          })}
-
-          <Link to="/admin" className="module-card module-card--admin">
-            <div className="module-card__top">
-              <span className="module-card__tag">Privé</span>
-              <span className="module-card__arrow">↗</span>
-            </div>
-            <div>
-              <h2>Admin</h2>
-              <p>Gestion de la soirée</p>
-              <span className="module-card__status">Control Room</span>
-            </div>
-          </Link>
-        </section>
-
-        <footer className="home__footer">
-          <span>Birthday App</span><span>•</span><span>2026</span>
-        </footer>
-      </main>
-    </>
-  )
+  return <>
+    <HomeIdentityOnboarding />
+    <main className="guest-page guest-home" inert={!isAdmin && (identityLoading || !identity)}>
+      <header className="guest-heading"><p>Anniv 2026 <span className={`guest-phase guest-phase--${phase}`}>{loading ? 'Connexion…' : phase === 'live' ? 'En direct' : phase === 'ended' ? 'Les souvenirs' : 'Avant la soirée'}</span></p><h1>{identity ? `Salut ${identity.playerName}.` : 'Bienvenue.'}</h1></header>
+      <section className={`guest-now${liveQuestion ? ' guest-now--live' : ''}`} aria-label="Maintenant"><p className="guest-eyebrow">{phase === 'ended' ? 'Merci à tous' : 'Maintenant'}</p><h2>{now.title}</h2><p>{now.detail}</p><Link to={now.path} className="guest-primary">{now.action} <span aria-hidden="true">→</span></Link></section>
+      {personalLinks.length > 0 && <section className="guest-section"><h2>Pour toi</h2><div className="guest-activity-list">{personalLinks.map(item => <Link className="guest-activity" key={item.title} to={item.path}><span className="guest-activity__icon" aria-hidden="true">{item.icon}</span><div><h3>{item.title}</h3><p>{item.detail}</p></div><span aria-hidden="true">→</span></Link>)}</div></section>}
+      <section className="guest-section"><h2>Souvenirs & rencontres</h2><div className="guest-discover">
+        {extras?.settings.capsule_visible && <Link to="/capsule"><span aria-hidden="true">✉</span><strong>La capsule</strong><small>Quelques mots pour plus tard</small></Link>}
+        {settings.icebergVisible && <Link to="/iceberg"><span aria-hidden="true">△</span><strong>L’Iceberg</strong><small>Les histoires entre nous</small></Link>}
+        {settings.guestsVisible && <Link to="/guests"><span aria-hidden="true">○</span><strong>Les invités</strong><small>Qui est de la partie ?</small></Link>}
+        {phase === 'ended' && settings.photosVisible && <Link to="/photos?view=gallery"><span aria-hidden="true">▧</span><strong>La galerie</strong><small>Revivre la soirée</small></Link>}
+      </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>
+      {isAdmin && <Link className="guest-admin-link" to="/admin/live">Ouvrir la régie →</Link>}
+    </main>
+  </>
 }
-
-export default Home

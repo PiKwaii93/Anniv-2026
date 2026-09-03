@@ -343,6 +343,7 @@ function Iceberg() {
   const { isAdmin, loading: authLoading } = useAuth()
 
   const [entries, setEntries] = useState<IcebergEntry[]>([])
+  const [view, setView] = useState<'list' | 'scene'>('list')
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     null,
   )
@@ -501,7 +502,7 @@ function Iceberg() {
   const surfaceDensityClass = getDensityClass(surfaceEntries.length)
 
   return (
-    <main className="iceberg-page">
+    <main className={`iceberg-page iceberg-page--${view}`}>
       <header className="iceberg-header">
         <div className="iceberg-header__navigation">
           <Link to="/" className="back-link">
@@ -535,6 +536,8 @@ function Iceberg() {
         </div>
       </header>
 
+      <div className="guest-tabs" aria-label="Lecture de l’Iceberg"><button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Par niveaux</button><button type="button" aria-pressed={view === 'scene'} onClick={() => setView('scene')}>Vue illustrée</button></div>
+      {view === 'list' && !loading && <div className="iceberg-readable">{levels.map(level => <section className="guest-section" key={level.level}><h2>{level.number} · {level.title}</h2><p className="guest-empty">{level.subtitle}</p><div className="guest-activity-list">{(entriesByLevel.get(level.level) ?? []).map(entry => <details key={entry.id}><summary>{entry.title}</summary><p>{entry.description.trim() || 'Cette histoire se raconte de vive voix. Demande autour de toi !'}</p></details>)}</div>{!(entriesByLevel.get(level.level)?.length) && <p className="guest-empty">Pas encore d’histoire à ce niveau.</p>}</section>)}</div>}
       {error && <div className="iceberg-error">{error}</div>}
 
       {loading ? (
@@ -543,7 +546,7 @@ function Iceberg() {
           <p>Formation de l&apos;iceberg...</p>
         </section>
       ) : (
-        <section className="iceberg-scene">
+        <section className="iceberg-scene" hidden={view !== 'scene'}>
           <div className="iceberg-sky" style={surfaceStyle}>
             <div className="iceberg-cloud iceberg-cloud--one" />
             <div className="iceberg-cloud iceberg-cloud--two" />

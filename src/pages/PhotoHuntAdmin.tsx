@@ -19,6 +19,7 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntAdmin.css'
+import '../features/party/MobileRegie.css'
 
 type ChallengeDraft = {
   prompt: string
@@ -50,6 +51,7 @@ function PhotoHuntAdmin() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const [view, setView] = useState<'review' | 'prepare'>('review')
 
   const loadData = useCallback(async () => {
     const [challengeResult, submissionResult] = await Promise.all([
@@ -456,14 +458,15 @@ function PhotoHuntAdmin() {
         </div>
       </header>
 
-      <section className="photo-hunt-admin__metrics">
+      <div className="photo-admin-tabs" aria-label="Mode régie photo"><button type="button" aria-pressed={view === 'review'} onClick={() => setView('review')}>Modérer ({pendingCount})</button><button type="button" aria-pressed={view === 'prepare'} onClick={() => setView('prepare')}>Préparation</button></div>
+      <section className="photo-hunt-admin__metrics" hidden={view !== 'prepare'}>
         <div><strong>{pendingCount}</strong><span>à valider</span></div>
         <div><strong>{approvedCount}</strong><span>publiées</span></div>
         <div><strong>{rejectedCount}</strong><span>refusées</span></div>
         <div><strong>{activeCount}</strong><span>défis actifs</span></div>
       </section>
 
-      {contributorStats.length > 0 && (
+      {view === 'prepare' && contributorStats.length > 0 && (
         <section className="photo-hunt-admin__contributors" aria-label="Activité par participant">
           <div className="photo-hunt-admin__contributors-heading">
             <div>
@@ -494,7 +497,11 @@ function PhotoHuntAdmin() {
 
       {error && <div className="photo-hunt-admin__error">{error}</div>}
 
-      <section className="photo-hunt-admin__panel">
+      {view === 'review' && (() => {
+        const photo = submissions.find(item => item.status === 'pending')
+        return photo ? <section className="photo-review" aria-label="Photo suivante à valider"><PhotoHuntImage path={photo.storage_path} alt={`Photo envoyée par ${photo.player_name}`} /><h2>{photo.player_name}</h2><p>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi photo'}</p>{photo.caption && <p>{photo.caption}</p>}<div className="photo-review__actions"><button disabled={!!busy} onClick={() => void moderate(photo, 'approved')}>Publier ✓</button><button disabled={!!busy} onClick={() => void moderate(photo, 'rejected')}>Refuser</button></div><p>{pendingCount} photo{pendingCount > 1 ? 's' : ''} à valider · la suivante apparaîtra ici.</p></section> : <p className="photo-hunt-admin__empty">Tout est à jour. Les prochaines photos arriveront ici automatiquement.</p>
+      })()}
+      <details className="photo-hunt-admin__panel" hidden={view !== 'review'}><summary>Toutes les photos et actions groupées</summary>
         <div className="photo-hunt-admin__panel-heading">
           <div>
             <p>01 · Régie photo</p>
@@ -619,9 +626,9 @@ function PhotoHuntAdmin() {
             })}
           </div>
         )}
-      </section>
+      </details>
 
-      <section className="photo-hunt-admin__panel">
+      <section className="photo-hunt-admin__panel" hidden={view !== 'prepare'}>
         <div className="photo-hunt-admin__panel-heading">
           <div>
             <p>02 · Contenu</p>

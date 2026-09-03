@@ -5,7 +5,7 @@ import './extras.css'
 
 export function ExtrasPage({ title, eyebrow, intro, error, children, admin = false }: { title: string; eyebrow: string; intro: string; error?: string; children: ReactNode; admin?: boolean }) {
   return <main className="extras-page">
-    <nav className="extras-nav"><Link to={admin ? '/admin/live' : '/'}>← {admin ? 'Mode Directeur' : 'Accueil'}</Link>{admin ? <Link to="/screen" target="_blank" rel="noreferrer">Écran TV ↗</Link> : <Link to="/jukebox">Jukebox ↗</Link>}</nav>
+    <nav className="extras-nav"><Link to={admin ? '/admin/live' : '/'}>← {admin ? 'Mode Directeur' : 'Accueil'}</Link>{admin && <Link to="/screen" target="_blank" rel="noreferrer">Écran TV ↗</Link>}</nav>
     <header className="extras-hero"><p className="extras-eyebrow">{eyebrow}</p><h1>{title}</h1><p>{intro}</p></header>
     {error && <p className="extras-notice extras-notice--error" role="alert">{error}</p>}
     {children}

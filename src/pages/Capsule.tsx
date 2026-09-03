@@ -3,22 +3,39 @@ import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { ExtrasPage } from '../features/party-extras/ExtrasUI'
 import { revealDate, type Letter } from '../features/party-extras/model'
 import { usePartyExtras } from '../features/party-extras/usePartyExtras'
+import { capsuleDraftKey, readCapsuleDraft, writeCapsuleDraft, type CapsuleDraft } from '../features/guest/capsuleDraft'
 
 function LetterForm({ own, closed, busy, save }: { own: Letter | null; closed: boolean; busy: boolean; save: (payload: Record<string, unknown>) => Promise<boolean> }) {
-  const [message, setMessage] = useState(own?.message ?? '')
-  const [memory, setMemory] = useState(own?.memory ?? '')
-  const [prediction, setPrediction] = useState(own?.prediction ?? '')
+  const { identity } = usePartyIdentity()
+  const [fields, setFields] = useState<CapsuleDraft>(() => {
+    try { return (identity && readCapsuleDraft(window.localStorage, identity.playerKey, own?.updated_at ?? null)) || { message: own?.message ?? '', memory: own?.memory ?? '', prediction: own?.prediction ?? '' } }
+    catch { return { message: own?.message ?? '', memory: own?.memory ?? '', prediction: own?.prediction ?? '' } }
+  })
+  const { message, memory, prediction } = fields
+  const [draftStatus, setDraftStatus] = useState('')
   const [notice, setNotice] = useState('')
+  const edit = (key: keyof CapsuleDraft, value: string) => {
+    const next = { ...fields, [key]: value }
+    setFields(next); setNotice('')
+    try { setDraftStatus(identity && writeCapsuleDraft(window.localStorage, identity.playerKey, own?.updated_at ?? null, next) ? 'Brouillon conservé 7 jours sur ce téléphone. Il n’est pas encore envoyé.' : 'Brouillon non sauvegardé sur ce téléphone. Garde cette page ouverte jusqu’à l’envoi.') }
+    catch { setDraftStatus('Brouillon non sauvegardé sur ce téléphone. Garde cette page ouverte jusqu’à l’envoi.') }
+  }
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setNotice('')
-    if (await save({ message, memory, prediction })) setNotice('Ta lettre est bien scellée. Tu peux la modifier tant que la collecte est ouverte.')
+    if (await save({ message, memory, prediction })) {
+      try { if (identity) window.localStorage.removeItem(capsuleDraftKey(identity.playerKey)) } catch { /* Storage may be unavailable. */ }
+      setDraftStatus(''); setNotice('Ta lettre est bien scellée. Tu peux la modifier tant que la collecte est ouverte.')
+    }
   }
   return <form className="extras-panel" onSubmit={(event) => void submit(event)}>
     <h2>{own ? 'Ta lettre est ici.' : 'Quelques mots pour plus tard.'}</h2>
-    <p>Un seul champ suffit. Seul Maxence pourra ouvrir ta lettre à la date prévue ; elle ne sera jamais affichée sur la TV.</p>
-    <label>Ton message <span className="extras-counter">{message.length}/1200</span><textarea value={message} maxLength={1200} rows={5} disabled={closed || busy} onChange={(event) => { setMessage(event.target.value); setNotice('') }} placeholder="Ce que tu as envie de lui dire…" /></label>
-    <label>Un souvenir ensemble <span className="extras-counter">{memory.length}/800</span><textarea value={memory} maxLength={800} rows={3} disabled={closed || busy} onChange={(event) => { setMemory(event.target.value); setNotice('') }} placeholder="Cette fois où…" /></label>
-    <label>Une prédiction pour l’année à venir <span className="extras-counter">{prediction.length}/800</span><textarea value={prediction} maxLength={800} rows={3} disabled={closed || busy} onChange={(event) => { setPrediction(event.target.value); setNotice('') }} placeholder="Je parie que l’an prochain…" /></label>
+    <p>Pour Maxence seulement, à la date prévue. Jamais sur la TV.</p>
+    <label>Ton message <span className="extras-counter">{message.length}/1200</span><textarea value={message} maxLength={1200} rows={5} disabled={closed || busy} onChange={event => edit('message', event.target.value)} placeholder="Ce que tu as envie de lui dire…" /></label>
+    <details open={memory.length > 0 || prediction.length > 0 || undefined}><summary>Ajouter un souvenir ou une prédiction · facultatif</summary>
+    <label>Un souvenir ensemble <span className="extras-counter">{memory.length}/800</span><textarea value={memory} maxLength={800} rows={3} disabled={closed || busy} onChange={event => edit('memory', event.target.value)} placeholder="Cette fois où…" /></label>
+    <label>Une prédiction pour l’année à venir <span className="extras-counter">{prediction.length}/800</span><textarea value={prediction} maxLength={800} rows={3} disabled={closed || busy} onChange={event => edit('prediction', event.target.value)} placeholder="Je parie que l’an prochain…" /></label>
+    </details>
+    {draftStatus && <p className="extras-help">{draftStatus}</p>}
     {!closed && <button disabled={busy || ![message, memory, prediction].some((value) => value.trim())}>{busy ? 'On scelle…' : own ? 'Mettre à jour ma lettre' : 'Sceller ma lettre'}</button>}
     {notice && <p className="extras-notice" role="status">{notice}</p>}
   </form>
