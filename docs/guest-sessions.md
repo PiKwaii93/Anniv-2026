@@ -23,3 +23,11 @@ La mise en ligne n'exécute pas la déconnexion. Les comptes Supabase Auth des a
 `node --test tests/guest-sessions.test.mjs` teste le vrai composant admin et le provider d'identité avec des services en mémoire. `tests/guest-sessions.sql` vérifie les permissions, la révocation, la reconnexion et l'égalité de tous les contenus des schémas applicatifs avant/après déconnexion (hors seuls jetons), dans une transaction entièrement annulée. Ne jamais retirer son `ROLLBACK`.
 
 Test manuel conseillé hors jeu en cours : deux téléphones identifiés → confirmation admin → retour au choix du prénom sous 10 secondes → reconnexion et vérification des contenus. Ne pas cliquer sur ce bouton en pleine partie sans prévenir les invités.
+
+## Protection des mises à jour via l’API
+
+PostgREST charge `safeupdate` pour les connexions API. Les deux mises à jour de jetons et la suppression des sessions globales ciblent explicitement les jetons déjà inscrits dans `party_identity.revoked_tokens`. Aucune protection n’est désactivée.
+
+Le test SQL direct ne suffit pas à reproduire cette protection. Sur une base de test où le chargement est autorisé, lancer `psql -X -v ON_ERROR_STOP=1 -f tests/guest-sessions-safeupdate.sql` : ce lanceur vérifie d’abord qu’un UPDATE non filtré est réellement refusé, puis exécute les tests transactionnels existants. Si l’hébergement interdit `LOAD`, ne pas modifier les permissions : valider le vrai bouton via l’API avec une session admin, uniquement après autorisation explicite de la déconnexion réelle.
+
+L’interface distingue un refus serveur (avec son code), une session admin invalide et un problème de transport au résultat incertain. Elle ne révèle pas le message SQL brut et ne répète jamais automatiquement la déconnexion.
