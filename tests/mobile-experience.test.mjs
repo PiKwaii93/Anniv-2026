@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import React, { act } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { JSDOM } from 'jsdom'
 import { build } from 'vite'
 
@@ -31,11 +31,13 @@ const entries = {
   Capsule: 'src/pages/Capsule.tsx', Photos: 'src/pages/PhotoHunt.tsx', Shell: 'src/features/guest/GuestShell.tsx',
   Connection: 'src/features/guest/ConnectionNotice.tsx',
   Chat: 'src/pages/PartyChat.tsx',
+  Onboarding: 'src/features/identity/HomeIdentityOnboarding.tsx',
 }
 const bundle = await build({configFile:false,logLevel:'error',plugins:[{
   name:'mobile-fixtures',enforce:'pre',
   resolveId(id) {
     if(id.endsWith('virtual:mobile'))return '\0mobile'
+    if(id==='./PartyIdentityContext')return '\0fixture:/identity/PartyIdentityContext'
     const key=Object.keys(mocks).find(key=>id.endsWith(key))
     if(key)return '\0fixture:'+key
   },
@@ -61,6 +63,10 @@ const q=s=>document.querySelector(s)
 const text=()=>q('#root').textContent
 const button=name=>[...document.querySelectorAll('button')].find(el=>el.textContent.includes(name))
 const click=async el=>{assert.ok(el);await act(async()=>el.click())}
+function AdminAccessProbe({Component}) {
+  const location=useLocation()
+  return React.createElement(React.Fragment,null,React.createElement(Component),React.createElement('output',{'data-testid':'admin-location'},JSON.stringify({path:location.pathname,from:location.state?.from})))
+}
 async function render(Component,path='/') {
   await act(async()=>root.render(React.createElement(MemoryRouter,{initialEntries:[path]},React.createElement(Component))))
   assert.ok(q('#root').innerHTML, `Empty component: ${Component.name}; ${errors.map(e=>e.stack).join('\n')}`)
@@ -79,7 +85,7 @@ beforeEach(async()=>{
   const data={settings:extrasSettings,phase:'live',capsule:{own:null,revealed:false},duo:null,waiting:false,duo_attempts:0,duo_stats:{completed:0},songs:[],song_count:0}
   fixture=globalThis.__mobile={
     auth:{isAdmin:false},
-    identity:{identity:{playerKey:'guest:fixture',playerName:'Camille',sessionToken:'fixture-token'},loading:false},
+    identity:{identity:{playerKey:'guest:fixture',playerName:'Camille',sessionToken:'fixture-token'},loading:false,availablePlayers:[],claimIdentity:async()=>{actions.push('claimIdentity');return true}},
     party:{settings,loading:false},
     overview:{room:{phase:'open',prompt:'Qui veut jouer ?'},extras:data},
     extras:{data,error:'',busy:false,act:async(action,payload)=>{actions.push({action,payload});return true},refresh:async()=>true},
@@ -127,6 +133,38 @@ afterEach(async()=>{
   delete globalThis.IS_REACT_ACT_ENVIRONMENT
 })
 
+test('Home offers admin sign-in to an identified guest without changing their identity',async()=>{
+  await render(()=>React.createElement(AdminAccessProbe,{Component:ui.Home}))
+  const link=q('.guest-home-footer a')
+  assert.equal(link.getAttribute('href'),'/admin/login')
+  assert.match(link.textContent,/Administration/)
+  await click(link)
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin/live'})
+  assert.deepEqual(actions,[])
+  assert.equal(fixture.identity.identity.playerName,'Camille')
+})
+test('Home takes an authenticated admin directly to the regie',async()=>{
+  fixture.auth.isAdmin=true
+  await render(ui.Home)
+  assert.equal(q('.guest-home-footer a').getAttribute('href'),'/admin/live')
+  assert.match(q('.guest-home-footer').textContent,/Ouvrir la régie/)
+})
+test('admin sign-in is reachable inside onboarding without claiming a guest',async()=>{
+  fixture.identity.identity=null
+  await render(()=>React.createElement(AdminAccessProbe,{Component:ui.Onboarding}))
+  const link=q('[role=dialog] a.home-onboarding__admin')
+  assert.ok(link)
+  assert.equal(link.closest('[inert]'),null)
+  await click(link)
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin/live'})
+  assert.deepEqual(actions,[])
+})
+test('admin access is available even while the guest profile is loading',async()=>{
+  fixture.identity.identity=null;fixture.identity.loading=true
+  await render(ui.Onboarding)
+  assert.equal(q('.home-onboarding--loading a').getAttribute('href'),'/admin/login')
+  assert.deepEqual(actions,[])
+})
 test('four navigation entries honor visibility and secondary routes',()=>{
   assert.deepEqual(ui.guestTabs(fixture.party.settings,fixture.extras.data.settings).map(t=>t.label),['Accueil','Jouer','Photos','Musique'])
   fixture.party.settings.photosVisible=false
