@@ -20,10 +20,15 @@ export async function spotifyAction<T = SpotifyResult>(action: string, payload: 
         : error.name === 'FunctionsRelayError' ? 'BRIDGE_RELAY'
         : error.name === 'SyntaxError' ? 'BRIDGE_RESPONSE' : 'BRIDGE_ERROR'
     }
-    const labels: Record<string, string> = { status: 'Actualisation', play: 'Lecture', pause: 'Pause', next: 'Morceau suivant', queue: 'Envoi du morceau', search: 'Recherche Spotify', device: 'Choix du PC', connect: 'Connexion', callback: 'Connexion', disconnect: 'Déconnexion', configure: 'Configuration', resolve: 'Vérification de la file' }
+    const labels: Record<string, string> = { guest_search: 'Recherche', guest_send: 'Envoi', status: 'Actualisation', play: 'Lecture', pause: 'Pause', next: 'Morceau suivant', queue: 'Envoi du morceau', search: 'Recherche Spotify', device: 'Choix du PC', connect: 'Connexion', callback: 'Connexion', disconnect: 'Déconnexion', configure: 'Configuration', resolve: 'Vérification de la file' }
     // Do not log the SDK error object: it can contain request headers or bodies.
     console.warn('spotify_request_failed', { action: Object.hasOwn(labels, action) ? action : 'unknown', code, status: response?.status })
-    throw new Error(`${labels[action] ?? 'Spotify'} : ${messages[code]}`)
+    const guestMessages: Record<string, string> = {
+      QUEUE_UNCERTAIN: 'Spotify n’a pas confirmé cet envoi. Ne crée pas une nouvelle proposition : celle-ci est conservée et ne sera pas envoyée deux fois.',
+      BRIDGE_NETWORK: 'Connexion interrompue. Ton choix reste ici. Réessaie ce même envoi, sans créer une nouvelle proposition.',
+      NOT_ADMIN: messages.IDENTITY_REQUIRED,
+    }
+    throw new Error(`${labels[action] ?? 'Spotify'} : ${action.startsWith('guest_') ? guestMessages[code] ?? messages[code] : messages[code]}`)
   }
   return data as T
 }

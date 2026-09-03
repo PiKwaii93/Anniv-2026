@@ -20,7 +20,7 @@ export type ExtrasState = {
 }
 
 export const songStatus: Record<SongStatus, string> = {
-  pending: 'En validation · privée', queued: 'Dans la sélection', playing: 'Choisie par la régie', played: 'Déjà passée', rejected: 'Non retenue',
+  pending: 'À compléter / envoyer · privée', queued: 'Dans la sélection', playing: 'Choisie par la régie', played: 'Déjà passée', rejected: 'Non retenue',
 }
 
 const musicHosts = new Set(['open.spotify.com', 'www.youtube.com', 'youtube.com', 'youtu.be', 'music.youtube.com', 'music.apple.com', 'www.deezer.com', 'deezer.com'])
