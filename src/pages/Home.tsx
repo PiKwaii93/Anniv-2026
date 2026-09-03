@@ -77,8 +77,8 @@ export default function Home() {
         {phase === 'ended' && settings.photosVisible && <Link to="/photos?view=gallery"><span aria-hidden="true">▧</span><strong>La galerie</strong><small>Revivre la soirée</small></Link>}
       </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>
       <footer className="guest-home-footer">
-        <Link className="guest-admin-link" to={isAdmin ? '/admin/live' : '/admin/login'} state={{ from: '/admin/live' }}>
-          {isAdmin ? 'Administration · Ouvrir la régie' : 'Administration'} <span aria-hidden="true">→</span>
+        <Link className="guest-admin-link" to={isAdmin ? '/admin' : '/admin/login'} state={{ from: '/admin' }}>
+          Administration <span aria-hidden="true">→</span>
         </Link>
       </footer>
     </main>
