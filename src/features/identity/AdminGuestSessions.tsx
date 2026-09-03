@@ -24,8 +24,17 @@ export default function AdminGuestSessions() {
       setNotice(`${data.disconnected} identité${data.disconnected === 1 ? '' : 's'} libérée${data.disconnected === 1 ? '' : 's'}. Les invités peuvent à nouveau choisir leur prénom.`)
       setConfirming(false)
       trigger.current?.focus()
-    } catch {
-      setError('Impossible de confirmer la déconnexion. Vérifie ta connexion et ta session admin avant de réessayer.')
+    } catch (cause) {
+      const code = cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string' ? cause.code : ''
+      if (['PGRST301', 'PGRST302', 'PGRST303'].includes(code)) {
+        setError('Ta session administrateur n’est plus valide. Reconnecte-toi avant de réessayer.')
+      } else if (code === '42501') {
+        setError('Accès refusé : ce compte n’est pas autorisé à déconnecter les invités.')
+      } else if (/^[0-9A-Z]{5}$/.test(code) || /^PGRST\d{3}$/.test(code)) {
+        setError(`Déconnexion refusée par le serveur (code ${code}). Aucun accès invité n’a été modifié.`)
+      } else {
+        setError('Impossible de confirmer la déconnexion : aucune réponse exploitable du serveur. Vérifie l’état des invités avant de réessayer.')
+      }
     } finally {
       pending.current = false
       setBusy(false)
