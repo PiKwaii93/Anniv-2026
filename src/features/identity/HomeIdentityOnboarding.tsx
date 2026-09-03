@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 import { usePartyIdentity } from './PartyIdentityContext'
@@ -54,6 +55,7 @@ function HomeIdentityOnboarding() {
       <div className="home-onboarding home-onboarding--loading">
         <div className="home-onboarding__loader">◌</div>
         <strong>On prépare ton profil…</strong>
+        <Link className="home-onboarding__admin" to="/admin/login" state={{ from: '/admin/live' }}>Administration <span aria-hidden="true">→</span></Link>
       </div>
     )
   }
@@ -166,6 +168,9 @@ function HomeIdentityOnboarding() {
         <p className="home-onboarding__privacy">
           Pas de compte à créer · ton choix reste lié à ce téléphone.
         </p>
+        <div className="home-onboarding__footer">
+          <Link className="home-onboarding__admin" to="/admin/login" state={{ from: '/admin/live' }}>Administration <span aria-hidden="true">→</span></Link>
+        </div>
       </section>
     </div>
   )
