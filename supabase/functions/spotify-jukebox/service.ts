@@ -1,4 +1,5 @@
 import { normalizeMusicText, rankTrackChoices } from './catalog.ts'
+import { guestRequest, type GuestRpc } from './guest.ts'
 
 export const REDIRECT_URI = 'https://anniv-2026-pi.vercel.app/admin/spotify/callback'
 const SCOPES = 'user-read-playback-state user-modify-playback-state'
@@ -30,8 +31,8 @@ export async function challenge(verifier: string) {
 
 // Boundary types represent trusted database and Spotify JSON, never forwarded wholesale to clients.
 type Json = Record<string, any>
-type Dependencies = { authenticate: (jwt: string) => Promise<string | null>; rpc: (admin: string, op: string, payload: Json, lease: string) => Promise<Json>; fetcher?: typeof fetch; report?: (event: Json) => void }
-export function createHandler({ authenticate, rpc, fetcher = fetch, report = (event) => console.warn(JSON.stringify(event)) }: Dependencies) {
+type Dependencies = { authenticate: (jwt: string) => Promise<string | null>; rpc: (admin: string, op: string, payload: Json, lease: string) => Promise<Json>; guestRpc?: GuestRpc; fetcher?: typeof fetch; report?: (event: Json) => void }
+export function createHandler({ authenticate, rpc, guestRpc, fetcher = fetch, report = (event) => console.warn(JSON.stringify(event)) }: Dependencies) {
   return async (request: Request): Promise<Response> => {
     const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store', 'Content-Type': 'application/json' }
     const respond = (data: Json, status = 200) => new Response(JSON.stringify(data), { status, headers })
@@ -45,12 +46,17 @@ export function createHandler({ authenticate, rpc, fetcher = fetch, report = (ev
     const diagnostic = (code: string, stage: string, status?: number) => report({ event: 'spotify_bridge', action, stage, code, ...(status === undefined ? {} : { status }) })
     try {
       const jwt = request.headers.get('Authorization')?.match(/^Bearer (.+)$/i)?.[1]
-      if (!jwt || !(admin = await authenticate(jwt))) throw new BridgeError('NOT_ADMIN', 401)
+      if (!jwt) throw new BridgeError('NOT_ADMIN', 401)
       const raw = await request.text()
       if (raw.length > 12000) throw new BridgeError('INVALID_INPUT')
       let body: Json
       try { body = JSON.parse(raw) } catch { throw new BridgeError('INVALID_INPUT') }
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BridgeError('INVALID_INPUT')
+      if (guestRpc && ['guest_search', 'guest_send'].includes(body.action)) {
+        const result = await guestRequest(body, guestRpc, fetcher)
+        return respond(result, result.error ? 400 : 200)
+      }
+      if (!(admin = await authenticate(jwt))) throw new BridgeError('NOT_ADMIN', 401)
       if (['configure', 'disconnect', 'connect', 'callback', 'status', 'device', 'resolve', 'play', 'pause', 'next', 'queue', 'search'].includes(body.action)) action = body.action
       const db = (op: string, payload: Json = {}) => rpc(admin!, op, payload, lease)
       const config = await db('acquire')

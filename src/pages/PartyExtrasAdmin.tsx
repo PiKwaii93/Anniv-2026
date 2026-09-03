@@ -15,7 +15,7 @@ function SongModeration({ song, busy, change, spotify, refresh }: { song: Song; 
   const dispatch = spotify.data?.dispatches[song.id]
   busy = busy || spotify.busy
   return <SongCard song={song}>
-    {!dispatch && ['pending', 'rejected', 'played'].includes(song.status) && <button disabled={busy} onClick={() => change('queued')}>{song.status === 'pending' ? spotify.data?.connected ? 'Accepter sans envoyer' : 'Accepter' : 'Remettre en sélection'}</button>}
+    {!dispatch && ['rejected', 'played'].includes(song.status) && <button disabled={busy} onClick={() => change('queued')}>Remettre en sélection</button>}
     {!dispatch && ['pending', 'queued'].includes(song.status) && <button className="secondary" disabled={busy} onClick={() => change('rejected')}>Refuser</button>}
     {song.status === 'queued' && <button disabled={busy} onClick={() => change('playing')}>Marquer en cours</button>}
     {['queued', 'playing'].includes(song.status) && <button className="secondary" disabled={busy} onClick={() => change('played')}>Marquer jouée</button>}
@@ -70,9 +70,9 @@ export default function PartyExtrasAdmin() {
       <section id="jukebox" className="extras-panel"><p className="extras-eyebrow">04 · La bande-son</p><h2>Jukebox participatif</h2>
         <Toggle label="Visible sur le site" checked={settings.jukebox_visible} disabled={busy} change={(value) => setting('jukebox_visible', value)} />
         <Toggle label="Accepter les propositions et votes" checked={settings.jukebox_open} disabled={busy} change={(value) => setting('jukebox_open', value)} />
-        <p>{spotify.data?.connected ? 'Valide depuis ton téléphone : le site retrouve le morceau sur Spotify et l’ajoute à la file du PC. Si plusieurs titres correspondent, choisis le bon ici. Aucun lien à copier. « Accepter sans envoyer » permet de recueillir les votes ; les boutons « Marquer » changent seulement le statut sur le site.' : 'Accepte une proposition pour la soumettre aux votes. Connecte Spotify ci-dessus pour retrouver les morceaux par leur titre et les envoyer sur le PC depuis cette régie.'}</p>
+        <p>Les invités recherchent et choisissent leur morceau eux-mêmes, puis l’ajoutent directement à la file Spotify. Aucune validation ni recherche à faire ici. Les anciennes propositions incomplètes sont à préciser par leur auteur dans son jukebox. {spotify.data?.connected ? 'Les commandes ci-dessous restent disponibles en dépannage ; « Marquer » change uniquement le statut sur le site.' : 'Connecte Spotify et sélectionne le PC ci-dessus pour activer les envois.'}</p>
         <div className="extras-actions"><button className="secondary" disabled={!data.songs.some((song) => ['queued', 'playing', 'played'].includes(song.status))} onClick={() => downloadText('jukebox-anniv-2026.txt', songExport(data.songs))}>Exporter la sélection</button><Link className="extras-link" to="/jukebox">Voir la page invitée ↗</Link></div>
-        <h3>À valider · {data.songs.filter((song) => song.status === 'pending').length}</h3>
+        <h3>À compléter par les invités · {data.songs.filter((song) => song.status === 'pending').length}</h3>
         {!data.songs.some((song) => song.status === 'pending') && <p className="extras-empty">Aucune proposition en attente.</p>}
         {data.songs.filter((song) => song.status === 'pending').map((song) => <SongModeration key={song.id} song={song} busy={busy} spotify={spotify} refresh={refresh} change={(status) => void action('admin_song', { id: song.id, status })} />)}
         <h3>La sélection</h3>{data.songs.filter((song) => ['queued', 'playing'].includes(song.status)).map((song) => <SongModeration key={song.id} song={song} busy={busy} spotify={spotify} refresh={refresh} change={(status) => void action('admin_song', { id: song.id, status })} />)}

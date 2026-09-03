@@ -23,11 +23,13 @@ const mocks = {
   '/party-extras/usePartyExtras': 'export function usePartyExtras() { return globalThis.__partyExtrasRender }',
   '/identity/PartyIdentityContext': 'export function usePartyIdentity() { return { identity: { playerKey: "fixture", playerName: "Invité test", sessionToken: "fixture" } } }',
 }
-const result = await build({ configFile: false, logLevel: 'error', plugins: [react(), { name: 'in-memory-fixtures', enforce: 'pre', resolveId(id) {
+const result = await build({ configFile: false, logLevel: 'error', plugins: [react(), { name: 'in-memory-fixtures', enforce: 'pre', resolveId(id, importer) {
+  if (id === './api' && importer?.endsWith('/spotify/GuestSongPicker.tsx')) return '\0spotify-api'
   if (id.endsWith('virtual:extras-pages')) return '\0extras-pages'
   const key = Object.keys(mocks).find((key) => id.endsWith(key))
   if (key) return `\0mock:${key}`
 }, load(id) {
+  if (id === '\0spotify-api') return 'export const spotifyAction = async () => { throw new Error("SSR must never request Spotify") }'
   if (id === '\0extras-pages') return ['Capsule', 'Jukebox', 'Duos', 'PartyExtrasAdmin'].map((name) => `export {default as ${name}} from ${JSON.stringify(resolve(`src/pages/${name}.tsx`))}`).join('\n')
   if (id.startsWith('\0mock:')) return mocks[id.slice(6)]
 } }], build: { ssr: 'virtual:extras-pages', write: false, minify: false } })
@@ -75,9 +77,12 @@ try {
   const ambiguousAdmin = render('PartyExtrasAdmin', { songs: [song] }, { ...connected, choices: { [song.id]: candidates } })
   const noResultAdmin = render('PartyExtrasAdmin', { songs: [song] }, { ...connected, choices: { [song.id]: [] } })
   assert.doesNotMatch(titleOnlyAdmin, /type="url"/)
-  assert.match(ambiguousAdmin, /type="radio"/)
-  assert.match(ambiguousAdmin, /Lionel Richie/)
-  assert.match(noResultAdmin, /Aucun morceau trouvé/)
+  assert.doesNotMatch(ambiguousAdmin, /type="radio"/)
+  assert.doesNotMatch(ambiguousAdmin, /Lionel Richie/)
+  assert.match(noResultAdmin, /À préciser par l’invité/)
+  const repairGuest = render('Jukebox', { songs: [{ ...song, mine: true }], song_count: 3 })
+  assert.match(repairGuest, /Préciser mon morceau et l’envoyer/)
+  assert.match(repairGuest, /Cela ne consomme pas une nouvelle proposition/)
   if (process.env.EXTRAS_REVIEW_PATH) {
     const css = await readFile('src/features/party-extras/extras.css', 'utf8')
     const escape = (value) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')

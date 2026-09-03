@@ -1,4 +1,11 @@
 export const messages: Record<string, string> = {
+  IDENTITY_REQUIRED: 'Ton identification a expiré. Reviens à l’accueil pour choisir ton prénom.',
+  JUKEBOX_CLOSED: 'Le jukebox ne reçoit plus de propositions pour le moment.',
+  SONG_LIMIT: 'Tu as déjà proposé tes trois chansons. Tu peux encore préciser une ancienne proposition.',
+  SONG_EXISTS: 'Ce morceau a déjà été proposé. Tu peux voter pour lui dans la sélection.',
+  SEARCH_RATE_LIMIT: 'Tu as lancé beaucoup de recherches. Attends une minute avant de continuer.',
+  GUEST_SPOTIFY_OFFLINE: 'Le lecteur de la soirée n’est pas disponible pour le moment. Ton choix reste ici ; réessaie quand la musique aura démarré.',
+  GUEST_SPOTIFY_UNAVAILABLE: 'Spotify est temporairement indisponible. Ton choix reste ici. Réessaie dans quelques instants.',
   NOT_ADMIN: 'Reconnecte-toi à la régie pour utiliser Spotify.',
   INVALID_CLIENT: 'Copie le Client ID de ton application Spotify : 32 caractères, sans espace.',
   DISCONNECT_FIRST: 'Déconnecte Spotify avant de changer le Client ID.',

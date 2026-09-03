@@ -15,21 +15,21 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   enforce: 'pre',
   resolveId(id, importer) {
     if (id.endsWith('virtual:spotify-ui')) return '\0spotify-ui'
-    if (id === './api' && importer?.endsWith('/spotify/useSpotify.ts')) return '\0spotify-api-fixture'
+    if (id === './api' && (importer?.endsWith('/spotify/useSpotify.ts') || importer?.endsWith('/spotify/GuestSongPicker.tsx'))) return '\0spotify-api-fixture'
   },
   load(id) {
-    if (id === '\0spotify-ui') return `export {useSpotify} from ${JSON.stringify(resolve('src/features/spotify/useSpotify.ts'))}; export {default as SpotifySongAction} from ${JSON.stringify(resolve('src/features/spotify/SpotifySongAction.tsx'))};`
+    if (id === '\0spotify-ui') return `export {useSpotify} from ${JSON.stringify(resolve('src/features/spotify/useSpotify.ts'))}; export {default as SpotifySongAction} from ${JSON.stringify(resolve('src/features/spotify/SpotifySongAction.tsx'))}; export {default as GuestSongPicker} from ${JSON.stringify(resolve('src/features/spotify/GuestSongPicker.tsx'))};`
     if (id === '\0spotify-api-fixture') return 'export const spotifyAction = (...args) => globalThis.__spotifyAction(...args)'
   },
 }], build: { ssr: 'virtual:spotify-ui', write: false, minify: false } })
 await mkdir(resolve('node_modules/.cache'), { recursive: true })
 await writeFile(cache, bundle.output.find((item) => item.type === 'chunk').code)
-const { useSpotify, SpotifySongAction } = await import(pathToFileURL(cache).href)
+const { useSpotify, SpotifySongAction, GuestSongPicker } = await import(pathToFileURL(cache).href)
 after(() => rm(cache))
 
 let dom, root, controller, poll, showCard, refreshes
 let replies = []
-const requests = []
+const requests = [], payloads = []
 const state = { connected: true, device_id: 'pc', device_name: 'PC', devices: [], dispatches: {}, playback: null }
 const status = (value = state) => ({ action: 'status', value })
 const unavailable = new Error('Spotify ne répond pas pour le moment.')
@@ -52,10 +52,10 @@ beforeEach(() => {
   dom.window.clearInterval = () => {}
   Object.defineProperty(document, 'visibilityState', { value: 'visible' })
   root = createRoot(document.getElementById('root'))
-  replies = []; requests.length = 0
+  replies = []; requests.length = 0; payloads.length = 0
   showCard = false; refreshes = 0
-  globalThis.__spotifyAction = async (action) => {
-    requests.push(action)
+  globalThis.__spotifyAction = async (action, payload) => {
+    requests.push(action); payloads.push(payload)
     const next = replies.shift()
     assert.equal(action, next?.action, 'Unexpected Spotify request')
     if (next.value instanceof Error) throw next.value
@@ -128,22 +128,61 @@ test('ambiguous search displays choices without claiming success or refreshing g
   await act(async () => assert.equal(await controller.run('queue', { song_id: 'song', track_id: choices[0].id }), true))
   assert.match(controller.notice, /Song.*a rejoint la file/)
 })
-test('admin can resolve an ambiguous title and send it without entering a Spotify URL', async () => {
+test('admin no longer has a search form or candidate selector for an unresolved title', async () => {
   showCard = true
   await mount(status())
-  const send = () => [...document.querySelectorAll('button')].find((button) => button.textContent === 'Accepter et envoyer sur le PC')
-  assert.equal(send().disabled, false)
-  assert.equal(document.querySelector('input[type="url"]'), null)
-  const choices = [{ id: 'a'.repeat(22), title: 'Unstoppable', artists: 'The Score', album: 'Atlas', duration_ms: 200000, url: 'https://open.spotify.com/track/' + 'a'.repeat(22) }]
-  replies.push({ action: 'queue', value: { ok: false, needs_choice: true, song_id: 'song', choices } })
-  await act(async () => send().click())
-  assert.equal(refreshes, 0)
-  assert.equal(send().disabled, true)
-  assert.match(document.body.textContent, /rien n’a encore été envoyé/)
-  await act(async () => document.querySelector('input[type="radio"]').click())
-  assert.equal(send().disabled, false)
-  replies.push({ action: 'queue', value: { ok: true, title: 'Unstoppable' } }, status())
-  await act(async () => send().click())
+  assert.equal(document.querySelector('input'), null)
+  assert.equal(document.querySelector('form'), null)
+  assert.match(document.body.textContent, /À préciser par l’invité/)
+  assert.deepEqual(requests, ['status'])
+})
+
+const guestTrack = { id: 'a'.repeat(22), title: 'Diamonds', artists: 'Rihanna', album: 'Unapologetic', duration_ms: 225000, url: 'https://open.spotify.com/track/' + 'a'.repeat(22) }
+const guestProps = { identity: { playerKey: 'guest:test', sessionToken: 'private-session' }, song: { id: 'legacy-song', title: 'diamond', artist: '' }, onSent: async () => { refreshes++ } }
+const clickSearch = async () => act(async () => document.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })))
+const sendButton = () => [...document.querySelectorAll('button')].find(button => button.textContent.includes('Choisir et ajouter'))
+test('guest chooses the artist and sends directly, without any admin request', async () => {
+  await act(async () => root.render(React.createElement(GuestSongPicker, guestProps)))
+  replies.push({ action: 'guest_search', value: { ok: true, choices: [{ ...guestTrack, id: 'b'.repeat(22), artists: 'Another artist' }, guestTrack] } })
+  await clickSearch()
+  assert.equal(refreshes, 0); assert.equal(sendButton().disabled, true)
+  await act(async () => document.querySelectorAll('input[type="radio"]')[1].click())
+  assert.equal(sendButton().disabled, false)
+  replies.push({ action: 'guest_send', value: { ok: true, title: 'Diamonds' } })
+  await act(async () => sendButton().click())
   assert.equal(refreshes, 1)
-  assert.equal(requests.filter((action) => action === 'queue').length, 2)
+  assert.equal(payloads[1].track_id, guestTrack.id)
+  assert.equal(payloads[1].song_id, 'legacy-song')
+  assert.deepEqual(requests, ['guest_search', 'guest_send'])
+})
+test('no match asks only the guest to refine, with no send or quota refresh', async () => {
+  await act(async () => root.render(React.createElement(GuestSongPicker, guestProps)))
+  replies.push({ action: 'guest_search', value: { ok: true, choices: [] } })
+  await clickSearch()
+  assert.match(document.body.textContent, /Précise le titre/)
+  assert.equal(sendButton(), undefined); assert.equal(refreshes, 0)
+  assert.deepEqual(requests, ['guest_search'])
+})
+test('retry uses the same proposal ID after a failed guest send', async () => {
+  await act(async () => root.render(React.createElement(GuestSongPicker, guestProps)))
+  replies.push({ action: 'guest_search', value: { ok: true, choices: [guestTrack] } })
+  await clickSearch()
+  await act(async () => document.querySelector('input[type="radio"]').click())
+  replies.push({ action: 'guest_send', value: new Error('Connexion interrompue') })
+  await act(async () => sendButton().click())
+  assert.equal(refreshes, 0); assert.match(document.body.textContent, /Connexion interrompue/)
+  replies.push({ action: 'guest_send', value: { ok: true, title: 'Diamonds' } })
+  await act(async () => sendButton().click())
+  assert.equal(payloads[1].song_id, payloads[2].song_id)
+  assert.equal(refreshes, 1)
+})
+test('new search clears the previous selected candidate', async () => {
+  await act(async () => root.render(React.createElement(GuestSongPicker, guestProps)))
+  replies.push({ action: 'guest_search', value: { ok: true, choices: [guestTrack] } })
+  await clickSearch()
+  await act(async () => document.querySelector('input[type="radio"]').click())
+  replies.push({ action: 'guest_search', value: { ok: true, choices: [guestTrack] } })
+  await clickSearch()
+  assert.equal(document.querySelector('input[type="radio"]').checked, false)
+  assert.equal(sendButton().disabled, true)
 })

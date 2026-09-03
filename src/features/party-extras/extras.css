@@ -3,9 +3,10 @@
 .spotify-panel{border-color:#3b7050}.spotify-panel ol{padding-left:22px;color:#c9c5bf;line-height:1.8}.spotify-panel li{margin-bottom:15px}.spotify-panel code{overflow-wrap:anywhere}.spotify-setup{padding-bottom:24px}.spotify-now{margin:24px 0;padding:20px;border:1px solid #3d5745;border-radius:12px;background:#17271d}.spotify-now h3{font-size:1.6rem;margin:10px 0}.spotify-song-action{flex-basis:100%;max-width:420px}.spotify-song-action label{margin:8px 0}.extras-song>.extras-actions{max-width:470px}.spotify-panel>.extras-actions{margin-top:20px}
 .spotify-matches fieldset { border: 1px solid #494b52; border-radius: 12px; padding: 12px; min-width: 0; margin: 12px 0; }
 .spotify-matches legend { padding: 0 6px; font-size: .85rem; }
-.spotify-song-action .spotify-match { display: flex; align-items: flex-start; gap: 10px; padding: 10px 4px; cursor: pointer; }
-.spotify-song-action .spotify-match input { width: 18px; height: 18px; flex: 0 0 18px; margin: 3px 0 0; accent-color: #dac98d; }
+.spotify-song-action .spotify-match,.spotify-guest-picker .spotify-match { display: flex; align-items: flex-start; gap: 10px; padding: 10px 4px; cursor: pointer; }
+.spotify-song-action .spotify-match input,.spotify-guest-picker .spotify-match input { width: 18px; height: 18px; flex: 0 0 18px; margin: 3px 0 0; accent-color: #dac98d; }
 .spotify-match > span { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .spotify-match small { opacity: .75; }
 .spotify-song-action details { margin-top: 12px; }
 .spotify-song-action details form { margin-top: 12px; }
+.spotify-guest-picker,.spotify-guest-repair{min-width:0;max-width:100%;width:100%}.spotify-guest-picker button{max-width:100%}.spotify-guest-picker .spotify-match{min-height:44px}.spotify-guest-picker fieldset:disabled{opacity:.6}
