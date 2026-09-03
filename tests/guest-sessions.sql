@@ -1,0 +1,82 @@
+-- Run in a transaction only: no real guest is left disconnected by this test.
+begin;
+set local plpgsql.check_asserts=on;
+set local lock_timeout='3s';
+set local statement_timeout='20s';
+do $$
+declare
+  g uuid:=gen_random_uuid(); token uuid:=gen_random_uuid(); fresh uuid:=gen_random_uuid();
+  k text; admin_id uuid; r jsonb; denied boolean; rec record; snapshot jsonb; projection text;
+  session_count integer; m_token uuid; room_token uuid;
+begin
+  select user_id into admin_id from public.app_admins limit 1;
+  assert admin_id is not null;
+  k:='guest:'||g;
+  insert into public.guests(id,name,status) values(g,'QA Identity Reset','confirmed');
+  assert public.claim_party_identity(k,token)->>'ok'='true';
+  assert public.claim_live_vote_identity(k,token)->>'ok'='true';
+  perform public.claim_secret_mission(k,token);
+  update public.live_vote_players set score=17 where player_key=k;
+  update public.secret_mission_players set completed_count=3 where player_key=k;
+  select session_token into room_token from public.live_vote_players where player_key=k;
+  select session_token into m_token from public.secret_mission_players where player_key=k;
+  select count(*) into session_count from public.party_identity_sessions;
+  -- Snapshot every public content table, excluding only credential rows/columns.
+  create temp table reset_snapshots(table_name text primary key, contents jsonb) on commit drop;
+  for rec in select schemaname,tablename from pg_tables where schemaname in ('public','party_chat','party_extras') and tablename <> 'party_identity_sessions' loop
+    projection:=case when rec.tablename in ('live_vote_players','secret_mission_players') then 'to_jsonb(t)-''session_token''' else 'to_jsonb(t)' end;
+    execute format('select coalesce(jsonb_agg(v order by v::text),''[]''::jsonb) from (select %s as v from %I.%I t) q',projection,rec.schemaname,rec.tablename) into snapshot;
+    insert into reset_snapshots values(rec.schemaname||'.'||rec.tablename,snapshot);
+  end loop;
+  set local role anon;
+  perform set_config('request.jwt.claim.sub','',true);
+  assert public.party_identity_is_valid(k,token);
+  assert not public.party_identity_is_valid(k,fresh);
+  denied:=false;
+  begin perform * from party_identity.revoked_tokens; exception when insufficient_privilege then denied:=true; end;
+  assert denied,'Tokens are private';
+  denied:=false;
+  begin perform party_identity.legacy_claim_party_identity(k,token); exception when insufficient_privilege then denied:=true; end;
+  assert denied,'Cannot bypass revocation check';
+  denied:=false;
+  begin perform public.admin_disconnect_party_guests(true); exception when insufficient_privilege then denied:=true; end;
+  assert denied,'Anonymous cannot disconnect everyone';
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub',g::text,true);
+  denied:=false;
+  begin perform public.admin_disconnect_party_guests(true); exception when insufficient_privilege then denied:=true; end;
+  assert denied,'Authenticated is not necessarily admin';
+  perform set_config('request.jwt.claim.sub',admin_id::text,true);
+  denied:=false;
+  begin perform public.admin_disconnect_party_guests(); exception when others then denied:=sqlerrm='CONFIRMATION_REQUIRED'; end;
+  assert denied,'Explicit confirmation required';
+  r:=public.admin_disconnect_party_guests(true);
+  assert r->>'ok'='true' and (r->>'disconnected')::integer >= session_count;
+  reset role;
+  assert not exists(select 1 from public.party_identity_sessions),'All global identities freed';
+  assert (select session_token <> room_token from public.live_vote_players where player_key=k),'Room credential invalidated';
+  assert (select session_token <> m_token from public.secret_mission_players where player_key=k),'Mission credential invalidated';
+  for rec in select schemaname,tablename from pg_tables where schemaname in ('public','party_chat','party_extras') and tablename <> 'party_identity_sessions' loop
+    projection:=case when rec.tablename in ('live_vote_players','secret_mission_players') then 'to_jsonb(t)-''session_token''' else 'to_jsonb(t)' end;
+    execute format('select coalesce(jsonb_agg(v order by v::text),''[]''::jsonb) from (select %s as v from %I.%I t) q',projection,rec.schemaname,rec.tablename) into snapshot;
+    assert snapshot=(select contents from reset_snapshots where table_name=rec.schemaname||'.'||rec.tablename),'Content changed in '||rec.tablename;
+  end loop;
+  assert exists(select 1 from public.app_admins where user_id=admin_id),'Admin account untouched';
+  set local role anon;
+  perform set_config('request.jwt.claim.sub','',true);
+  assert not public.party_identity_is_valid(k,token);
+  assert public.claim_party_identity(k,token)->>'code'='INVALID_SESSION','Old private tab cannot reclaim';
+  assert public.claim_live_vote_identity(k,token)->>'code'='INVALID_SESSION';
+  assert public.get_secret_mission_state(k,token)->>'code'='INVALID_SESSION';
+  denied:=false;
+  begin perform public.get_party_chat(k,token); exception when others then denied:=sqlerrm='IDENTITY_REQUIRED'; end;
+  assert denied,'Old token cannot read private chat';
+  assert public.claim_party_identity(k,fresh)->>'ok'='true','A fresh phone can claim released guest';
+  assert public.party_identity_is_valid(k,fresh);
+  assert public.claim_live_vote_identity(k,fresh)->>'score'='17','Room scores survive reconnect';
+  perform public.claim_secret_mission(k,fresh);
+  reset role;
+  assert (select completed_count=3 from public.secret_mission_players where player_key=k),'Missions survive reconnect';
+end;
+$$;
+rollback;

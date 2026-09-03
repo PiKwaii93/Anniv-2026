@@ -1207,6 +1207,10 @@ function DirectorMode() {
           <span aria-hidden="true">☏</span>
           <div><small>Entre invités</small><strong>Modérer la discussion</strong></div>
         </Link>
+        <Link to="/admin/guests#sessions" className="director-shortcut">
+          <span aria-hidden="true">♙</span>
+          <div><small>Accès</small><strong>Libérer les identités</strong></div>
+        </Link>
         <Link to="/admin" className="director-shortcut">
           <span>⌘</span>
           <div>
