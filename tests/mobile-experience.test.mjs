@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import React, { act } from 'react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { JSDOM } from 'jsdom'
 import { build } from 'vite'
 
@@ -32,6 +32,7 @@ const entries = {
   Connection: 'src/features/guest/ConnectionNotice.tsx',
   Chat: 'src/pages/PartyChat.tsx',
   Onboarding: 'src/features/identity/HomeIdentityOnboarding.tsx',
+  AdminLogin: 'src/pages/AdminLogin.tsx',
 }
 const bundle = await build({configFile:false,logLevel:'error',plugins:[{
   name:'mobile-fixtures',enforce:'pre',
@@ -139,15 +140,36 @@ test('Home offers admin sign-in to an identified guest without changing their id
   assert.equal(link.getAttribute('href'),'/admin/login')
   assert.match(link.textContent,/Administration/)
   await click(link)
-  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin/live'})
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin'})
   assert.deepEqual(actions,[])
   assert.equal(fixture.identity.identity.playerName,'Camille')
 })
-test('Home takes an authenticated admin directly to the regie',async()=>{
+test('Home takes an authenticated admin directly to the full administration dashboard',async()=>{
   fixture.auth.isAdmin=true
-  await render(ui.Home)
-  assert.equal(q('.guest-home-footer a').getAttribute('href'),'/admin/live')
-  assert.match(q('.guest-home-footer').textContent,/Ouvrir la régie/)
+  await render(()=>React.createElement(AdminAccessProbe,{Component:ui.Home}))
+  const link=q('.guest-home-footer a')
+  assert.equal(link.getAttribute('href'),'/admin')
+  assert.equal(link.textContent,'Administration →')
+  await click(link)
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin',from:'/admin'})
+  assert.deepEqual(actions,[])
+})
+test('sign-in from Home returns to the full admin dashboard instead of Director mode',async()=>{
+  function AdminAccessFlow() {
+    return React.createElement(Routes,null,
+      React.createElement(Route,{path:'/',element:React.createElement(ui.Home)}),
+      React.createElement(Route,{path:'/admin/login',element:React.createElement(ui.AdminLogin)}),
+      React.createElement(Route,{path:'/admin',element:React.createElement('h1',null,'Administration complète')}))
+  }
+  await render(AdminAccessFlow)
+  await click(q('.guest-home-footer a'))
+  assert.equal(q('h1').textContent,'Administration')
+  assert.ok(q('input[type=password]'))
+  // Model successful authentication in memory; never sign into production.
+  fixture.auth.isAdmin=true
+  await render(AdminAccessFlow)
+  assert.equal(q('h1').textContent,'Administration complète')
+  assert.deepEqual(actions,[])
 })
 test('admin sign-in is reachable inside onboarding without claiming a guest',async()=>{
   fixture.identity.identity=null
@@ -156,13 +178,15 @@ test('admin sign-in is reachable inside onboarding without claiming a guest',asy
   assert.ok(link)
   assert.equal(link.closest('[inert]'),null)
   await click(link)
-  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin/live'})
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin'})
   assert.deepEqual(actions,[])
 })
 test('admin access is available even while the guest profile is loading',async()=>{
   fixture.identity.identity=null;fixture.identity.loading=true
-  await render(ui.Onboarding)
+  await render(()=>React.createElement(AdminAccessProbe,{Component:ui.Onboarding}))
   assert.equal(q('.home-onboarding--loading a').getAttribute('href'),'/admin/login')
+  await click(q('.home-onboarding--loading a'))
+  assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin/login',from:'/admin'})
   assert.deepEqual(actions,[])
 })
 test('four navigation entries honor visibility and secondary routes',()=>{
@@ -373,6 +397,21 @@ test('TV status explains room priority, announcements and ending without changin
   assert.deepEqual(ui.tvStatus('live','photos','idle',false),{current:'Photos',next:null})
   assert.deepEqual(ui.tvStatus('live','photos','idle',true),{current:'Annonce en cours',next:'Photos'})
   assert.deepEqual(ui.tvStatus('ended','photos','open',false),{current:'Générique / palmarès',next:null})
+})
+test('Director TV status shares the centered panel width without changing mobile wrapping',async()=>{
+  const directorCss=await readFile('src/pages/DirectorMode.css','utf8')
+  const regieCss=await readFile('src/features/party/MobileRegie.css','utf8')
+  const style=document.createElement('style')
+  style.textContent=directorCss
+  document.head.append(style)
+  const sharedRule=[...style.sheet.cssRules].find(rule=>rule.selectorText?.split(',').map(s=>s.trim()).includes('.director-mode > .regie-tv'))
+  assert.ok(sharedRule,'TV status must join the Director content container')
+  assert.ok(sharedRule.selectorText.includes('.director-command-bar'))
+  assert.equal(sharedRule.style.getPropertyValue('width'),'min(100%, 1180px)')
+  assert.equal(sharedRule.style.getPropertyValue('margin-inline'),'auto')
+  // The scoped selector wins over the later .regie-tv margin shorthand.
+  assert.match(regieCss,/\.regie-tv \{[^}]*margin: 16px 0;/)
+  assert.match(regieCss,/@media[^}]*[\s\S]*\.regie-tv \{ align-items: flex-start; flex-wrap: wrap;/)
 })
 test('mobile CSS reserves safe areas, readable Bingo and input sizes without affecting TV',async()=>{
   const css=await readFile('src/features/guest/guest.css','utf8')
