@@ -177,6 +177,8 @@ function PhotoHunt() {
     return available.slice(0, 1)
   }, [orderedChallenges, submissionByChallenge])
 
+  const otherChallenges = orderedChallenges.filter(challenge => challenge.id !== spotlight[0]?.id)
+
   const approvedCount = ownSubmissions.filter((submission) => submission.status === 'approved').length
   const pendingCount = ownSubmissions.filter((submission) => submission.status === 'pending').length
   const rejectedCount = ownSubmissions.filter((submission) => submission.status === 'rejected').length
@@ -346,6 +348,8 @@ function PhotoHunt() {
 
       {error && <div className="photo-hunt__error">{error}</div>}
 
+      {view === 'challenges' && challenges.length === 0 && <section className="photo-hunt__section"><p>Les défis arrivent bientôt.</p></section>}
+
       {view === 'mine' && (
         <section className="photo-hunt__status-panel" aria-label="État de tes photos">
           <div>
@@ -380,7 +384,6 @@ function PhotoHunt() {
               <p>Pour toi</p>
               <h2>Ton prochain défi</h2>
             </div>
-            <span>Choisis-en un</span>
           </div>
 
           <div className="photo-hunt__spotlight">
@@ -401,17 +404,17 @@ function PhotoHunt() {
         </section>
       )}
 
-      {view === 'challenges' && <section className="photo-hunt__section">
+      {view === 'challenges' && otherChallenges.length > 0 && <section className="photo-hunt__section">
         <div className="photo-hunt__section-title">
           <div>
             <p>Checklist</p>
-            <h2>Tous les défis</h2>
+            <h2>{spotlight.length > 0 ? 'Autres défis' : 'Tous les défis'}</h2>
           </div>
           <span>{approvedCount + pendingCount} / {challenges.length} tentés</span>
         </div>
 
         <div className="photo-hunt__challenge-list">
-          {orderedChallenges.map((challenge) => {
+          {otherChallenges.map((challenge) => {
             const submission = submissionByChallenge.get(challenge.id)
             const status = submission?.status
             const label =

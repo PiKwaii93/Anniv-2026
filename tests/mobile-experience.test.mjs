@@ -24,6 +24,7 @@ const mocks = {
 const entries = {
   Home: 'src/pages/Home.tsx', Play: 'src/pages/Play.tsx', Bingo: 'src/pages/Bingo.tsx',
   Capsule: 'src/pages/Capsule.tsx', Photos: 'src/pages/PhotoHunt.tsx', Shell: 'src/features/guest/GuestShell.tsx',
+  Connection: 'src/features/guest/ConnectionNotice.tsx',
 }
 const bundle = await build({configFile:false,logLevel:'error',plugins:[{
   name:'mobile-fixtures',enforce:'pre',
@@ -77,10 +78,11 @@ beforeEach(async()=>{
     overview:{room:{phase:'open',prompt:'Qui veut jouer ?'},extras:data},
     extras:{data,error:'',busy:false,act:async(action,payload)=>{actions.push({action,payload});return true},refresh:async()=>true},
     ownPhotos:[{challengeId:'c1',status:'pending'}],
+    challenges:[{id:'c1',prompt:'Photo ensemble',hint:'',sort_order:0},{id:'c2',prompt:'Photo du gâteau',hint:'',sort_order:1}],
     db:{
       from(table){
         reads.push(table)
-        const rows={live_vote_public_state:{state:fixture.overview.room},bingo_prompts:Array.from({length:16},(_,i)=>({id:'b'+i,text:'Situation numéro '+i})),photo_hunt_challenges:[{id:'c1',prompt:'Photo ensemble',hint:'',sort_order:0},{id:'c2',prompt:'Photo du gâteau',hint:'',sort_order:1}],photo_hunt_submissions:[]}
+        const rows={live_vote_public_state:{state:fixture.overview.room},bingo_prompts:Array.from({length:16},(_,i)=>({id:'b'+i,text:'Situation numéro '+i})),photo_hunt_challenges:fixture.challenges,photo_hunt_submissions:[]}
         assert.ok(Object.hasOwn(rows,table),'Unexpected read '+table)
         const value={data:rows[table],error:null}
         const query={select(){return query},eq(){return query},order(){return query},limit(){return query},maybeSingle:async()=>value,then(a,b){return Promise.resolve(value).then(a,b)}}
@@ -195,6 +197,72 @@ test('direct link to own photos does not bury them under challenges',async()=>{
   await render(ui.Photos,'/photos?view=mine')
   assert.ok(q('.photo-hunt__status-panel'))
   assert.equal(q('.photo-hunt__spotlight'),null)
+})
+test('suggested photo challenge occurs only once and the full progress total is retained',async()=>{
+  await render(ui.Photos,'/photos')
+  const suggestion=q('.photo-hunt__spotlight-card strong').textContent
+  const others=[...document.querySelectorAll('.photo-hunt__challenge strong')].map(el=>el.textContent)
+  assert.ok(!others.includes(suggestion))
+  assert.equal(others.length,1)
+  assert.match(text(),/Autres défis/)
+  assert.match(text(),/1 \/ 2 tentés/)
+  assert.ok(!text().includes('Choisis-en un'))
+})
+test('when every challenge is submitted the complete read-only list remains',async()=>{
+  fixture.ownPhotos=[{challengeId:'c1',status:'pending'},{challengeId:'c2',status:'approved'}]
+  await render(ui.Photos,'/photos')
+  assert.equal(q('.photo-hunt__spotlight'),null)
+  assert.match(text(),/Tous les défis/)
+  assert.equal(document.querySelectorAll('.photo-hunt__challenge:disabled').length,2)
+})
+test('a sole suggested challenge does not create an empty secondary section',async()=>{
+  fixture.ownPhotos=[];fixture.challenges=fixture.challenges.slice(0,1)
+  await render(ui.Photos,'/photos')
+  assert.ok(q('.photo-hunt__spotlight-card'))
+  assert.equal(q('.photo-hunt__challenge-list'),null)
+  assert.ok(!text().includes('Autres défis'))
+})
+test('empty photo catalogue displays an explicit waiting state',async()=>{
+  fixture.ownPhotos=[];fixture.challenges=[]
+  await render(ui.Photos,'/photos')
+  assert.match(text(),/Les défis arrivent bientôt/)
+})
+test('offline notice responds to device events without replaying any action or remounting the page',async()=>{
+  let online=true
+  Object.defineProperty(window.navigator,'onLine',{configurable:true,get:()=>online})
+  const Page=()=>React.createElement(React.Fragment,null,React.createElement(ui.Connection),React.createElement('textarea',{defaultValue:'Texte non envoyé'}))
+  await render(Page)
+  const input=q('textarea'),status=q('[role="status"]')
+  assert.equal(status.textContent,'')
+  input.value='Mon brouillon en cours'
+  online=false
+  await act(async()=>window.dispatchEvent(new window.Event('offline')))
+  assert.match(status.textContent,/Connexion perdue/)
+  assert.equal(status.getAttribute('aria-live'),'polite')
+  online=true
+  await act(async()=>window.dispatchEvent(new window.Event('online')))
+  assert.equal(status.textContent,'')
+  assert.equal(q('textarea'),input)
+  assert.equal(input.value,'Mon brouillon en cours')
+  assert.deepEqual(actions,[]);assert.deepEqual(reads,[])
+})
+test('offline first render works and network subscriptions are cleaned up',async()=>{
+  Object.defineProperty(window.navigator,'onLine',{configurable:true,value:false})
+  const added=[],removed=[],add=window.addEventListener.bind(window),remove=window.removeEventListener.bind(window)
+  window.addEventListener=(type,fn,...args)=>{if(['online','offline'].includes(type))added.push([type,fn]);add(type,fn,...args)}
+  window.removeEventListener=(type,fn,...args)=>{if(['online','offline'].includes(type))removed.push([type,fn]);remove(type,fn,...args)}
+  await render(ui.Connection)
+  assert.match(text(),/Connexion perdue/)
+  await act(async()=>root.render(null))
+  assert.equal(added.length,2);assert.deepEqual(removed,added)
+})
+test('Photos tabs share the content width and desktop columns do not override the mobile breakpoint',async()=>{
+  const guestCss=await readFile('src/features/guest/guest.css','utf8')
+  const photoCss=await readFile('src/pages/PhotoHunt.css','utf8')
+  assert.match(guestCss,/\.guest-app \.photo-hunt > \.guest-tabs \{ width: min\(1160px, 100%\); margin-inline: auto;/)
+  assert.ok(!guestCss.includes('.guest-app .photo-hunt__challenge-list'))
+  assert.match(photoCss,/\.photo-hunt__challenge-list \{\s*display: grid;\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/)
+  assert.match(photoCss,/@media \(max-width: 760px\)[\s\S]*\.photo-hunt__challenge-list \{\s*grid-template-columns: 1fr;/)
 })
 test('photo composer is a native modal and restores page scrolling on close',async()=>{
   await render(ui.Photos,'/photos')
