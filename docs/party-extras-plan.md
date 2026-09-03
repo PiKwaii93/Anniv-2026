@@ -12,3 +12,9 @@ Trois routes invitées, cartes sur l'accueil et une régie commune accessible de
 Vérification : `node --test tests/*.test.mjs`, `node tests/party-extras-render.mjs`, `npm run build`. Le script de rendu remplace les hooks par des données en mémoire et ne contacte pas Supabase. `EXTRAS_REVIEW_PATH=/tmp/extras-review.html node tests/party-extras-render.mjs` produit une vue des pages à 390 px. Le test SQL s'exécute dans une transaction suivie de ROLLBACK.
 
 Les tables privées ont RLS activé sans politique autorisant la lecture directe, et aucun privilège client sur les tables. Le signal informatif Supabase « RLS Enabled No Policy » est donc attendu. Les fonctions publiques sont des wrappers invoker ; les fonctions internes contrôlent les sessions invitées ou l'identité admin avant toute opération.
+
+## Générique et annonces de clôture
+
+Le générique synchronise les annonces à chaque nouvelle fin de soirée ou relance. Tant que l'annonce recouvre `/screen`, le minuteur est suspendu et les commandes du générique sont inaccessibles. À l'expiration ou au retrait de l'annonce, le même écran reprend pour dix secondes complètes. Une pause manuelle ou liée à la réduction des animations reste respectée. Une annonce ne doit jamais marquer un générique masqué comme terminé.
+
+Régression : `node --test tests/party-ending.test.mjs` utilise le véritable écran de fin et l'overlay avec des données en mémoire et une horloge simulée. Vérification réelle : recharger `/screen`, lancer **Scènes → Fin de soirée**, laisser l'annonce disparaître sans relance manuelle, puis vérifier l'introduction, les pages suivantes et le Hall of Fame. Une nouvelle annonce pendant le générique doit préserver la page courante. Le test ne nécessite aucune migration ni modification des données de la soirée.
