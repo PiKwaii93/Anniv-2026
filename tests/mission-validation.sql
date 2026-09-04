@@ -9,7 +9,7 @@ declare
   ta uuid:=gen_random_uuid(); tb uuid:=gen_random_uuid(); tc uuid:=gen_random_uuid();
   ka text:='guest:'||a; kb text:='guest:'||b; kc text:='guest:'||c;
   req uuid:=gen_random_uuid(); req2 uuid:=gen_random_uuid(); req3 uuid:=gen_random_uuid(); req4 uuid:=gen_random_uuid();
-  p public.secret_mission_players%rowtype; result jsonb; m uuid; assigned timestamptz; denied boolean;
+  p public.secret_mission_players%rowtype; result jsonb; m uuid; assigned timestamptz; scoreboard_version text;
 begin
   insert into public.guests(id,name,status) values(a,'QA Mission Author','confirmed'),(b,'QA Mission Witness','confirmed'),(c,'QA Mission Other','confirmed');
   update public.party_state set phase='preparation',missions_visible=true where id='main';
@@ -43,6 +43,10 @@ begin
   select * into p from public.secret_mission_players where player_key=ka;
   assert p.completed_count=0 and p.current_prompt_id=m,'Request never awards or changes mission';
   assert (select count(*) from party_missions.validations where player_id=p.id)=1;
+  select ctid::text into scoreboard_version from public.secret_mission_scoreboard where player_id=p.id;
+  perform public.get_secret_mission_state(ka,ta);
+  perform public.get_secret_mission_state(ka,ta);
+  assert (select ctid::text from public.secret_mission_scoreboard where player_id=p.id)=scoreboard_version,'Polling must not rewrite or rebroadcast the scoreboard';
   assert not has_table_privilege('anon','party_missions.validations','select');
   assert not has_table_privilege('authenticated','party_missions.validations','insert');
   assert not has_function_privilege('anon','public.private_assign_secret_mission(uuid)','execute');
