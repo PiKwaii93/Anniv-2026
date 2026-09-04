@@ -46,6 +46,7 @@ const bundle = await build({configFile:false,logLevel:'error',plugins:[{
     if(id==='\0mobile')return Object.entries(entries).map(([name,path])=>'export {default as '+name+'} from '+JSON.stringify(resolve(path))+';').join('\n')+
       'export * from '+JSON.stringify(resolve('src/features/guest/navigation.ts'))+';'+
       'export * from '+JSON.stringify(resolve('src/features/guest/capsuleDraft.ts'))+';'+
+      'export * from '+JSON.stringify(resolve('src/features/identity/PartyIdentityUI.tsx'))+';'+
       'export * from '+JSON.stringify(resolve('src/features/party/tvStatus.ts'))+';'
     if(id.startsWith('\0fixture:'))return mocks[id.slice(9)]
   },
@@ -419,6 +420,72 @@ test('mobile CSS reserves safe areas, readable Bingo and input sizes without aff
   assert.match(css,/\.guest-app \.bingo-cell \.bingo-cell__text \{ font-size: 14px/)
   assert.match(css,/\.guest-app textarea, \.guest-app select \{ font-size: 16px/)
   assert.ok(!css.includes('.party-screen '))
+})
+
+// CSSOM assertions cover the conflicting selectors, not just the presence of a media query.
+async function cssRules(path) {
+  const style=document.createElement('style')
+  style.textContent=await readFile(path,'utf8')
+  document.head.append(style)
+  return [...style.sheet.cssRules]
+}
+const ruleFor=(rules,selector)=>rules.find(rule=>rule.selectorText===selector)?.style
+test('guest profile overrides every desktop offset at the identity mobile breakpoint',async()=>{
+  const rules=await cssRules('src/features/guest/guest.css')
+  const desktop=ruleFor(rules,'.guest-app .party-identity-popover')
+  assert.equal(desktop.getPropertyValue('left'),'auto')
+  const mobile=rules.find(rule=>rule.conditionText==='(max-width: 640px)')
+  assert.ok(mobile,'600px misses the 601–640px identity breakpoint')
+  const panel=ruleFor([...mobile.cssRules],'.guest-app .party-identity-popover')
+  assert.equal(panel.getPropertyValue('position'),'fixed')
+  assert.equal(panel.getPropertyValue('width'),'auto')
+  assert.equal(panel.getPropertyValue('bottom'),'auto')
+  for(const side of ['left','right','top']) assert.match(panel.getPropertyValue(side),/env\(safe-area-inset-/)
+  assert.match(panel.getPropertyValue('max-height'),/100dvh/)
+  const header=ruleFor(rules,'.guest-topbar:has(.party-identity-popover)')
+  const nav=ruleFor(rules,'.guest-nav')
+  assert.ok(Number(header.getPropertyValue('z-index'))>Number(nav.getPropertyValue('z-index')),'Navigation must not cover the profile actions')
+})
+test('onboarding grid and inputs can shrink and the whole card stays scrollable',async()=>{
+  const rules=await cssRules('src/features/identity/HomeIdentityOnboarding.css')
+  const overlay=ruleFor(rules,'.home-onboarding')
+  assert.equal(overlay.getPropertyValue('grid-template-columns'),'minmax(0, 1fr)')
+  assert.equal(overlay.getPropertyValue('grid-template-rows'),'minmax(0, 1fr)')
+  const card=ruleFor(rules,'.home-onboarding__card')
+  assert.equal(parseFloat(card.getPropertyValue('min-width')),0)
+  assert.equal(parseFloat(card.getPropertyValue('min-height')),0)
+  assert.equal(card.getPropertyValue('max-height'),'min(880px, 100%)')
+  assert.equal(card.getPropertyValue('overflow-y'),'auto')
+  assert.equal(card.getPropertyValue('overflow-wrap'),'anywhere')
+  assert.equal(parseFloat(ruleFor(rules,'.home-onboarding__search input').getPropertyValue('min-width')),0)
+  const guestRules=await cssRules('src/features/guest/guest.css')
+  assert.equal(ruleFor(guestRules,'.guest-app .home-onboarding__card').getPropertyValue('max-height'),'','Guest scope must not replace the available height with a viewport height')
+})
+test('profile can open and close without releasing an identity',async()=>{
+  fixture.identity.releaseIdentity=async()=>{actions.push('releaseIdentity');return true}
+  await render(()=>React.createElement(ui.PartyIdentityBadge,{inline:true}))
+  await click(button('Salut Camille'))
+  assert.ok(q('.party-identity-popover'))
+  assert.equal(q('.party-identity-badge').getAttribute('aria-expanded'),'true')
+  await click(q('button[aria-label="Fermer"]'))
+  assert.equal(q('.party-identity-popover'),null)
+  assert.deepEqual(actions,[])
+})
+test('profile release still requires confirmation and a successful response',async()=>{
+  let confirm=false,success=false
+  window.confirm=()=>confirm
+  fixture.identity.releaseIdentity=async()=>{actions.push('releaseIdentity');return success}
+  await render(()=>React.createElement(ui.PartyIdentityBadge,{inline:true}))
+  await click(button('Salut Camille'))
+  await click(button('Ce n’est pas moi'))
+  assert.deepEqual(actions,[])
+  confirm=true
+  await click(button('Ce n’est pas moi'))
+  assert.ok(button('Ce n’est pas moi'),'A failed release must retain the current profile')
+  success=true
+  await click(button('Ce n’est pas moi'))
+  assert.ok(q('.party-identity-picker'))
+  assert.deepEqual(actions,['releaseIdentity','releaseIdentity'])
 })
 
 const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine})
