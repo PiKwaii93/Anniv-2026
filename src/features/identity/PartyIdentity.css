@@ -69,7 +69,9 @@
 }
 
 .party-identity-picker {
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -82,6 +84,8 @@
 }
 
 .party-identity-picker > input {
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
   min-height: 48px;
   padding: 0 14px;
@@ -238,6 +242,9 @@
 }
 
 .party-identity-popover {
+  min-width: 0;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
   position: absolute;
   right: 0;
   bottom: calc(100% + 10px);
@@ -268,8 +275,9 @@
 }
 
 .party-identity-popover__header > button {
-  width: 36px;
-  height: 36px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   color: #9aa6b9;
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -279,7 +287,7 @@
 
 .party-identity-popover__current {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
