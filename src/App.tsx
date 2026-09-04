@@ -25,7 +25,7 @@ import {
 
 import Home from './pages/Home'
 import GuestShell from './features/guest/GuestShell'
-import { isGuestPath } from './features/guest/navigation'
+import { isGuestPath, isGuestPathAvailable, isPrepartyGuestPath } from './features/guest/navigation'
 const Play = lazy(() => import('./pages/Play'))
 const PartyChat = lazy(() => import('./pages/PartyChat'))
 const PartyBring = lazy(() => import('./pages/PartyBring'))
@@ -160,6 +160,7 @@ function ModuleGate({
 
   if (
     isAdmin ||
+    (module === 'guests' && settings.phase === 'preparation') ||
     isPartyModuleVisible(
       settings,
       module,
@@ -240,6 +241,22 @@ function AdminRoute({
   return children
 }
 
+function GuestPhaseGate({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
+  const { isAdmin } = useAuth()
+  const { settings, loading } = useParty()
+
+  if (!isAdmin && loading && !isPrepartyGuestPath(pathname)) {
+    return <RouteLoading />
+  }
+
+  if (!isGuestPathAvailable(pathname, settings.phase, isAdmin)) {
+    return <Navigate to="/" replace state={{ prepartyBlocked: true }} />
+  }
+
+  return children
+}
+
 function App() {
   const { pathname } = useLocation()
   const content = <AppRoutes />
@@ -247,7 +264,7 @@ function App() {
     <>
       <AdminPartyDock />
       <LiveAnnouncementOverlay />
-      {isGuestPath(pathname) ? <GuestShell>{content}</GuestShell> : content}
+      {isGuestPath(pathname) ? <GuestShell><GuestPhaseGate>{content}</GuestPhaseGate></GuestShell> : content}
     </>
   )
 }
@@ -344,7 +361,9 @@ function AppRoutes() {
             path="/guests"
             element={
               <ModuleGate module="guests">
-                <Guests />
+                <PartyIdentityGate>
+                  <Guests />
+                </PartyIdentityGate>
               </ModuleGate>
             }
           />

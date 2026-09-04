@@ -201,6 +201,29 @@ test('four navigation entries honor visibility and secondary routes',()=>{
   for(const path of ['/bingo','/missions','/duos','/room','/beer-pong'])assert.equal(ui.activeGuestTab(path),'/play')
   for(const path of ['/screen','/qr','/admin','/admin/photos','/admin/login'])assert.equal(ui.isGuestPath(path),false)
 })
+test('preparation exposes only the explicit organization paths',async()=>{
+  fixture.party.settings.phase='preparation'
+  assert.deepEqual(ui.guestTabs(fixture.party.settings,fixture.extras.data.settings).map(t=>t.path),['/'])
+  for(const path of ['/','/bring','/bring/','/chat','/guests'])assert.equal(ui.isGuestPathAvailable(path,'preparation'),true)
+  for(const path of ['/play','/photos','/jukebox','/missions','/bingo','/iceberg','/capsule','/duos','/hall-of-fame'])assert.equal(ui.isGuestPathAvailable(path,'preparation'),false)
+  assert.equal(ui.isGuestPathAvailable('/photos','preparation',true),true)
+
+  await render(ui.Home)
+  assert.equal(q('.guest-now a').getAttribute('href'),'/bring')
+  assert.ok(q('.bring-home-link'))
+  assert.ok(q('.chat-home-link'))
+  assert.ok(q('.guests-home-link'))
+  assert.equal(q('a[href="/play"]'),null)
+  assert.equal(q('a[href="/capsule"]'),null)
+  assert.equal(q('a[href="/iceberg"]'),null)
+  assert.ok(!reads.includes('get_photo_hunt_player_state'))
+  assert.ok(!reads.includes('get_secret_mission_checks'))
+})
+test('preparation redirect explains why an activity is unavailable',async()=>{
+  fixture.party.settings.phase='preparation'
+  await render(ui.Home,{pathname:'/',state:{prepartyBlocked:true}})
+  assert.match(text(),/Cette activité ouvrira pendant la soirée/)
+})
 test('all closed modules leave only Home; ended duos do not create a Games tab',()=>{
   for(const key of Object.keys(fixture.party.settings))if(key.endsWith('Visible'))fixture.party.settings[key]=false
   fixture.party.settings.phase='ended'

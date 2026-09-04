@@ -9,12 +9,27 @@ export const activities: { key: PartyVisibilityModule; title: string; detail: st
 ]
 
 export function guestTabs(settings: PartySettings, extras?: ExtrasSettings) {
+  if (settings.phase === 'preparation') {
+    return [{ path: '/', label: 'Accueil', icon: '⌂', visible: true }]
+  }
+
   return [
     { path: '/', label: 'Accueil', icon: '⌂', visible: true },
     { path: '/play', label: 'Jouer', icon: '◇', visible: activities.some(item => isPartyModuleVisible(settings, item.key)) || !!extras?.duos_visible && settings.phase !== 'ended' },
     { path: '/photos', label: 'Photos', icon: '▧', visible: isPartyModuleVisible(settings, 'photos') },
     { path: '/jukebox', label: 'Musique', icon: '♫', visible: !!extras?.jukebox_visible },
   ].filter(tab => tab.visible)
+}
+
+const prepartyGuestPaths = new Set(['/', '/bring', '/chat', '/guests'])
+
+export function isPrepartyGuestPath(path: string) {
+  const normalized = path.length > 1 ? path.replace(/\/+$/, '') : path
+  return prepartyGuestPaths.has(normalized)
+}
+
+export function isGuestPathAvailable(path: string, phase: PartySettings['phase'], isAdmin = false) {
+  return isAdmin || phase !== 'preparation' || isPrepartyGuestPath(path)
 }
 
 export function activeGuestTab(path: string) {
