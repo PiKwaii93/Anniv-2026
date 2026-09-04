@@ -113,6 +113,9 @@ beforeEach(async()=>{
         } else if(name==='party_chat_action') {
           actions.push({name,args})
           value={data:{ok:true},error:args.p_action==='send'?fixture.sendFailure:null}
+        } else if(name==='get_secret_mission_checks') {
+          assert.equal(args.p_summary,true,'Home reads only a count, never a secret mission')
+          value={data:{ok:true,incomingCount:fixture.validations??0},error:null}
         } else {
           assert.equal(name,'get_photo_hunt_player_state','Home must not claim or assign missions')
           assert.equal(args.p_player_key,fixture.identity.identity.playerKey)
@@ -504,9 +507,17 @@ test('Home chat shortcut shows actual unread count without reading messages or m
   fixture.chat.unread=7;fixture.chat.latest='7'
   await render(ui.Home)
   assert.equal(q('.chat-home-link').getAttribute('href'),'/chat')
+  assert.match(q('.chat-home-link').textContent,/Discussion entre invités/)
   assert.equal(q('.chat-unread').textContent,'7')
   assert.equal(fixture.chatReads[0].p_summary,true)
   assert.deepEqual(chatWrites(),[])
+})
+test('Home shows witness requests without assigning or disclosing missions',async()=>{
+  fixture.validations=2
+  await render(ui.Home)
+  const link=document.querySelector('a[href="/missions#validations"]')
+  assert.match(link.textContent,/2 missions à valider/)
+  assert.ok(!reads.includes('get_secret_mission_state'))
 })
 test('chat never queries messages without a guest identity',async()=>{
   fixture.identity.identity=null

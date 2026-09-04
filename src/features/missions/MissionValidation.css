@@ -1,0 +1,14 @@
+.mission-checks { position: relative; z-index: 1; width: 100%; max-width: 1080px; margin: 16px auto 24px; scroll-margin-top: 80px; }
+.mission-checks h2 { font-size: 1.1rem; margin: 0 0 12px; }
+.mission-checks p { color: #bac5c0; line-height: 1.6; overflow-wrap: anywhere; }
+.mission-check-own, .mission-check-review { border: 1px solid #34443c; border-radius: 18px; background: #101a16; padding: clamp(16px, 3vw, 24px); margin: 12px 0; }
+.mission-check-review summary { cursor: pointer; font-weight: 700; line-height: 1.5; min-height: 44px; align-content: center; }
+.mission-checks .mission-check-secret { color: #f7f8f4; font-size: 1.1rem; font-weight: 700; }
+.mission-check-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.mission-checks button { min-height: 44px; white-space: normal; }
+.mission-checks select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; margin-top: 10px; padding: 12px; font: inherit; font-size: 16px; color: #f7f8f4; background: #0c1110; border: 1px solid #52655a; border-radius: 10px; }
+.mission-check-attestation { display: flex; align-items: center; gap: 12px; min-height: 48px; line-height: 1.5; cursor: pointer; }
+.mission-check-attestation input { width: 22px; height: 22px; flex-shrink: 0; accent-color: #b6eccf; }
+.mission-checks [role="alert"] { color: #ffb9b9; }
+.mission-checks [role="status"] { color: #b6eccf; }
+@media (max-width: 600px) { .mission-check-actions > button { width: 100%; } }

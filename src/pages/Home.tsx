@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase'
 import { hasMissionToResume } from '../features/guest/activityMemory'
 import ChatHomeLink from '../features/chat/ChatHomeLink'
 
-type PersonalState = { scope: string; pending: number; retry: number; mission: boolean }
+type PersonalState = { scope: string; pending: number; retry: number; mission: boolean; validations: number }
 
 export default function Home() {
   const { isAdmin } = useAuth()
@@ -31,10 +31,13 @@ export default function Home() {
     const refresh = async () => {
       const request = ++version
       const args = { p_player_key: playerKey, p_session_token: token }
-      const photos = settings.photosVisible ? await supabase.rpc('get_photo_hunt_player_state', args) : null
+      const [photos, checks] = await Promise.all([
+        settings.photosVisible ? supabase.rpc('get_photo_hunt_player_state', args) : null,
+        settings.missionsVisible ? supabase.rpc('get_secret_mission_checks', { ...args, p_summary: true }) : null,
+      ])
       if (!active || version !== request) return
       const submissions: { status: string }[] = photos?.data?.ok ? photos.data.submissions ?? [] : []
-      setPersonal({ scope, pending: submissions.filter(photo => photo.status === 'pending').length, retry: submissions.filter(photo => photo.status === 'rejected').length, mission: hasMissionToResume(playerKey) })
+      setPersonal({ scope, pending: submissions.filter(photo => photo.status === 'pending').length, retry: submissions.filter(photo => photo.status === 'rejected').length, mission: hasMissionToResume(playerKey), validations: checks?.data?.ok ? checks.data.incomingCount ?? 0 : 0 })
     }
     const visible = () => { if (document.visibilityState === 'visible') void refresh() }
     void refresh()
@@ -56,6 +59,7 @@ export default function Home() {
         ? { title: featured.title, detail: featured.detail, path: featured.path, action: `Ouvrir ${featured.title}` }
         : { title: phase === 'live' ? 'La soirée est à toi.' : 'On se retrouve bientôt.', detail: phase === 'live' ? 'Un jeu, une photo, un morceau : participe à ton rythme.' : 'Découvre les activités déjà ouvertes.', path: '/play', action: 'Découvrir les jeux' }
   const personalLinks = [
+    ...(currentPersonal?.validations && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions#validations', title: `${currentPersonal.validations} mission${currentPersonal.validations > 1 ? 's' : ''} à valider`, detail: 'Un invité te demande de confirmer sa réussite.', icon: '✓' }] : []),
     ...(own?.settings.duos_visible && phase !== 'ended' && own.duo?.status === 'active' ? [{ path: '/duos', title: `Ton duo avec ${own.duo.partner}`, detail: own.duo.confirmed ? 'Tu as confirmé · en attente de ton partenaire' : 'Votre défi est prêt.', icon: '↔' }] : []),
     ...(own?.settings.duos_visible && phase !== 'ended' && own.waiting ? [{ path: '/duos', title: 'Recherche de ton partenaire', detail: 'Tu es dans la file des duos.', icon: '↔' }] : []),
     ...(currentPersonal?.mission && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions', title: 'Reprendre tes missions', detail: 'Retrouve ta mission discrètement.', icon: '◇' }] : []),
