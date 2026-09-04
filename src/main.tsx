@@ -10,6 +10,7 @@ import { AuthProvider } from './features/auth/AuthContext'
 import { GuestsProvider } from './features/guests/GuestsContext'
 import PartyIdentityProvider from './features/identity/PartyIdentityContext'
 import { PartyProvider } from './features/party/PartyContext'
+import PartyDataBoundary from './features/identity/PartyDataBoundary'
 
 import './index.css'
 import './MobilePolish.css'
@@ -26,6 +27,7 @@ createRoot(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
+        <PartyDataBoundary>
         <PartyProvider>
           <AnnouncementProvider>
             <GuestsProvider>
@@ -35,6 +37,7 @@ createRoot(
             </GuestsProvider>
           </AnnouncementProvider>
         </PartyProvider>
+        </PartyDataBoundary>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
