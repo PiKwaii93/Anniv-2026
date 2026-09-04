@@ -2,10 +2,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { Link } from 'react-router-dom'
 import { rememberMission } from '../features/guest/activityMemory'
+import MissionValidation from '../features/missions/MissionValidation'
 
 import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
@@ -109,6 +111,8 @@ function missionErrorMessage(
       return 'Ta mission a changé entre-temps. Elle vient d’être resynchronisée.'
     case 'MISSION_NOT_FOUND':
       return 'Cette mission n’existe plus. Une nouvelle mission va être attribuée.'
+    case 'VALIDATION_REQUIRED':
+      return 'Un autre invité doit maintenant confirmer ta mission. Actualise la page pour accéder à la validation.'
     default:
       return 'Impossible de synchroniser ta mission pour le moment.'
   }
@@ -136,9 +140,14 @@ function SecretMissions() {
 
   const [busy, setBusy] =
     useState(false)
+  const stateRequest = useRef(0)
+  const actionBusy = useRef(false)
+  const previousCount = useRef<number | null>(null)
 
-  const [revealed, setRevealed] =
-    useState(false)
+  const [revealedAssignment, setRevealedAssignment] = useState<string | null>(null)
+  const assignment = missionState?.mission ? `${missionState.mission.id}:${missionState.mission.assignedAt}` : null
+  const revealed = assignment !== null && revealedAssignment === assignment
+  const setRevealed = (show: boolean) => setRevealedAssignment(show ? assignment : null)
 
   const [message, setMessage] =
     useState('')
@@ -224,6 +233,8 @@ function SecretMissions() {
       storedIdentity: StoredIdentity,
       quiet = false,
     ) => {
+      if (actionBusy.current) return false
+      const request = ++stateRequest.current
       const { data, error: rpcError } =
         await supabase.rpc(
           'get_secret_mission_state',
@@ -234,6 +245,8 @@ function SecretMissions() {
               storedIdentity.sessionToken,
           },
         )
+
+      if (request !== stateRequest.current) return false
 
       if (rpcError) {
         console.error(
@@ -339,11 +352,11 @@ function SecretMissions() {
       if (
         document.visibilityState === 'hidden'
       ) {
-        setRevealed(false)
+        setRevealedAssignment(null)
         return
       }
 
-      if (identity) {
+      if (identity && !actionBusy.current) {
         void synchronizeState(
           identity,
           true,
@@ -355,8 +368,12 @@ function SecretMissions() {
       'visibilitychange',
       handleVisibilityChange,
     )
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible' && identity && !actionBusy.current) void synchronizeState(identity, true)
+    }, 8000)
 
     return () => {
+      window.clearInterval(interval)
       document.removeEventListener(
         'visibilitychange',
         handleVisibilityChange,
@@ -430,85 +447,13 @@ function SecretMissions() {
     void loadScores()
   }
 
-  const completeMission = async () => {
-    const mission = missionState?.mission
-
-    if (
-      !identity ||
-      !mission ||
-      busy
-    ) {
-      return
-    }
-
-    if (
-      !window.confirm(
-        'Mission réellement accomplie ? Elle comptera immédiatement dans le classement.',
-      )
-    ) {
-      return
-    }
-
-    setBusy(true)
-    setError('')
-    setMessage('')
-
-    const { data, error: rpcError } =
-      await supabase.rpc(
-        'complete_secret_mission',
-        {
-          p_player_key:
-            identity.playerKey,
-          p_session_token:
-            identity.sessionToken,
-          p_mission_id: mission.id,
-        },
-      )
-
-    setBusy(false)
-
-    if (rpcError) {
-      console.error(
-        'Unable to complete secret mission:',
-        rpcError,
-      )
-      setError(
-        'Impossible de valider la mission.',
-      )
-      return
-    }
-
-    const nextState =
-      data as MissionState
-
-    if (!nextState.ok) {
-      setError(
-        missionErrorMessage(
-          nextState.code,
-        ),
-      )
-      await synchronizeState(identity, true)
-      return
-    }
-
-    setMissionState(nextState)
-    setRevealed(false)
-    setMessage('Mission réussie. +1 au compteur ⚡')
-
-    if ('vibrate' in navigator) {
-      navigator.vibrate?.([60, 40, 110])
-    }
-
-    void loadScores()
-  }
-
   const skipMission = async () => {
     const mission = missionState?.mission
 
     if (
       !identity ||
       !mission ||
-      busy ||
+      busy || actionBusy.current ||
       (missionState?.skipsRemaining ?? 0) < 1
     ) {
       return
@@ -522,6 +467,8 @@ function SecretMissions() {
       return
     }
 
+    actionBusy.current = true
+    stateRequest.current++
     setBusy(true)
     setError('')
     setMessage('')
@@ -538,6 +485,7 @@ function SecretMissions() {
         },
       )
 
+    actionBusy.current = false
     setBusy(false)
 
     if (rpcError) {
@@ -570,6 +518,15 @@ function SecretMissions() {
   }
 
   const mission = missionState?.mission
+  useEffect(() => {
+    const count = missionState?.completedCount
+    if (count == null) return
+    if (previousCount.current != null && count > previousCount.current) {
+      setMessage('Mission confirmée par ton témoin. +1 au compteur ! Ta prochaine mission est prête.')
+      void loadScores()
+    }
+    previousCount.current = count
+  }, [missionState?.completedCount, loadScores])
   useEffect(() => {
     if (identity && missionState?.ok) rememberMission(identity.playerKey, !!mission)
   }, [identity, missionState?.ok, mission])
@@ -605,7 +562,7 @@ function SecretMissions() {
         </h1>
 
         <p className="missions-header__description">
-          Accomplis ton objectif sans te faire griller. Ta mission reste liée à ce téléphone et se masque automatiquement quand tu quittes l’onglet.
+          Accomplis ton objectif discrètement, puis fais-le confirmer par un témoin. Un autre invité valide, tu gagnes 1 point.
         </p>
       </header>
 
@@ -784,21 +741,11 @@ function SecretMissions() {
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  className="missions-primary-button"
-                  disabled={busy}
-                  onClick={() => {
-                    void completeMission()
-                  }}
-                >
-                  {busy
-                    ? 'Validation...'
-                    : 'Mission accomplie ✓'}
-                </button>
               </div>
             )}
           </section>
+
+          <MissionValidation key={`${identity.playerKey}:${identity.sessionToken}`} identity={identity} mission={mission} revealed={revealed && !busy} players={availablePlayers} onChange={() => { void synchronizeState(identity, true); void loadScores() }} />
 
           <p className="missions-privacy-note">
             Un seul joker pour la soirée. Ta mission reste la même lorsque tu reviens.

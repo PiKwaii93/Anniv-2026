@@ -72,7 +72,7 @@ function ChatRoom({ admin }: { admin: boolean }) {
 
   return <main className={`chat-page${admin ? ' chat-page--admin' : ''}`}>
     <Link className="chat-back" to={admin ? '/admin/live' : '/'}>← {admin ? 'Retour à la régie' : 'Accueil'}</Link>
-    <header className="chat-heading"><p>{admin ? 'Régie · discussion' : 'Entre invités'}</p><h1>La soirée<span>.</span></h1><p>{admin ? 'Supprime un message inapproprié ou mets les envois en pause.' : 'Un mot à tout le monde. Puis on repose le téléphone.'}</p></header>
+    <header className="chat-heading"><p>{admin ? 'Régie · discussion' : 'Entre invités'}</p><h1>La discussion<span>.</span></h1><p>{admin ? 'Supprime un message inapproprié ou mets les envois en pause.' : 'Un message à tous les invités. Puis on repose le téléphone.'}</p></header>
     <div className="chat-room-info"><span><i aria-hidden="true" />{data?.open === false ? 'Envois en pause' : 'Salon commun'}</span><small>Visible par les invités et la régie · jamais sur la TV</small></div>
     {admin && <div className="chat-admin-tools"><button disabled={!data || busy} onClick={() => void perform('admin_pause', { paused: data?.open }, data?.open ? 'Envois mis en pause.' : 'Discussion rouverte.')}>{data?.open === false ? 'Rouvrir les envois' : 'Mettre les envois en pause'}</button><Link to="/chat">Vue invitée ↗</Link></div>}
     {(error || actionError) && <div className="chat-error" role="alert">{actionError || error}<button onClick={() => void refresh()}>Réessayer la connexion</button></div>}
