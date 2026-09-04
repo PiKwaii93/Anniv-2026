@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
 import HomeIdentityOnboarding from '../features/identity/HomeIdentityOnboarding'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
@@ -14,6 +14,7 @@ import ChatHomeLink from '../features/chat/ChatHomeLink'
 type PersonalState = { scope: string; pending: number; retry: number; mission: boolean; validations: number }
 
 export default function Home() {
+  const location = useLocation()
   const { isAdmin } = useAuth()
   const { identity, loading: identityLoading } = usePartyIdentity()
   const { settings, loading } = useParty()
@@ -26,6 +27,10 @@ export default function Home() {
 
   useEffect(() => {
     if (!playerKey || !token) return
+    if (settings.phase === 'preparation') {
+      setPersonal(null)
+      return
+    }
     let active = true
     let version = 0
     const refresh = async () => {
@@ -44,7 +49,7 @@ export default function Home() {
     const timer = window.setInterval(visible, 15000)
     document.addEventListener('visibilitychange', visible)
     return () => { active = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible) }
-  }, [playerKey, token, scope, settings.photosVisible, settings.missionsVisible])
+  }, [playerKey, token, scope, settings.phase, settings.photosVisible, settings.missionsVisible])
 
   const phase = settings.phase
   const currentPersonal = personal?.scope === scope ? personal : null
@@ -57,7 +62,9 @@ export default function Home() {
       ? { title: 'À toi de voter.', detail: room?.prompt || 'Une question est ouverte dans La Salle.', path: '/room', action: 'Participer au vote' }
       : phase === 'live' && featured
         ? { title: featured.title, detail: featured.detail, path: featured.path, action: `Ouvrir ${featured.title}` }
-        : { title: phase === 'live' ? 'La soirée est à toi.' : 'On se retrouve bientôt.', detail: phase === 'live' ? 'Un jeu, une photo, un morceau : participe à ton rythme.' : 'Découvre les activités déjà ouvertes.', path: '/play', action: 'Découvrir les jeux' }
+        : phase === 'preparation'
+          ? { title: 'On se retrouve bientôt.', detail: 'Organise les derniers détails avec les autres invités.', path: '/bring', action: 'Voir l’organisation' }
+          : { title: 'La soirée est à toi.', detail: 'Un jeu, une photo, un morceau : participe à ton rythme.', path: '/play', action: 'Découvrir les jeux' }
   const personalLinks = [
     ...(currentPersonal?.validations && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions#validations', title: `${currentPersonal.validations} mission${currentPersonal.validations > 1 ? 's' : ''} à valider`, detail: 'Un invité te demande de confirmer sa réussite.', icon: '✓' }] : []),
     ...(own?.settings.duos_visible && phase !== 'ended' && own.duo?.status === 'active' ? [{ path: '/duos', title: `Ton duo avec ${own.duo.partner}`, detail: own.duo.confirmed ? 'Tu as confirmé · en attente de ton partenaire' : 'Votre défi est prêt.', icon: '↔' }] : []),
@@ -71,18 +78,20 @@ export default function Home() {
     <HomeIdentityOnboarding />
     <main className="guest-page guest-home" inert={!isAdmin && (identityLoading || !identity)}>
       <header className="guest-heading"><p>Anniv 2026 <span className={`guest-phase guest-phase--${phase}`}>{loading ? 'Connexion…' : phase === 'live' ? 'En direct' : phase === 'ended' ? 'Les souvenirs' : 'Avant la soirée'}</span></p><h1>{identity ? `Salut ${identity.playerName}.` : 'Bienvenue.'}</h1></header>
+      {(location.state as { prepartyBlocked?: boolean } | null)?.prepartyBlocked && <p className="guest-phase-notice" role="status">Cette activité ouvrira pendant la soirée.</p>}
       <section className={`guest-now${liveQuestion ? ' guest-now--live' : ''}`} aria-label="Maintenant"><p className="guest-eyebrow">{phase === 'ended' ? 'Merci à tous' : 'Maintenant'}</p><h2>{now.title}</h2><p>{now.detail}</p><Link to={now.path} className="guest-primary">{now.action} <span aria-hidden="true">→</span></Link></section>
-      {personalLinks.length > 0 && <section className="guest-section"><h2>Pour toi</h2><div className="guest-activity-list">{personalLinks.map(item => <Link className="guest-activity" key={item.title} to={item.path}><span className="guest-activity__icon" aria-hidden="true">{item.icon}</span><div><h3>{item.title}</h3><p>{item.detail}</p></div><span aria-hidden="true">→</span></Link>)}</div></section>}
+      {phase !== 'preparation' && personalLinks.length > 0 && <section className="guest-section"><h2>Pour toi</h2><div className="guest-activity-list">{personalLinks.map(item => <Link className="guest-activity" key={item.title} to={item.path}><span className="guest-activity__icon" aria-hidden="true">{item.icon}</span><div><h3>{item.title}</h3><p>{item.detail}</p></div><span aria-hidden="true">→</span></Link>)}</div></section>}
       <section className="guest-section"><h2>Organisation de la soirée</h2><div className="guest-activity-list">
         <Link to="/bring" className="guest-activity bring-home-link"><span className="guest-activity__icon" aria-hidden="true">⌑</span><div><h3>Ce qu’on ramène</h3><p>Consulte la liste et indique ce que tu prévois d’apporter.</p></div><span aria-hidden="true">→</span></Link>
         <ChatHomeLink />
+        {(phase === 'preparation' || settings.guestsVisible) && <Link to="/guests" className="guest-activity guests-home-link"><span className="guest-activity__icon" aria-hidden="true">○</span><div><h3>Liste des invités</h3><p>Découvre qui sera présent à la soirée.</p></div><span aria-hidden="true">→</span></Link>}
       </div></section>
-      <section className="guest-section"><h2>Souvenirs & rencontres</h2><div className="guest-discover">
+      {phase !== 'preparation' && <section className="guest-section"><h2>Souvenirs & rencontres</h2><div className="guest-discover">
         {extras?.settings.capsule_visible && <Link to="/capsule"><span aria-hidden="true">✉</span><strong>La capsule</strong><small>Quelques mots pour plus tard</small></Link>}
         {settings.icebergVisible && <Link to="/iceberg"><span aria-hidden="true">△</span><strong>L’Iceberg</strong><small>Les histoires entre nous</small></Link>}
         {settings.guestsVisible && <Link to="/guests"><span aria-hidden="true">○</span><strong>Les invités</strong><small>Qui est de la partie ?</small></Link>}
         {phase === 'ended' && settings.photosVisible && <Link to="/photos?view=gallery"><span aria-hidden="true">▧</span><strong>La galerie</strong><small>Revivre la soirée</small></Link>}
-      </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>
+      </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>}
       <footer className="guest-home-footer">
         <Link className="guest-admin-link" to={isAdmin ? '/admin' : '/admin/login'} state={{ from: '/admin' }}>
           Administration <span aria-hidden="true">→</span>

@@ -51,6 +51,7 @@
 .guest-heading > span { color: #b9bac6; font-size: 16px; line-height: 1.5; }
 .guest-phase { float: right; letter-spacing: 0; text-transform: none; color: #c2c5d4; }
 .guest-phase--live { color: #91ddb4; }
+.guest-phase-notice { margin: -8px 0 18px; padding: 12px 14px; border: 1px solid #514a36; border-radius: 12px; background: #211f18; color: #e8d9aa; font-size: 14px; line-height: 1.45; }
 .guest-now { padding: 28px; background: radial-gradient(ellipse at top right, #71644135, transparent 70%), #17181d; border: 1px solid #514a36; border-radius: 24px; }
 .guest-now--live { border-color: #6473b8; background: radial-gradient(ellipse at top right, #5869dc35, transparent 70%), #151821; }
 .guest-now h2 { color: #fff9ef; margin: 12px 0; font-size: clamp(28px, 6vw, 40px); line-height: 1.12; letter-spacing: -.025em; }
