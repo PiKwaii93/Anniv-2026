@@ -28,6 +28,7 @@ import GuestShell from './features/guest/GuestShell'
 import { isGuestPath } from './features/guest/navigation'
 const Play = lazy(() => import('./pages/Play'))
 const PartyChat = lazy(() => import('./pages/PartyChat'))
+const PartyBring = lazy(() => import('./pages/PartyBring'))
 
 const Capsule = lazy(() => import('./pages/Capsule'))
 const Jukebox = lazy(() => import('./pages/Jukebox'))
@@ -257,6 +258,7 @@ function AppRoutes() {
         <Routes>
           <Route path="/play" element={<Play />} />
           <Route path="/chat" element={<PartyIdentityGate><PartyChat /></PartyIdentityGate>} />
+          <Route path="/bring" element={<PartyIdentityGate><PartyBring /></PartyIdentityGate>} />
           <Route path="/admin/chat" element={<AdminRoute><PartyChat admin /></AdminRoute>} />
           <Route path="/capsule" element={<PartyIdentityGate><Capsule /></PartyIdentityGate>} />
           <Route path="/jukebox" element={<PartyIdentityGate><Jukebox /></PartyIdentityGate>} />
