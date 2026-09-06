@@ -15,6 +15,10 @@ export type PartyPhase =
   | 'live'
   | 'ended'
 
+export type PartyEnvironment =
+  | 'live'
+  | 'rehearsal'
+
 export type PartyModule =
   | 'iceberg'
   | 'beer-pong'
@@ -28,6 +32,7 @@ export type PartyVisibilityModule =
   | 'photos'
 
 export type PartySettings = {
+  environment: PartyEnvironment
   phase: PartyPhase
   featuredModule: PartyModule | null
   icebergVisible: boolean
@@ -41,6 +46,7 @@ export type PartySettings = {
 
 type PartyStateRow = {
   id: string
+  environment: PartyEnvironment
   phase: PartyPhase
   featured_module: string | null
   iceberg_visible: boolean
@@ -64,6 +70,7 @@ type PartyContextValue = {
 }
 
 const defaultSettings: PartySettings = {
+  environment: 'live',
   phase: 'preparation',
   featuredModule: null,
   icebergVisible: true,
@@ -79,12 +86,13 @@ const PartyContext =
   createContext<PartyContextValue | null>(null)
 
 const partyStateSelect =
-  'id, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, photos_visible, guests_visible' as const
+  'id, environment, phase, featured_module, iceberg_visible, beer_pong_visible, bingo_visible, missions_visible, room_visible, photos_visible, guests_visible' as const
 
 function rowToSettings(
   row: PartyStateRow,
 ): PartySettings {
   return {
+    environment: row.environment,
     phase: row.phase,
     // Photo Hunt is intercepted before the legacy TV/director engines render.
     // Keeping their historical PartyModule union unchanged avoids widening

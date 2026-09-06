@@ -1,0 +1,121 @@
+.party-environment-card {
+  position: relative;
+  z-index: 2;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+
+  width: 100%;
+  max-width: 1120px;
+  margin: -22px auto 28px;
+  padding: 22px;
+
+  background: rgba(255, 255, 255, .025);
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 18px;
+}
+
+.party-environment-card--rehearsal {
+  background: rgba(242, 166, 74, .08);
+  border-color: rgba(242, 166, 74, .42);
+}
+
+.party-environment-card__copy h2 {
+  margin: 7px 0 5px;
+  font-size: 24px;
+}
+
+.party-environment-card__copy > p:last-child,
+.party-environment-card > p,
+.party-environment-confirm p {
+  margin: 0;
+  color: #9696a1;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.party-environment-card > button,
+.party-environment-confirm button {
+  min-height: 44px;
+  padding: 10px 15px;
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.party-environment-card > button:disabled,
+.party-environment-confirm button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.party-environment-card__warning,
+.party-environment-card__error,
+.party-environment-card__notice,
+.party-environment-confirm {
+  grid-column: 1 / -1;
+}
+
+.party-environment-card__warning,
+.party-environment-card__error {
+  color: #f1a3aa !important;
+}
+
+.party-environment-card__notice {
+  color: #9bd5ad !important;
+}
+
+.party-environment-confirm {
+  padding: 18px;
+  background: #111117;
+  border: 1px solid rgba(242, 166, 74, .34);
+  border-radius: 14px;
+}
+
+.party-environment-confirm > strong {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.party-environment-confirm p + p {
+  margin-top: 8px;
+  color: #e2bd8e;
+}
+
+.party-environment-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.party-environment-confirm .party-environment-confirm__primary {
+  color: #201306;
+  background: #f2a64a;
+  border-color: #f2a64a;
+}
+
+@media (max-width: 680px) {
+  .party-environment-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: -28px;
+  }
+
+  .party-environment-card > button {
+    width: 100%;
+  }
+
+  .party-environment-confirm > div {
+    flex-direction: column-reverse;
+  }
+
+  .party-environment-confirm button {
+    width: 100%;
+  }
+}

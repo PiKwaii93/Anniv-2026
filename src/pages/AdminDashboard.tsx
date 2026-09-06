@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
+import AdminPartyEnvironment from '../features/party/AdminPartyEnvironment'
 
 import './AdminDashboard.css'
 
@@ -561,6 +562,8 @@ function AdminDashboard() {
           {error}
         </div>
       )}
+
+      <AdminPartyEnvironment />
 
       <section className="control-modules">
         <Link
