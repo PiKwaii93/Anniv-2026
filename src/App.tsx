@@ -17,6 +17,7 @@ import {
   PartyIdentityGate,
 } from './features/identity/PartyIdentityUI'
 import AdminPartyDock from './features/party/AdminPartyDock'
+import PartyEnvironmentBanner from './features/party/PartyEnvironmentBanner'
 import {
   isPartyModuleVisible,
   type PartyVisibilityModule,
@@ -262,6 +263,7 @@ function App() {
   const content = <AppRoutes />
   return (
     <>
+      <PartyEnvironmentBanner />
       <AdminPartyDock />
       <LiveAnnouncementOverlay />
       {isGuestPath(pathname) ? <GuestShell><GuestPhaseGate>{content}</GuestPhaseGate></GuestShell> : content}
