@@ -15,7 +15,7 @@ test('practical information is routed for guests and administrators', async () =
 })
 
 test('rehearsal isolates guest catalogs and blocks real external controls', async () => {
-  const sql = await readFile('supabase/migrations/20260907103000_harden_rehearsal_boundaries.sql', 'utf8')
+  const sql = await readFile('supabase/migrations/20260907191421_harden_rehearsal_boundaries.sql', 'utf8')
   for (const key of ['guests', 'plus_ones', 'guest_private_notes']) {
     assert.match(sql, new RegExp(`'${key}'`))
   }
