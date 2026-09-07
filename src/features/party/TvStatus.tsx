@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAnnouncement } from '../announcements/AnnouncementContext'
 import { useLiveRoom } from '../guest/useLiveRoom'
 import { useParty } from './PartyContext'
-import { tvStatus } from './tvStatus'
+import { tvStatus } from './tvStatusModel'
 import './MobileRegie.css'
 
 export default function TvStatus() {
