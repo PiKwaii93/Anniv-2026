@@ -21,7 +21,7 @@ export function guestTabs(settings: PartySettings, extras?: ExtrasSettings) {
   ].filter(tab => tab.visible)
 }
 
-const prepartyGuestPaths = new Set(['/', '/bring', '/chat', '/guests'])
+const prepartyGuestPaths = new Set(['/', '/bring', '/chat', '/guests', '/info'])
 
 export function isPrepartyGuestPath(path: string) {
   const normalized = path.length > 1 ? path.replace(/\/+$/, '') : path

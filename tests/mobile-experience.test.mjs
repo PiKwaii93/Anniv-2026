@@ -47,7 +47,7 @@ const bundle = await build({configFile:false,logLevel:'error',plugins:[{
       'export * from '+JSON.stringify(resolve('src/features/guest/navigation.ts'))+';'+
       'export * from '+JSON.stringify(resolve('src/features/guest/capsuleDraft.ts'))+';'+
       'export * from '+JSON.stringify(resolve('src/features/identity/PartyIdentityUI.tsx'))+';'+
-      'export * from '+JSON.stringify(resolve('src/features/party/tvStatus.ts'))+';'
+      'export * from '+JSON.stringify(resolve('src/features/party/tvStatusModel.ts'))+';'
     if(id.startsWith('\0fixture:'))return mocks[id.slice(9)]
   },
 }],build:{ssr:'virtual:mobile',write:false,minify:false}})
