@@ -1,4 +1,5 @@
--- Practical event details are global configuration, shared by live and rehearsal.
+-- Practical event details are global configuration, shared by the live and rehearsal spaces.
+-- Installing this migration preserves every guest contribution and game result.
 create schema if not exists party_info;
 revoke all on schema party_info from public, anon, authenticated;
 
@@ -20,16 +21,36 @@ values ('main', '2026-10-24 19:30:00+00');
 alter table public.party_event_info enable row level security;
 revoke all on table public.party_event_info from public, anon, authenticated;
 grant select on table public.party_event_info to anon, authenticated;
-grant update (event_at, venue_name, address, access_notes, dress_code, parking_notes, other_notes)
-  on table public.party_event_info to authenticated;
+grant update (
+  event_at,
+  venue_name,
+  address,
+  access_notes,
+  dress_code,
+  parking_notes,
+  other_notes
+) on table public.party_event_info to authenticated;
 
-create function party_info.is_admin() returns boolean
-language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from public.app_admins where user_id = (select auth.uid()));
+create function party_info.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.app_admins
+    where user_id = (select auth.uid())
+  );
 $$;
 
-create function party_info.touch_updated_at() returns trigger
-language plpgsql security invoker set search_path = '' as $$
+create function party_info.touch_updated_at()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
 begin
   new.updated_at := clock_timestamp();
   return new;
@@ -40,10 +61,16 @@ revoke all on all functions in schema party_info from public, anon, authenticate
 grant usage on schema party_info to authenticated;
 grant execute on function party_info.is_admin() to authenticated;
 
-create policy "Practical event details are public" on public.party_event_info
-for select to anon, authenticated using (true);
-create policy "Only admins update practical event details" on public.party_event_info
-for update to authenticated
+create policy "Practical event details are public"
+on public.party_event_info
+for select
+to anon, authenticated
+using (true);
+
+create policy "Only admins update practical event details"
+on public.party_event_info
+for update
+to authenticated
 using ((select party_info.is_admin()))
 with check (id = 'main' and (select party_info.is_admin()));
 
