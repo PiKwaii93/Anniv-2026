@@ -81,6 +81,19 @@ function rowToAnnouncement(
   }
 }
 
+function expiredEventId(
+  announcement: PartyAnnouncement,
+  now = Date.now(),
+) {
+  if (!announcement.isActive || !announcement.expiresAt) {
+    return null
+  }
+
+  return new Date(announcement.expiresAt).getTime() <= now
+    ? announcement.eventId
+    : null
+}
+
 export function AnnouncementProvider({
   children,
 }: {
@@ -91,7 +104,7 @@ export function AnnouncementProvider({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [expiryTick, setExpiryTick] = useState(0)
+  const [expiredId, setExpiredId] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     const {
@@ -114,11 +127,12 @@ export function AnnouncementProvider({
     }
 
     if (data) {
-      setAnnouncement(
-        rowToAnnouncement(data as AnnouncementRow),
-      )
+      const next = rowToAnnouncement(data as AnnouncementRow)
+      setAnnouncement(next)
+      setExpiredId(expiredEventId(next))
     } else {
       setAnnouncement(emptyAnnouncement)
+      setExpiredId(null)
     }
 
     setError('')
@@ -175,17 +189,14 @@ export function AnnouncementProvider({
       return
     }
 
-    const delay =
-      new Date(announcement.expiresAt).getTime() - Date.now()
-
-    if (delay <= 0) {
-      setExpiryTick((value) => value + 1)
-      return
-    }
+    const delay = Math.max(
+      0,
+      new Date(announcement.expiresAt).getTime() - Date.now() + 40,
+    )
 
     const timeout = window.setTimeout(
-      () => setExpiryTick((value) => value + 1),
-      delay + 40,
+      () => setExpiredId(announcement.eventId),
+      delay,
     )
 
     return () => window.clearTimeout(timeout)
@@ -196,8 +207,6 @@ export function AnnouncementProvider({
   ])
 
   const visible = useMemo(() => {
-    void expiryTick
-
     if (
       !announcement.isActive ||
       !announcement.message.trim()
@@ -209,10 +218,8 @@ export function AnnouncementProvider({
       return true
     }
 
-    return (
-      new Date(announcement.expiresAt).getTime() > Date.now()
-    )
-  }, [announcement, expiryTick])
+    return expiredId !== announcement.eventId
+  }, [announcement, expiredId])
 
   const publish = useCallback(
     async ({
@@ -270,9 +277,9 @@ export function AnnouncementProvider({
         return false
       }
 
-      setAnnouncement(
-        rowToAnnouncement(data as AnnouncementRow),
-      )
+      const next = rowToAnnouncement(data as AnnouncementRow)
+      setAnnouncement(next)
+      setExpiredId(expiredEventId(next))
       return true
     },
     [],
@@ -310,9 +317,9 @@ export function AnnouncementProvider({
       return false
     }
 
-    setAnnouncement(
-      rowToAnnouncement(data as AnnouncementRow),
-    )
+    const next = rowToAnnouncement(data as AnnouncementRow)
+    setAnnouncement(next)
+    setExpiredId(expiredEventId(next))
     return true
   }, [])
 

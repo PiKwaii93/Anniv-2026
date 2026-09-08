@@ -10,6 +10,7 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
+import { useNow } from '../hooks/useNow'
 import PhotoHuntScreen from './PhotoHuntScreen'
 
 import './PartyScreen.css'
@@ -159,7 +160,6 @@ function PartyScreen() {
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [now, setNow] = useState(Date.now())
 
   const loadScreenData = useCallback(async () => {
     const [roomResult, beerPongResult, missionResult] = await Promise.all([
@@ -259,18 +259,11 @@ function PartyScreen() {
     }
   }, [loadScreenData])
 
-  useEffect(() => {
-    if (roomState.phase !== 'open' || !roomState.closesAt) return
+  const now = useNow(
+    roomState.phase === 'open' && Boolean(roomState.closesAt),
+  )
 
-    const interval = window.setInterval(
-      () => setNow(Date.now()),
-      1000,
-    )
-
-    return () => window.clearInterval(interval)
-  }, [roomState.closesAt, roomState.phase])
-
-  const secondsLeft = roomState.closesAt
+  const secondsLeft = roomState.closesAt && now !== null
     ? Math.max(
       0,
       Math.ceil(

@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
+import { useNow } from '../hooks/useNow'
 
 import './LiveVoteRoom.css'
 
@@ -145,7 +146,6 @@ function LiveVoteRoom() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [now, setNow] = useState(Date.now())
   const previousPhaseRef = useRef<PublicState['phase']>('idle')
   const publicStateRef = useRef<PublicState>({ phase: 'idle', roundId: null })
   const identityRef = useRef<StoredIdentity | null>(null)
@@ -324,17 +324,15 @@ function LiveVoteRoom() {
     }
   }, [applyPublicState, loadPlayerState, loadPublicState, loadScores])
 
-  useEffect(() => {
-    if (!publicState.closesAt || publicState.phase !== 'open') return
-    const interval = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(interval)
-  }, [publicState.closesAt, publicState.phase])
+  const now = useNow(
+    publicState.phase === 'open' && Boolean(publicState.closesAt),
+  )
 
   useEffect(() => {
     if (identity) void loadPlayerState(identity)
   }, [identity, loadPlayerState, publicState.roundId, publicState.stage])
 
-  const secondsLeft = publicState.closesAt
+  const secondsLeft = publicState.closesAt && now !== null
     ? Math.max(0, Math.ceil((new Date(publicState.closesAt).getTime() - now) / 1000))
     : null
 

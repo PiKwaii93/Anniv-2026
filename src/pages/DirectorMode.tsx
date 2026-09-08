@@ -15,6 +15,7 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { supabase } from '../lib/supabase'
+import { useNow } from '../hooks/useNow'
 
 import './DirectorMode.css'
 import TvStatus from '../features/party/TvStatus'
@@ -223,7 +224,6 @@ function DirectorMode() {
   const [busyAction, setBusyAction] =
     useState<string | null>(null)
   const [lastSync, setLastSync] = useState<number | null>(null)
-  const [now, setNow] = useState(Date.now())
 
   const confirmedParticipantCount = useMemo(
     () => guests
@@ -448,23 +448,11 @@ function DirectorMode() {
     }
   }, [loadLiveData])
 
-  useEffect(() => {
-    if (
-      roomState.phase !== 'open' ||
-      !roomState.closesAt
-    ) {
-      return
-    }
+  const now = useNow(
+    roomState.phase === 'open' && Boolean(roomState.closesAt),
+  )
 
-    const interval = window.setInterval(
-      () => setNow(Date.now()),
-      1000,
-    )
-
-    return () => window.clearInterval(interval)
-  }, [roomState.closesAt, roomState.phase])
-
-  const secondsLeft = roomState.closesAt
+  const secondsLeft = roomState.closesAt && now !== null
     ? Math.max(
       0,
       Math.ceil(

@@ -175,7 +175,10 @@ function PartyIdentityProvider({
   // lookup in a ref so that this does not recreate the identity-restore
   // callback and briefly remount every public route.
   const playerByKeyRef = useRef(playerByKey)
-  playerByKeyRef.current = playerByKey
+
+  useEffect(() => {
+    playerByKeyRef.current = playerByKey
+  }, [playerByKey])
 
   const seedModuleStorage = useCallback(
     (stored: StoredIdentity) => {
