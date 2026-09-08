@@ -44,13 +44,14 @@ const expectedMigrations = new Map(Object.entries({
   '20260904232523_isolated_rehearsal_mode.sql': '00cdf78221460e4c4753d7056ecbe3da',
   '20260906185619_party_event_info.sql': 'c5ce80059544241a78a56d61e6fc591d',
   '20260907191421_harden_rehearsal_boundaries.sql': 'c17dc9dea210319d5e793450c6019c4f',
+  '20260908075929_revoke_deleted_guest_sessions.sql': '7036481ac8b8e40765ce731f5ce28ed8',
 }))
 
 const normalizedMd5 = (sql) => createHash('md5')
   .update(sql.replace(/\r\n?/g, '\n').trim())
   .digest('hex')
 
-test('the local migration ledger matches the production ledger captured on 2026-09-07', async () => {
+test('the local migration ledger matches the recovered production ledger plus reviewed changes', async () => {
   const files = (await readdir('supabase/migrations'))
     .filter((file) => file.endsWith('.sql'))
     .sort()
