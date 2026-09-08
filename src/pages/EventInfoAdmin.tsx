@@ -82,13 +82,13 @@ export default function EventInfoAdmin() {
     </header>
     {rehearsal && <p className="event-info-lock" role="status">Les infos pratiques restent celles de la vraie soirée. Repasse en soirée réelle pour les modifier.</p>}
     {loading ? <p className="event-info-state" role="status">Chargement…</p> : <form className="event-info-form" onSubmit={submit}>
-      <Field label="Date et heure" required><input type="datetime-local" required value={form.event_at} onChange={e => update('event_at', e.target.value)} /></Field>
-      <Field label="Nom du lieu" limit={80}><input maxLength={80} value={form.venue_name} onChange={e => update('venue_name', e.target.value)} /></Field>
-      <Field label="Adresse" limit={240}><textarea maxLength={240} value={form.address} onChange={e => update('address', e.target.value)} /></Field>
-      <Field label="Accès" limit={500}><textarea maxLength={500} value={form.access_notes} onChange={e => update('access_notes', e.target.value)} /></Field>
-      <Field label="Tenue" limit={160}><textarea maxLength={160} value={form.dress_code} onChange={e => update('dress_code', e.target.value)} /></Field>
-      <Field label="Stationnement" limit={300}><textarea maxLength={300} value={form.parking_notes} onChange={e => update('parking_notes', e.target.value)} /></Field>
-      <Field label="Autres informations" limit={500} wide><textarea maxLength={500} value={form.other_notes} onChange={e => update('other_notes', e.target.value)} /></Field>
+      <Field label="Date et heure" required><input type="datetime-local" required disabled={rehearsal || saving} value={form.event_at} onChange={e => update('event_at', e.target.value)} /></Field>
+      <Field label="Nom du lieu" limit={80}><input maxLength={80} disabled={rehearsal || saving} value={form.venue_name} onChange={e => update('venue_name', e.target.value)} /></Field>
+      <Field label="Adresse" limit={240}><textarea maxLength={240} disabled={rehearsal || saving} value={form.address} onChange={e => update('address', e.target.value)} /></Field>
+      <Field label="Accès" limit={500}><textarea maxLength={500} disabled={rehearsal || saving} value={form.access_notes} onChange={e => update('access_notes', e.target.value)} /></Field>
+      <Field label="Tenue" limit={160}><textarea maxLength={160} disabled={rehearsal || saving} value={form.dress_code} onChange={e => update('dress_code', e.target.value)} /></Field>
+      <Field label="Stationnement" limit={300}><textarea maxLength={300} disabled={rehearsal || saving} value={form.parking_notes} onChange={e => update('parking_notes', e.target.value)} /></Field>
+      <Field label="Autres informations" limit={500} wide><textarea maxLength={500} disabled={rehearsal || saving} value={form.other_notes} onChange={e => update('other_notes', e.target.value)} /></Field>
       <div className="event-info-actions">
         <button type="submit" disabled={!valid || rehearsal || saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
         <Link to="/info">Voir la page publique →</Link>

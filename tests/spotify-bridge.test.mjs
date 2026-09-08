@@ -11,6 +11,7 @@ function harness(overrides = {}) {
     authenticate: async (jwt) => jwt === 'test-admin' ? 'admin-id' : null,
     rpc: async (_admin, op, payload) => {
       ops.push({ op, payload })
+      if (op === 'acquire' && overrides.denied) throw new Error(overrides.denied)
       if (op === 'acquire') return { ...config, ...overrides.config }
       if (op === 'song') return overrides.song ?? { link: `https://open.spotify.com/track/${trackId}` }
       if (op === 'consume') { if (payload.state !== 'valid') throw new Error('OAUTH_EXPIRED'); return { verifier: 'PRIVATE_VERIFIER', client_id: config.client_id } }
@@ -42,6 +43,12 @@ test('PKCE SHA256 follows the RFC7636 test vector', async () => {
 test('unauthenticated callers never reach the database or Spotify', async () => {
   const h = harness(); assert.equal((await h.call('status', {}, 'fake')).status, 401)
   assert.equal(h.ops.length, 0); assert.equal(h.network.length, 0)
+})
+test('rehearsal denial is returned explicitly without contacting Spotify', async () => {
+  const h = harness({ denied: 'REHEARSAL_SPOTIFY_DISABLED' })
+  const result = await h.call('status')
+  assert.equal(result.body.error, 'REHEARSAL_SPOTIFY_DISABLED')
+  assert.equal(h.network.length, 0)
 })
 test('status returns only public fields; revoked tokens still permit reconnect UI', async () => {
   const h = harness(); assert.ok(!JSON.stringify((await h.call('status')).body).includes('PRIVATE'))

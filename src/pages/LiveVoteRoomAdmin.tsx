@@ -59,7 +59,7 @@ type RpcResult = {
 const modeCopy: Record<VoteMode, { label: string; detail: string }> = {
   likely: {
     label: '🔥 Plus susceptible de…',
-    detail: 'Nominations libres parmi tous les participants, puis finale automatique à 4.',
+    detail: 'Nominations libres, puis finale jusqu’à 4 noms ou résultat direct si un seul nom ressort.',
   },
   majority: {
     label: '⚖️ Majority Rules',
@@ -78,7 +78,8 @@ const modeCopy: Record<VoteMode, { label: string; detail: string }> = {
 function adminError(code?: string) {
   switch (code) {
     case 'ROUND_ALREADY_OPEN': return 'Un round est déjà ouvert. Révèle-le ou passe-le avant d’en lancer un autre.'
-    case 'NOT_ENOUGH_NOMINATIONS': return 'Il faut au moins deux personnes différentes nommées avant la finale.'
+    case 'NO_NOMINATIONS': return 'Attends au moins une nomination avant d’afficher le résultat.'
+    case 'NOT_ENOUGH_NOMINATIONS': return 'Il faut encore une autre personne nommée avec la version actuelle de La Salle.'
     case 'FINAL_NOT_STARTED': return 'Passe d’abord des nominations à la finale.'
     case 'INVALID_OPTIONS': return 'Cette question doit contenir entre 2 et 4 choix.'
     case 'INVALID_SUSPECTS': return 'Il faut entre 4 et 6 suspects.'
@@ -414,7 +415,7 @@ function LiveVoteRoomAdmin() {
 
             {isLikelyNomination && (
               <p className="live-control__guidance">
-                Les invités nomment librement quelqu’un. Quand tu as assez de réponses, transforme les nominations en <strong>Top 4</strong> pour lancer la finale.
+                Les invités nomment librement quelqu’un. Quand tu as assez de réponses, calcule le <strong>Top 4</strong>. Si un seul nom ressort, le résultat est révélé directement.
               </p>
             )}
 
@@ -438,7 +439,7 @@ function LiveVoteRoomAdmin() {
                   disabled={busy}
                   onClick={() => void runRpc('admin_advance_likely_vote')}
                 >
-                  Passer au Top 4 →
+                  Calculer la suite →
                 </button>
               )}
               {publicState.phase === 'open' && !isLikelyNomination && (

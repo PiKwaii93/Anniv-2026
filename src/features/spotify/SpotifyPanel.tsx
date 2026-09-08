@@ -9,10 +9,11 @@ function SpotifySetup({ controller }: { controller: SpotifyController }) {
     <form onSubmit={(event) => { event.preventDefault(); void controller.run('configure', { client_id: clientId.trim() }) }}><label>Client ID Spotify<input value={clientId} onChange={(event) => setClientId(event.target.value)} maxLength={32} spellCheck={false} autoComplete="off" placeholder="Les 32 caractères du Client ID" /></label><button disabled={controller.busy || controller.data?.connected || !/^[a-f0-9]{32}$/i.test(clientId.trim())}>Enregistrer le Client ID</button></form>
   </details>
 }
-export default function SpotifyPanel({ controller }: { controller: SpotifyController }) {
+export default function SpotifyPanel({ controller, rehearsal = false }: { controller: SpotifyController; rehearsal?: boolean }) {
   const { data, busy, error, notice, run } = controller
   return <section className="extras-panel spotify-panel" id="spotify"><p className="extras-eyebrow">Spotify · Le PC fait le DJ</p><h2>La musique, pour de vrai.</h2>
     <p>Ton PC diffuse la musique. Tu gardes la main depuis cette régie, sur PC ou téléphone.</p>
+    {rehearsal ? <p role="status" className="extras-notice">Spotify est désactivé en mode répétition. Repasse en soirée réelle pour utiliser le compte et le lecteur.</p> : <>
     {error && <p role="alert" className="extras-notice extras-notice--error">{error}</p>}{notice && <p role="status" className="extras-notice">{notice}</p>}
     {data?.warning && <p role="status" className="extras-notice">{spotifyMessage(data.warning)}</p>}
     {!data ? <><p role="status">Chargement de la connexion Spotify…</p><button className="secondary" onClick={() => void controller.refresh()}>Actualiser</button></> : <>
@@ -26,6 +27,7 @@ export default function SpotifyPanel({ controller }: { controller: SpotifyContro
         <div className="extras-actions"><button disabled={busy || !data.device_id} onClick={() => void run('play')}>▶ Lecture sur le PC</button><button className="secondary" disabled={busy || !data.device_id} onClick={() => void run('pause')}>Ⅱ Pause</button><button className="secondary" disabled={busy || !data.device_id} onClick={() => void run('next')}>Suivant →</button></div>
         <p className="extras-help">L’état se rafraîchit toutes les 30 secondes. Les votes aident à choisir avant l’envoi ; les morceaux envoyés restent dans l’ordre de la file Spotify.</p>
       </>}
+    </>}
     </>}
   </section>
 }

@@ -46,7 +46,7 @@ test('no matches remain on guest side and do not consume a proposal', async () =
   const h = harness({ items: [] }); assert.deepEqual((await h.call()).body.choices, [])
   assert.ok(!h.ops.some(x => x.op === 'prepare'))
 })
-for (const denied of ['IDENTITY_REQUIRED', 'SEARCH_RATE_LIMIT', 'JUKEBOX_CLOSED', 'SONG_LIMIT', 'SONG_NOT_READY']) {
+for (const denied of ['IDENTITY_REQUIRED', 'SEARCH_RATE_LIMIT', 'JUKEBOX_CLOSED', 'SONG_LIMIT', 'SONG_NOT_READY', 'REHEARSAL_SPOTIFY_DISABLED']) {
   test(`${denied} is enforced before Spotify access`, async () => {
     const h = harness({ denied }); assert.equal((await h.call()).body.error, denied); assert.equal(h.network.length, 0)
   })

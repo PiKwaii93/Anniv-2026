@@ -4,7 +4,7 @@ type Json = Record<string, any>
 export type GuestRpc = (identity: Json, op: string, payload: Json, lease: string) => Promise<Json>
 const API = 'https://api.spotify.com/v1'
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
-const codes = ['IDENTITY_REQUIRED', 'JUKEBOX_CLOSED', 'SONG_LIMIT', 'SONG_EXISTS', 'SONG_NOT_READY', 'SPOTIFY_BUSY', 'SEARCH_RATE_LIMIT', 'QUEUE_UNCERTAIN', 'INVALID_INPUT']
+const codes = ['IDENTITY_REQUIRED', 'JUKEBOX_CLOSED', 'SONG_LIMIT', 'SONG_EXISTS', 'SONG_NOT_READY', 'SPOTIFY_BUSY', 'SEARCH_RATE_LIMIT', 'QUEUE_UNCERTAIN', 'INVALID_INPUT', 'REHEARSAL_SPOTIFY_DISABLED']
 
 // Public gateway JWT + the existing private party session. No admin identity is
 // borrowed and no guest can select a device, control playback, or read tokens.

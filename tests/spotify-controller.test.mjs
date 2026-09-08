@@ -27,7 +27,7 @@ await writeFile(cache, bundle.output.find((item) => item.type === 'chunk').code)
 const { useSpotify, SpotifySongAction, GuestSongPicker } = await import(pathToFileURL(cache).href)
 after(() => rm(cache))
 
-let dom, root, controller, poll, showCard, refreshes
+let dom, root, controller, poll, showCard, refreshes, spotifyEnabled
 let replies = []
 const requests = [], payloads = []
 const state = { connected: true, device_id: 'pc', device_name: 'PC', devices: [], dispatches: {}, playback: null }
@@ -35,7 +35,7 @@ const status = (value = state) => ({ action: 'status', value })
 const unavailable = new Error('Spotify ne répond pas pour le moment.')
 
 function Probe() {
-  const current = useSpotify()
+  const current = useSpotify(spotifyEnabled)
   useLayoutEffect(() => { controller = current })
   return showCard ? React.createElement(SpotifySongAction, { song: { id: 'song', title: 'Unstoppable', artist: '', link: '', status: 'pending' }, controller: current, refresh: async () => { refreshes++ } }) : null
 }
@@ -53,7 +53,7 @@ beforeEach(() => {
   Object.defineProperty(document, 'visibilityState', { value: 'visible' })
   root = createRoot(document.getElementById('root'))
   replies = []; requests.length = 0; payloads.length = 0
-  showCard = false; refreshes = 0
+  showCard = false; refreshes = 0; spotifyEnabled = true
   globalThis.__spotifyAction = async (action, payload) => {
     requests.push(action); payloads.push(payload)
     const next = replies.shift()
@@ -79,6 +79,15 @@ test('manual refresh clears a failed status request and restores the current sta
   await act(async () => controller.refresh())
   assert.equal(controller.error, '')
   assert.equal(controller.data.device_id, 'pc')
+})
+
+test('rehearsal mode neither loads Spotify nor accepts a command', async () => {
+  spotifyEnabled = false
+  await mount()
+  assert.equal(controller.data, null)
+  await act(async () => assert.equal(await controller.run('status'), false))
+  await act(async () => controller.refresh())
+  assert.deepEqual(requests, [])
 })
 
 test('automatic polling clears a status error without repeating a successful command', async () => {

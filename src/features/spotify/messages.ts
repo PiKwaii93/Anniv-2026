@@ -6,6 +6,7 @@ export const messages: Record<string, string> = {
   SEARCH_RATE_LIMIT: 'Tu as lancé beaucoup de recherches. Attends une minute avant de continuer.',
   GUEST_SPOTIFY_OFFLINE: 'Le lecteur de la soirée n’est pas disponible pour le moment. Ton choix reste ici ; réessaie quand la musique aura démarré.',
   GUEST_SPOTIFY_UNAVAILABLE: 'Spotify est temporairement indisponible. Ton choix reste ici. Réessaie dans quelques instants.',
+  REHEARSAL_SPOTIFY_DISABLED: 'Spotify est désactivé en mode répétition. Repasse en soirée réelle pour utiliser le compte et le lecteur.',
   NOT_ADMIN: 'Reconnecte-toi à la régie pour utiliser Spotify.',
   INVALID_CLIENT: 'Copie le Client ID de ton application Spotify : 32 caractères, sans espace.',
   DISCONNECT_FIRST: 'Déconnecte Spotify avant de changer le Client ID.',
