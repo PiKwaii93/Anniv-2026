@@ -445,7 +445,7 @@ function Bingo() {
         <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>Grille 4 × 4</button>
         <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Liste lisible</button>
       </div>
-      <p className="guest-empty">{view === 'grid' ? 'Touche une case pour la cocher ou la décocher.' : 'Les mêmes 16 cases, dans le même ordre. Coche une situation lorsqu’elle arrive.'}</p>
+      <p className="guest-empty bingo-view-help">{view === 'grid' ? 'Touche une case pour la cocher ou la décocher.' : 'Les mêmes 16 cases, dans le même ordre. Coche une situation lorsqu’elle arrive.'}</p>
       <section className="bingo-board-shell">
         {loading && !game ? (
           <div className="bingo-loading">

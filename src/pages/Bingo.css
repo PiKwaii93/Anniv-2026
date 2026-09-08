@@ -69,6 +69,14 @@
   margin: 0 auto 22px;
 }
 
+.bingo-page .bingo-view-help {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto 16px;
+}
+
 .bingo-header__navigation {
   display: flex;
   align-items: center;

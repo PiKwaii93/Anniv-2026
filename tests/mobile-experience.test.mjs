@@ -447,6 +447,7 @@ test('mobile CSS reserves safe areas, readable Bingo and input sizes without aff
   assert.match(css,/\.guest-app \.bingo-cell \.bingo-cell__text \{ font-size: 14px/)
   assert.match(css,/\.guest-app textarea, \.guest-app select \{ font-size: 16px/)
   assert.match(bingoCss,/\.bingo-page \.bingo-view-switcher \{[\s\S]*max-width: 1120px;[\s\S]*margin: 0 auto 22px;/)
+  assert.match(bingoCss,/\.bingo-page \.bingo-view-help \{[\s\S]*max-width: 1120px;[\s\S]*margin: 0 auto 16px;/)
   assert.ok(!css.includes('.party-screen '))
 })
 
