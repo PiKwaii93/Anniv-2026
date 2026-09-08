@@ -442,9 +442,11 @@ test('Director TV status shares the centered panel width without changing mobile
 })
 test('mobile CSS reserves safe areas, readable Bingo and input sizes without affecting TV',async()=>{
   const css=await readFile('src/features/guest/guest.css','utf8')
+  const bingoCss=await readFile('src/pages/Bingo.css','utf8')
   assert.match(css,/safe-area-inset-bottom/)
   assert.match(css,/\.guest-app \.bingo-cell \.bingo-cell__text \{ font-size: 14px/)
   assert.match(css,/\.guest-app textarea, \.guest-app select \{ font-size: 16px/)
+  assert.match(bingoCss,/\.bingo-page \.bingo-view-switcher \{[\s\S]*max-width: 1120px;[\s\S]*margin: 0 auto 22px;/)
   assert.ok(!css.includes('.party-screen '))
 })
 

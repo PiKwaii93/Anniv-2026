@@ -441,7 +441,7 @@ function Bingo() {
         </section>
       ) : null}
 
-      <div className="guest-tabs" aria-label="Présentation du Bingo">
+      <div className="guest-tabs bingo-view-switcher" aria-label="Présentation du Bingo">
         <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>Grille 4 × 4</button>
         <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Liste lisible</button>
       </div>
