@@ -1,6 +1,6 @@
 # Supabase schema history
 
-The production project contains 41 recorded migrations. Every corresponding SQL
+The production project contains 42 recorded migrations. Every corresponding SQL
 file is stored in `migrations/`, with the same version, name, and normalized SQL
 content as `supabase_migrations.schema_migrations` on 2026-09-08.
 

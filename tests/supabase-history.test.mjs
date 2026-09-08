@@ -45,6 +45,7 @@ const expectedMigrations = new Map(Object.entries({
   '20260906185619_party_event_info.sql': 'c5ce80059544241a78a56d61e6fc591d',
   '20260907191421_harden_rehearsal_boundaries.sql': 'c17dc9dea210319d5e793450c6019c4f',
   '20260908075929_revoke_deleted_guest_sessions.sql': '7036481ac8b8e40765ce731f5ce28ed8',
+  '20260908082945_harden_supabase_security_boundaries.sql': 'cf8d11c78bdbdd9937fac1450643178b',
 }))
 
 const normalizedMd5 = (sql) => createHash('md5')
