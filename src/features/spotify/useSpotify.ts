@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { spotifyAction, type SpotifyState, type SpotifyTrackChoice } from './api'
 
-export function useSpotify() {
+export function useSpotify(enabled = true) {
   const [data, setData] = useState<SpotifyState | null>(null)
   const [commandError, setCommandError] = useState('')
   const [statusError, setStatusError] = useState('')
@@ -11,6 +11,7 @@ export function useSpotify() {
   const mounted = useRef(false)
   const pending = useRef(false)
   const load = useCallback(async () => {
+    if (!enabled) return
     try {
       const state = await spotifyAction<SpotifyState>('status')
       if (mounted.current) {
@@ -18,22 +19,23 @@ export function useSpotify() {
         setStatusError('')
       }
     } catch (cause) { if (mounted.current) setStatusError((cause as Error).message) }
-  }, [])
+  }, [enabled])
   const refresh = useCallback(async () => {
-    if (pending.current) return
+    if (!enabled || pending.current) return
     pending.current = true
     try { await load() } finally { pending.current = false }
-  }, [load])
+  }, [enabled, load])
   useEffect(() => {
     mounted.current = true
+    if (!enabled) return () => { mounted.current = false }
     void refresh()
     const timer = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 30000)
     const visible = () => { if (document.visibilityState === 'visible') void refresh() }
     document.addEventListener('visibilitychange', visible)
     return () => { mounted.current = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible) }
-  }, [refresh])
+  }, [enabled, refresh])
   const run = async (action: string, payload: Record<string, unknown> = {}) => {
-    if (pending.current) return false
+    if (!enabled || pending.current) return false
     pending.current = true; setBusy(true); setCommandError(''); setNotice('')
     if (action === 'search' && typeof payload.song_id === 'string') {
       setChoices((current) => { const next = { ...current }; delete next[payload.song_id as string]; return next })
@@ -59,6 +61,6 @@ export function useSpotify() {
       return false
     } finally { pending.current = false; if (mounted.current) setBusy(false) }
   }
-  return { data, busy, choices, error: commandError || statusError, notice, refresh, run }
+  return { data: enabled ? data : null, busy, choices, error: commandError || statusError, notice, refresh, run }
 }
 export type SpotifyController = ReturnType<typeof useSpotify>

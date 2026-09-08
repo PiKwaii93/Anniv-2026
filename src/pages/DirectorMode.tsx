@@ -184,8 +184,10 @@ function visibilityPatch(
 
 function roomCommandError(code?: string) {
   switch (code) {
+    case 'NO_NOMINATIONS':
+      return 'Attends au moins une nomination avant d’afficher le résultat.'
     case 'NOT_ENOUGH_NOMINATIONS':
-      return 'Pas encore assez de nominations différentes pour générer la finale.'
+      return 'Il faut encore une autre personne nommée avec la version actuelle de La Salle.'
     case 'FINAL_NOT_STARTED':
       return 'La finale doit être lancée avant la révélation.'
     case 'NO_ACTIVE_ROUND':
@@ -621,7 +623,7 @@ function DirectorMode() {
       ? roomState.mode === 'likely' &&
         roomState.stage === 'nomination'
         ? {
-          label: 'Passer au Top 4 →',
+          label: 'Calculer la suite →',
           rpc: 'admin_advance_likely_vote',
         }
         : {

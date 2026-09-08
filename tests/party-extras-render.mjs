@@ -16,11 +16,13 @@ const fixture = {
   duo: null, duo_attempts: 0, waiting: false, duo_stats: { waiting: 0, completed: 0 }, credits_names: [], ending_key: 'test-ending',
 }
 globalThis.__partyExtrasRender = { data: structuredClone(fixture), error: '', busy: false, act: async () => { throw new Error('Rendering must never write') } }
+globalThis.__partyRender = { settings: { environment: 'live' }, loading: false }
 const spotifyFixture = { data: { client_id: null, connected: false, dispatches: {}, devices: [], redirect_uri: 'https://anniv-2026-pi.vercel.app/admin/spotify/callback' }, choices: {}, busy: false, error: '', notice: '', run: async () => false, refresh: async () => {} }
 globalThis.__spotifyRender = spotifyFixture
 const mocks = {
   '/spotify/useSpotify': 'export function useSpotify() { return globalThis.__spotifyRender }',
   '/party-extras/usePartyExtras': 'export function usePartyExtras() { return globalThis.__partyExtrasRender }',
+  '/party/PartyContext': 'export function useParty() { return globalThis.__partyRender }',
   '/identity/PartyIdentityContext': 'export function usePartyIdentity() { return { identity: { playerKey: "fixture", playerName: "Invité test", sessionToken: "fixture" } } }',
 }
 const result = await build({ configFile: false, logLevel: 'error', plugins: [react(), { name: 'in-memory-fixtures', enforce: 'pre', resolveId(id, importer) {
@@ -41,6 +43,7 @@ try {
   const render = (name, patch = {}, spotifyPatch = {}) => {
     globalThis.__partyExtrasRender.data = { ...structuredClone(fixture), ...patch }
     globalThis.__spotifyRender = { ...spotifyFixture, ...spotifyPatch }
+    globalThis.__partyRender = { settings: { environment: 'live' }, loading: false }
     return renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(pages[name])))
   }
   assert.match(render('Capsule'), /Sceller ma lettre/)
@@ -66,6 +69,10 @@ try {
   assert.match(lockedAdmin, /Client ID Spotify/)
   assert.match(lockedAdmin, /Enregistrer le Client ID/)
   assert.doesNotMatch(lockedAdmin, /Exporter les lettres/)
+  globalThis.__partyRender = { settings: { environment: 'rehearsal' }, loading: false }
+  const rehearsalAdmin = renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(pages.PartyExtrasAdmin)))
+  assert.match(rehearsalAdmin, /Spotify est désactivé en mode répétition/)
+  assert.doesNotMatch(rehearsalAdmin, /Client ID Spotify/)
   const openedAdmin = render('PartyExtrasAdmin', { capsule: { own: null, count: 1, revealed: true, entries: [{ player_name: 'Test', message: '<script>alert(1)</script>', memory: '', prediction: '' }] } })
   assert.match(openedAdmin, /Exporter les lettres/)
   assert.ok(openedAdmin.includes('&lt;script&gt;alert(1)&lt;/script&gt;'))
@@ -95,6 +102,7 @@ try {
   console.log('PASS: guest forms, closed/hidden capsule, song quota, duo opt-in and confirmations, admin reveal and HTML escaping')
 } finally {
   delete globalThis.__partyExtrasRender
+  delete globalThis.__partyRender
   delete globalThis.__spotifyRender
   await rm(cache)
 }

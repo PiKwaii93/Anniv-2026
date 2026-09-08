@@ -274,13 +274,11 @@ test('Games respects disabled modules and keeps duos discoverable',async()=>{
   assert.equal(q('a[href="/bingo"]'),null)
   assert.ok(q('a[href="/duos"]'))
 })
-test('Bingo grid opens a readable dialog, confirms the same cell and preserves it in list view',async()=>{
+test('Bingo grid toggles a cell in one click and preserves it in list view',async()=>{
   await render(ui.Bingo,'/bingo')
   const cell=q('.bingo-cell')
   const fullText=cell.querySelector('.bingo-cell__text').textContent
   await click(cell)
-  assert.equal(q('dialog h2').textContent,fullText)
-  await click(button('Ça s’est passé'))
   assert.equal(q('dialog'),null)
   assert.equal(q('.bingo-cell').getAttribute('aria-pressed'),'true')
   await click(button('Liste lisible'))
@@ -288,6 +286,8 @@ test('Bingo grid opens a readable dialog, confirms the same cell and preserves i
   assert.equal(q('.bingo-cell').getAttribute('aria-pressed'),'true')
   const saved=JSON.parse(window.localStorage.getItem('anniv-2026-bingo-v1'))
   assert.equal(saved.cells[0].text,fullText);assert.equal(saved.cells[0].checked,true)
+  await click(q('.bingo-cell'))
+  assert.equal(q('.bingo-cell').getAttribute('aria-pressed'),'false')
 })
 test('four original Bingo positions still constitute a winning line',async()=>{
   await render(ui.Bingo,'/bingo')

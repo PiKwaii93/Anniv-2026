@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ExtrasPage, SongCard } from '../features/party-extras/ExtrasUI'
 import { downloadText, letterExport, revealDate, songExport, type Song, type SongStatus } from '../features/party-extras/model'
 import { usePartyExtras } from '../features/party-extras/usePartyExtras'
+import { useParty } from '../features/party/PartyContext'
 import SpotifyPanel from '../features/spotify/SpotifyPanel'
 import SpotifySongAction from '../features/spotify/SpotifySongAction'
 import { useSpotify, type SpotifyController } from '../features/spotify/useSpotify'
@@ -25,7 +26,9 @@ function SongModeration({ song, busy, change, spotify, refresh }: { song: Song; 
 
 export default function PartyExtrasAdmin() {
   const { data, error, busy, act, refresh } = usePartyExtras()
-  const spotify = useSpotify()
+  const { settings: partySettings, loading: partyLoading } = useParty()
+  const rehearsal = partySettings.environment === 'rehearsal'
+  const spotify = useSpotify(!partyLoading && !rehearsal)
   const [notice, setNotice] = useState('')
   const action = async (name: string, payload: Record<string, unknown> = {}) => {
     setNotice('')
@@ -35,7 +38,7 @@ export default function PartyExtrasAdmin() {
   const settings = data?.settings
   return <ExtrasPage title="Les petits plus." eyebrow="Régie · Anniv 2026" intro="Les lettres de demain, la bande-son d’aujourd’hui, les rencontres et le dernier mot de la soirée." error={error} admin>
     <nav className="extras-tabs" aria-label="Régie des activités"><a href="#spotify">Spotify</a><a href="#capsule">Capsule</a><a href="#jukebox">Jukebox</a><a href="#duos">Duos</a><a href="#credits">Générique</a></nav>
-    <SpotifyPanel controller={spotify} />
+    <SpotifyPanel controller={spotify} rehearsal={rehearsal} />
     <div role="status" aria-live="polite">{notice && <p className="extras-notice">{notice}</p>}</div>
     {!data || !settings ? <p className="extras-loading">Chargement de la régie…</p> : <>
       <div className="extras-grid">

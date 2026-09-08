@@ -5,8 +5,6 @@ import {
   useState,
 } from 'react'
 import { Link } from 'react-router-dom'
-import GuestDialog from '../features/guest/GuestDialog'
-
 import { useAuth } from '../features/auth/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -198,7 +196,6 @@ function getLengthClass(
 
 function Bingo() {
   const [view, setView] = useState<'grid' | 'list'>('grid')
-  const [reading, setReading] = useState<number | null>(null)
   const { isAdmin } = useAuth()
 
   const [prompts, setPrompts] =
@@ -448,7 +445,7 @@ function Bingo() {
         <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>Grille 4 × 4</button>
         <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Liste lisible</button>
       </div>
-      <p className="guest-empty">{view === 'grid' ? 'Touche une case pour lire la situation et la cocher.' : 'Les mêmes 16 cases, dans le même ordre. Coche une situation lorsqu’elle arrive.'}</p>
+      <p className="guest-empty">{view === 'grid' ? 'Touche une case pour la cocher ou la décocher.' : 'Les mêmes 16 cases, dans le même ordre. Coche une situation lorsqu’elle arrive.'}</p>
       <section className="bingo-board-shell">
         {loading && !game ? (
           <div className="bingo-loading">
@@ -479,9 +476,7 @@ function Bingo() {
                     } ${getLengthClass(cell.text)}`}
                     aria-label={`${index + 1}. ${cell.text}${cell.checked ? ' · cochée' : ''}`}
                     aria-pressed={cell.checked}
-                    onClick={() =>
-                      view === 'list' ? toggleCell(index) : setReading(index)
-                    }
+                    onClick={() => toggleCell(index)}
                   >
                     <span className="bingo-cell__number">
                       {String(index + 1).padStart(2, '0')}
@@ -509,12 +504,6 @@ function Bingo() {
         )}
       </section>
 
-      {reading !== null && game?.cells[reading] && <GuestDialog titleId="bingo-reading-title" onClose={() => setReading(null)}>
-        <button className="guest-dialog__close" onClick={() => setReading(null)} aria-label="Fermer">×</button>
-        <p className="guest-eyebrow">Case {reading + 1} / 16</p>
-        <h2 id="bingo-reading-title">{game.cells[reading].text}</h2>
-        <button className="guest-primary" onClick={() => { toggleCell(reading); setReading(null) }}>{game.cells[reading].checked ? 'Décocher cette case' : 'Ça s’est passé ! ✓'}</button>
-      </GuestDialog>}
       <section className="bingo-footer-panel">
         <div>
           <span>Ta grille</span>

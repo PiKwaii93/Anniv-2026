@@ -196,7 +196,7 @@ export function createHandler({ authenticate, rpc, guestRpc, fetcher = fetch, re
       }
       throw new BridgeError('INVALID_ACTION')
     } catch (error) {
-      const allowed = ['NOT_ADMIN','INVALID_INPUT','INVALID_CLIENT','OAUTH_EXPIRED','SPOTIFY_BUSY','DISCONNECT_FIRST','SONG_NOT_READY','ALREADY_DISPATCHED','TRACK_LINK_REQUIRED']
+      const allowed = ['NOT_ADMIN','INVALID_INPUT','INVALID_CLIENT','OAUTH_EXPIRED','SPOTIFY_BUSY','DISCONNECT_FIRST','SONG_NOT_READY','ALREADY_DISPATCHED','TRACK_LINK_REQUIRED','REHEARSAL_SPOTIFY_DISABLED']
       const code = error instanceof BridgeError ? error.code : allowed.find((code) => String((error as Error)?.message).includes(code)) ?? 'SPOTIFY_UNAVAILABLE'
       diagnostic(code, 'request', error instanceof BridgeError ? error.status : 400)
       return respond({ error: code }, error instanceof BridgeError ? error.status : code === 'NOT_ADMIN' ? 403 : 400)
