@@ -9,7 +9,7 @@
   line-height: 1;
   background: rgba(87, 119, 255, 0.14);
   border: 1px solid rgba(112, 140, 255, 0.24);
-  border-radius: 28%;
+  border-radius: 50%;
   white-space: normal;
   text-overflow: clip;
 }

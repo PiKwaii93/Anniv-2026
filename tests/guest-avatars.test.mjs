@@ -51,10 +51,26 @@ test('avatar initials remain visible and uploads are cropped before storage', as
 
   assert.match(avatar, /guest-profile-avatar__initial/)
   assert.match(avatarStyles, /\.guest-profile-avatar\.guest-profile-avatar/)
+  assert.match(avatarStyles, /border-radius: 50%/)
   assert.match(cropper, /type="range"/)
   assert.match(cropper, /onPointerMove/)
   assert.match(cropper, /context\.drawImage/)
   assert.match(cropper, /canvas\.toBlob\(resolve, 'image\/webp'/)
   assert.match(admin, /setCropFile\(file\)/)
   assert.match(admin, /onChange\(croppedFile\)/)
+})
+
+test('Beer Pong keeps and displays guest photos throughout the tournament', async () => {
+  const [beerPong, partyScreen] = await Promise.all([
+    readFile('src/pages/BeerPong.tsx', 'utf8'),
+    readFile('src/pages/PartyScreenAuto.tsx', 'utf8'),
+  ])
+
+  assert.match(beerPong, /avatarPath: guest\.avatarPath/)
+  assert.match(beerPong, /avatarPath: plusOne\.avatarPath/)
+  assert.match(beerPong, /<GuestAvatar/)
+  assert.match(beerPong, /beer-team__members/)
+  assert.match(beerPong, /beer-match__faces/)
+  assert.match(partyScreen, /party-screen-auto__player-faces/)
+  assert.match(partyScreen, /path=\{player\.avatarPath\}/)
 })

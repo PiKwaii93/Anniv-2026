@@ -99,22 +99,17 @@
   pointer-events: none;
 }
 
-.avatar-crop-viewport > span {
-  position: absolute;
-  right: 16px;
-  bottom: 12px;
-  left: 16px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.68rem;
-  font-weight: 700;
+.avatar-crop-instruction {
+  margin: 12px 0 0;
+  color: #a9a9b4;
+  font-size: 0.75rem;
+  line-height: 1.4;
   text-align: center;
-  text-shadow: 0 1px 5px #000;
-  pointer-events: none;
 }
 
 .avatar-crop-zoom {
   gap: 14px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .avatar-crop-zoom span {

@@ -1142,6 +1142,53 @@
   font-size: 0.75rem;
 }
 
+.beer-team__members {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  margin-top: 42px;
+}
+
+.beer-team__member {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.beer-team__member strong {
+  min-width: 0;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.beer-team__members--manual {
+  margin-top: 42px;
+}
+
+.beer-team__members--manual + .beer-team__manual {
+  margin-top: 12px;
+}
+
+.beer-team__members--current {
+  display: flex;
+  margin: 14px 0 0;
+}
+
+.beer-team__members--champion {
+  justify-content: center;
+  width: min(100%, 360px);
+  margin: 26px auto 0;
+}
+
+.beer-team__members--champion .beer-team__member {
+  justify-content: center;
+}
+
 /* =========================================================
    MANUAL TEAM
    ========================================================= */
@@ -1460,6 +1507,40 @@
   color: #6d6d77;
 
   font-size: 0.68rem;
+}
+
+.beer-match__players {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.beer-match__faces {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.beer-match__faces > span {
+  display: block;
+}
+
+.beer-match__faces > span + span {
+  margin-left: -10px;
+}
+
+.beer-match__faces .guest-profile-avatar {
+  box-shadow: 0 0 0 2px #111116;
+}
+
+.beer-match__players > span {
+  min-width: 0;
+  overflow: hidden;
+  color: #6d6d77;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .beer-match__winner-icon {

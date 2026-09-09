@@ -72,6 +72,37 @@
   line-height: 1.55;
 }
 
+.party-screen-auto__player-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 1.5vw, 20px);
+  margin-top: clamp(24px, 3vw, 38px);
+}
+
+.party-screen-auto__player-faces > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.party-screen-auto__player-faces .guest-profile-avatar {
+  width: clamp(52px, 5vw, 76px);
+  height: clamp(52px, 5vw, 76px);
+  font-size: clamp(1rem, 1.4vw, 1.4rem);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.party-screen-auto__player-faces span {
+  max-width: 180px;
+  overflow: hidden;
+  color: #dce3ed;
+  font-size: clamp(0.8rem, 1vw, 1.05rem);
+  font-weight: 750;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .party-screen-auto__qr {
   justify-self: end;
   width: min(34vw, 450px);

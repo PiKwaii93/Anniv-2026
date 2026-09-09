@@ -235,8 +235,11 @@ function AvatarCropDialog({
             />
           )}
           <div className="avatar-crop-mask" aria-hidden="true" />
-          <span>Déplace la photo pour choisir le cadrage</span>
         </div>
+
+        <p className="avatar-crop-instruction">
+          Déplace la photo pour choisir le cadrage.
+        </p>
 
         <label className="avatar-crop-zoom">
           <span>Zoom</span>

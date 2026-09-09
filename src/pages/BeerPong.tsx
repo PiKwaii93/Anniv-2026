@@ -8,6 +8,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../features/auth/AuthContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
@@ -17,6 +18,7 @@ import './BeerPong.css'
 type Player = {
   id: string
   name: string
+  avatarPath: string | null
   type: 'guest' | 'plusOne'
   parentGuestName?: string
 }
@@ -84,6 +86,7 @@ function normalizePlayer(
   return {
     id: value.id,
     name: value.name,
+    avatarPath: typeof value.avatarPath === 'string' ? value.avatarPath : null,
     type: value.type,
     ...(typeof value.parentGuestName === 'string'
       ? { parentGuestName: value.parentGuestName }
@@ -460,6 +463,7 @@ function BeerPong() {
         const guestPlayer: Player = {
           id: `guest:${guest.id}`,
           name: guest.name,
+          avatarPath: guest.avatarPath,
           type: 'guest',
         }
 
@@ -467,6 +471,7 @@ function BeerPong() {
           (plusOne) => ({
             id: `plus-one:${plusOne.id}`,
             name: plusOne.name.trim() || `+1 de ${guest.name}`,
+            avatarPath: plusOne.avatarPath,
             type: 'plusOne',
             parentGuestName: guest.name,
           }),
@@ -684,6 +689,37 @@ function BeerPong() {
   ) => {
     return displayPlayerById.get(playerId)?.name ?? 'Joueur inconnu'
   }
+
+  const renderPlayerAvatar = (
+    playerId: string,
+    size: 'small' | 'medium' | 'large' = 'small',
+    className = '',
+  ) => {
+    const player = displayPlayerById.get(playerId)
+    const name = player?.name ?? 'Joueur inconnu'
+    return (
+      <GuestAvatar
+        name={name}
+        path={player?.avatarPath}
+        size={size}
+        className={className}
+      />
+    )
+  }
+
+  const renderTeamMembers = (
+    team: Team,
+    className = '',
+  ) => (
+    <div className={`beer-team__members ${className}`.trim()}>
+      {team.playerIds.map((playerId) => (
+        <div key={playerId} className="beer-team__member">
+          {renderPlayerAvatar(playerId)}
+          <strong>{getPlayerName(playerId)}</strong>
+        </div>
+      ))}
+    </div>
+  )
 
   const buildPlayerSnapshots = (
     playerIds: string[],
@@ -1228,11 +1264,18 @@ function BeerPong() {
     }
 
     return (
-      <span>
-        {getPlayerName(team.playerIds[0])}
-        {' & '}
-        {getPlayerName(team.playerIds[1])}
-      </span>
+      <div className="beer-match__players">
+        <div className="beer-match__faces" aria-hidden="true">
+          {team.playerIds.map((playerId) => (
+            <span key={playerId}>{renderPlayerAvatar(playerId)}</span>
+          ))}
+        </div>
+        <span>
+          {getPlayerName(team.playerIds[0])}
+          {' & '}
+          {getPlayerName(team.playerIds[1])}
+        </span>
+      </div>
     )
   }
 
@@ -1319,7 +1362,7 @@ function BeerPong() {
         const match = state.rounds.flat().find(item => !item.winnerTeamId && (item.teamAId === team.id || item.teamBId === team.id))
         const opponentId = match && (match.teamAId === team.id ? match.teamBId : match.teamAId)
         const opponent = opponentId ? teamById.get(opponentId) : null
-        return <section className="guest-now"><p className="guest-eyebrow">Ton équipe</p><h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></section>
+        return <section className="guest-now"><p className="guest-eyebrow">Ton équipe</p>{renderTeamMembers(team, 'beer-team__members--current')}<h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></section>
       })()}
       {synchronizationError && (
         <div className="beer-sync-error">
@@ -1409,11 +1452,12 @@ function BeerPong() {
                           {isSelected ? '✓' : ''}
                         </div>
 
-                        <div className="beer-player__avatar">
-                          {player.name
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
+                        <GuestAvatar
+                          name={player.name}
+                          path={player.avatarPath}
+                          size="medium"
+                          className="beer-player__avatar"
+                        />
 
                         <div className="beer-player__identity">
                           <strong>
@@ -1608,8 +1652,10 @@ function BeerPong() {
                         </div>
 
                         {state.draftMode === 'manual' ? (
-                          <div className="beer-team__manual">
-                            <select
+                          <>
+                            {renderTeamMembers(team, 'beer-team__members--manual')}
+                            <div className="beer-team__manual">
+                              <select
                               value={team.playerIds[0]}
                               aria-label={`Premier joueur de l’équipe ${index + 1}`}
                               onChange={(event) =>
@@ -1631,13 +1677,13 @@ function BeerPong() {
                                   )}
                                 </option>
                               ))}
-                            </select>
+                              </select>
 
-                            <span>
-                              +
-                            </span>
+                              <span>
+                                +
+                              </span>
 
-                            <select
+                              <select
                               value={team.playerIds[1]}
                               aria-label={`Deuxième joueur de l’équipe ${index + 1}`}
                               onChange={(event) =>
@@ -1659,22 +1705,11 @@ function BeerPong() {
                                   )}
                                 </option>
                               ))}
-                            </select>
-                          </div>
+                              </select>
+                            </div>
+                          </>
                         ) : (
-                          <div className="beer-team__players">
-                            <strong>
-                              {getPlayerName(team.playerIds[0])}
-                            </strong>
-
-                            <span>
-                              +
-                            </span>
-
-                            <strong>
-                              {getPlayerName(team.playerIds[1])}
-                            </strong>
-                          </div>
+                          renderTeamMembers(team)
                         )}
                       </article>
                     ))}
@@ -1764,11 +1799,7 @@ function BeerPong() {
                       key={playerId}
                       className="beer-public-player"
                     >
-                      <div className="beer-player__avatar">
-                        {getPlayerName(playerId)
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
+                      {renderPlayerAvatar(playerId, 'medium', 'beer-player__avatar')}
 
                       <div>
                         <strong>
@@ -1841,19 +1872,7 @@ function BeerPong() {
                     Équipe {index + 1}
                   </p>
 
-                  <div className="beer-team__players">
-                    <strong>
-                      {getPlayerName(team.playerIds[0])}
-                    </strong>
-
-                    <span>
-                      +
-                    </span>
-
-                    <strong>
-                      {getPlayerName(team.playerIds[1])}
-                    </strong>
-                  </div>
+                  {renderTeamMembers(team)}
                 </article>
               ))}
             </div>
@@ -2028,11 +2047,7 @@ function BeerPong() {
             {getTeamName(state.championTeamId)}
           </h2>
 
-          <p>
-            {getPlayerName(championTeam.playerIds[0])}
-            <span>&</span>
-            {getPlayerName(championTeam.playerIds[1])}
-          </p>
+          {renderTeamMembers(championTeam, 'beer-team__members--champion')}
 
           {canManage && (
             <button
