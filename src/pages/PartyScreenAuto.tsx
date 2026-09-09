@@ -241,10 +241,6 @@ function PartyScreenAuto() {
   ])
 
   useEffect(() => {
-    setSlideIndex((current) => current % Math.max(slides.length, 1))
-  }, [slides.length])
-
-  useEffect(() => {
     if (slides.length <= 1) return
 
     const interval = window.setInterval(() => {
@@ -254,7 +250,8 @@ function PartyScreenAuto() {
     return () => window.clearInterval(interval)
   }, [slides.length])
 
-  const activeSlide = slides[slideIndex % slides.length] ?? 'welcome'
+  const activeSlideIndex = slideIndex % slides.length
+  const activeSlide = slides[activeSlideIndex] ?? 'welcome'
 
   if (loading) {
     return (
@@ -268,7 +265,7 @@ function PartyScreenAuto() {
   const indicator = (
     <AutoIndicator
       key={`${activeSlide}-${slideIndex}`}
-      current={slideIndex + 1}
+      current={activeSlideIndex + 1}
       total={slides.length}
     />
   )
