@@ -11,7 +11,7 @@ type PhotoHuntImageProps = {
   className?: string
 }
 
-function PhotoHuntImage({
+function PhotoHuntImageForPath({
   path,
   alt,
   className,
@@ -22,9 +22,6 @@ function PhotoHuntImage({
   useEffect(() => {
     let cancelled = false
     let objectUrl = ''
-
-    setUrl('')
-    setFailed(false)
 
     const load = async () => {
       const { data, error } = await supabase.storage
@@ -76,6 +73,10 @@ function PhotoHuntImage({
       decoding="async"
     />
   )
+}
+
+function PhotoHuntImage(props: PhotoHuntImageProps) {
+  return <PhotoHuntImageForPath key={props.path} {...props} />
 }
 
 export default PhotoHuntImage

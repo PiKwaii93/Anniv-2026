@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import {
@@ -31,15 +31,6 @@ function LiveAnnouncementOverlay() {
   const isScreen = location.pathname === '/screen'
   const isAdmin = location.pathname.startsWith('/admin')
   const meta = kindMeta[announcement.kind]
-
-  useEffect(() => {
-    if (
-      announcement.eventId &&
-      announcement.eventId !== dismissedEventId
-    ) {
-      setDismissedEventId(null)
-    }
-  }, [announcement.eventId, dismissedEventId])
 
   if (
     isAdmin ||
