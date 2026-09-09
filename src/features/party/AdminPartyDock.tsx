@@ -85,7 +85,7 @@ function visibilityPatch(
   }
 }
 
-function AdminPartyDock() {
+function AdminPartyDockRoute() {
   const location = useLocation()
   const { isAdmin } = useAuth()
   const {
@@ -129,12 +129,6 @@ function AdminPartyDock() {
       document.removeEventListener('keydown', escape)
     }
   }, [toolsOpen])
-
-  useEffect(() => {
-    setOpen(false)
-    setToolsOpen(false)
-    setPanel(null)
-  }, [location.pathname])
 
   const currentPhase = phaseOptions.find((option) => option.value === settings.phase) ?? phaseOptions[0]
   const visibleModules = useMemo(
@@ -375,6 +369,12 @@ function AdminPartyDock() {
       )}
     </>
   )
+}
+
+function AdminPartyDock() {
+  const { pathname } = useLocation()
+
+  return <AdminPartyDockRoute key={pathname} />
 }
 
 export default AdminPartyDock
