@@ -1835,8 +1835,8 @@ function BeerPong() {
 
       {state.draftValidated && (
         <>
-          <section className="beer-section">
-            <div className="beer-section__heading">
+          <details className="beer-section beer-validated-draft">
+            <summary>
               <div>
                 <p className="beer-eyebrow">
                   Équipes
@@ -1845,8 +1845,14 @@ function BeerPong() {
                 <h2>
                   Draft validée
                 </h2>
+                <span>
+                  {state.teams.length} équipe{state.teams.length !== 1 ? 's' : ''} · afficher la composition
+                </span>
               </div>
+              <i aria-hidden="true">⌄</i>
+            </summary>
 
+            <div className="beer-validated-draft__content">
               {canManage && (
                 <button
                   type="button"
@@ -1856,27 +1862,27 @@ function BeerPong() {
                   Réinitialiser
                 </button>
               )}
+
+              <div className="beer-teams beer-teams--validated">
+                {state.teams.map((team, index) => (
+                  <article
+                    key={team.id}
+                    className="beer-team"
+                  >
+                    <div className="beer-team__number beer-team__number--validated">
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+
+                    <p>
+                      Équipe {index + 1}
+                    </p>
+
+                    {renderTeamMembers(team)}
+                  </article>
+                ))}
+              </div>
             </div>
-
-            <div className="beer-teams beer-teams--validated">
-              {state.teams.map((team, index) => (
-                <article
-                  key={team.id}
-                  className="beer-team"
-                >
-                  <div className="beer-team__number beer-team__number--validated">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
-
-                  <p>
-                    Équipe {index + 1}
-                  </p>
-
-                  {renderTeamMembers(team)}
-                </article>
-              ))}
-            </div>
-          </section>
+          </details>
 
           <section className="beer-section">
             <div className="beer-section__heading">

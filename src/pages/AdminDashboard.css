@@ -1396,14 +1396,15 @@
   }
 
   .control-shortcut > span:first-child {
-    color: #777985;
-    font-size: 0.68rem;
+    color: #5f616b;
+    font-size: 0.62rem;
   }
 
   .control-shortcut strong {
-    color: #f2f3f7;
-    font-size: 0.94rem;
-    line-height: 1.25;
+    color: #f7f7fa;
+    font-size: 1.08rem;
+    font-weight: 800;
+    line-height: 1.18;
   }
 }
 

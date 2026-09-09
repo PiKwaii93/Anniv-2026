@@ -242,6 +242,67 @@
   margin-bottom: 66px;
 }
 
+.beer-validated-draft {
+  padding: 0;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 20px;
+}
+
+.beer-validated-draft > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 92px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.beer-validated-draft > summary::-webkit-details-marker {
+  display: none;
+}
+
+.beer-validated-draft > summary h2 {
+  margin: 5px 0 2px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.beer-validated-draft > summary div > span {
+  color: #74747e;
+  font-size: 0.72rem;
+}
+
+.beer-validated-draft > summary > i {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  color: #d9d9df;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  font-style: normal;
+  transition: transform 160ms ease;
+}
+
+.beer-validated-draft[open] > summary > i {
+  transform: rotate(180deg);
+}
+
+.beer-validated-draft__content {
+  padding: 0 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.beer-validated-draft__content > .beer-reset-button {
+  display: block;
+  margin: 18px 0 14px auto;
+}
+
 .beer-section__heading {
   display: flex;
   align-items: flex-end;

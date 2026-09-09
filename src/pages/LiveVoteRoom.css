@@ -137,7 +137,6 @@
 .live-room__person {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
   min-height: 48px;
   padding: 9px 12px;
@@ -145,12 +144,18 @@
   text-align: left;
 }
 
-.live-room__person strong {
+.live-room__person-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.live-room__person-copy strong {
   color: #e6e9ef;
   font-size: 0.78rem;
 }
 
-.live-room__person span {
+.live-room__person-copy > span {
   color: #686e78;
   font-size: 0.62rem;
 }
@@ -261,6 +266,16 @@
   text-align: left;
 }
 
+.live-room__nomination .live-room__choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-room__choice-copy {
+  min-width: 0;
+}
+
 .live-room__choice strong {
   display: block;
   color: #eef1f5;
@@ -269,7 +284,8 @@
   line-height: 1.15;
 }
 
-.live-room__choice span {
+.live-room__choice > span:not(.live-room__choice-copy),
+.live-room__choice-copy > span {
   display: block;
   margin-top: 8px;
   color: #98afff;
@@ -418,7 +434,7 @@
 
 .live-room__score-row {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 24px auto 1fr auto;
   gap: 8px;
   align-items: center;
   min-height: 38px;

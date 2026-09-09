@@ -227,6 +227,11 @@ test('practical information loads without a production dependency', async ({ pag
   await expect(page.getByRole('heading', { level: 1, name: 'Infos pratiques' })).toBeVisible()
   await expect(page.getByText('samedi 24 octobre 2026 à 21:30')).toBeVisible()
   await expect(page.getByText('19 Rue Louison Bobet, Neuilly-Plaisance 93360')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Ouvrir dans Google Maps' })).toHaveAttribute(
+    'href',
+    /google\.com\/maps\/search\/\?api=1&query=/,
+  )
+  await expect(page.getByText('Lieu', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Tenue libre')).toBeVisible()
   await expect(page.getByText('Stationnement')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
