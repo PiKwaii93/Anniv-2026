@@ -8,9 +8,13 @@ test('public and admin module lists share one icon vocabulary', async () => {
     readFile('src/features/guest/navigation.ts', 'utf8'),
     readFile('src/features/party/AdminPartyDock.tsx', 'utf8'),
     readFile('src/pages/AdminDashboard.tsx', 'utf8'),
+    readFile('src/pages/BingoAdmin.tsx', 'utf8'),
     readFile('src/pages/ContentManager.tsx', 'utf8'),
     readFile('src/pages/DirectorMode.tsx', 'utf8'),
     readFile('src/pages/Home.tsx', 'utf8'),
+    readFile('src/pages/IcebergAdmin.tsx', 'utf8'),
+    readFile('src/pages/LiveVoteRoomAdmin.tsx', 'utf8'),
+    readFile('src/pages/SecretMissionsAdmin.tsx', 'utf8'),
   ])
 
   assert.match(visuals, /room: '◉'/)

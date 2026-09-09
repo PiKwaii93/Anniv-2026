@@ -472,13 +472,28 @@
 
 @media (max-width: 620px) {
   .live-room-admin {
-    padding: 16px 11px 72px;
+    padding: max(18px, env(safe-area-inset-top)) 14px max(110px, env(safe-area-inset-bottom));
   }
 
   .live-room-admin__header {
     align-items: flex-start;
     flex-direction: column;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .live-room-admin__header h1 {
+    font-size: 3.15rem;
+  }
+
+  .live-room-admin__header > div > p:last-child {
+    color: #9da4af;
+    font-size: 0.94rem;
+  }
+
+  .live-room-admin__public-link {
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
   }
 
   .live-room-admin__editor,
@@ -490,12 +505,22 @@
   }
 
   .live-room-admin__modes {
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    margin-inline: -14px;
+    padding: 0 14px 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
   .live-room-admin__mode {
-    min-height: 88px;
-    padding: 10px;
+    min-width: min(78vw, 270px);
+    min-height: 112px;
+    padding: 14px;
+    flex: 0 0 auto;
+  }
+
+  .live-room-admin__modes::-webkit-scrollbar {
+    display: none;
   }
 
   .live-room-admin__editor-row,
@@ -504,11 +529,35 @@
   }
 
   .live-room-admin__suspect-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .live-room-admin__question {
     grid-template-columns: 42px 1fr;
     padding: 9px;
+  }
+
+  .live-room-admin__field input,
+  .live-room-admin__field textarea,
+  .live-room-admin__field select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .live-control__actions,
+  .live-room-admin__question-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .live-control__actions button,
+  .live-room-admin__question-actions button {
+    min-height: 44px;
+  }
+
+  .live-room-admin__save {
+    width: 100%;
+    min-height: 50px;
   }
 }

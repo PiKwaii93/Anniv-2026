@@ -10,3 +10,19 @@
 .spotify-song-action details { margin-top: 12px; }
 .spotify-song-action details form { margin-top: 12px; }
 .spotify-guest-picker,.spotify-guest-repair{min-width:0;max-width:100%;width:100%}.spotify-guest-picker button{max-width:100%}.spotify-guest-picker .spotify-match{min-height:44px}.spotify-guest-picker fieldset:disabled{opacity:.6}
+
+@media(max-width:700px){
+  .extras-page{padding:max(18px,env(safe-area-inset-top)) 14px max(120px,env(safe-area-inset-bottom))}
+  .extras-hero{padding:36px 0 24px}
+  .extras-hero h1{font-size:3.15rem;margin:12px 0}
+  .extras-hero>p:last-child{font-size:.94rem;line-height:1.6;color:#d0ccc4}
+  .extras-panel{padding:18px 16px;border-radius:18px}
+  .extras-panel h2{font-size:1.4rem}
+  .extras-toggle{min-height:56px}
+  .extras-panel input:not([type=checkbox]),.extras-panel textarea,.extras-panel select{min-height:48px;font-size:16px}
+  .extras-actions{display:grid;grid-template-columns:1fr}
+  .extras-actions>button,.extras-actions>.extras-link{width:100%;min-height:46px;box-sizing:border-box}
+  .extras-actions>.extras-link{display:flex;align-items:center}
+  .extras-page details>summary{min-height:44px;display:flex;align-items:center}
+  .extras-panel[id]{scroll-margin-top:88px}
+}

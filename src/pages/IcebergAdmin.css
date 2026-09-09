@@ -883,18 +883,54 @@
    ========================================================= */
 
 @media (max-width: 520px) {
+  .iceberg-admin-page {
+    padding: max(18px, env(safe-area-inset-top)) 14px max(110px, env(safe-area-inset-bottom));
+  }
+
+  .iceberg-admin-header {
+    margin-bottom: 28px;
+  }
+
   .iceberg-admin-header__navigation {
-    align-items: flex-start;
+    align-items: center;
+    margin-bottom: 28px;
   }
 
   .iceberg-admin-preview {
-    max-width: 130px;
-
-    text-align: right;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    max-width: none;
+    padding: 0 12px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 11px;
   }
 
   .iceberg-admin-header h1 {
-    font-size: 3.4rem;
+    font-size: 3.15rem;
+  }
+
+  .iceberg-admin-header__description {
+    color: #98a4ac;
+    font-size: 0.94rem;
+  }
+
+  .iceberg-admin-create,
+  .iceberg-admin-content {
+    margin-bottom: 42px;
+  }
+
+  .iceberg-admin-form {
+    padding: 16px;
+  }
+
+  .iceberg-admin-field input,
+  .iceberg-admin-field textarea,
+  .iceberg-admin-field select {
+    min-height: 48px;
+    font-size: 16px;
   }
 
   .iceberg-admin-entry__actions {
@@ -906,8 +942,14 @@
     margin: 0 0 4px;
   }
 
+  .iceberg-admin-order-actions button {
+    width: 44px;
+    height: 44px;
+  }
+
   .iceberg-admin-action {
     flex: 1;
+    min-height: 44px;
   }
 
   .iceberg-admin-form__actions,
@@ -918,5 +960,6 @@
   .iceberg-admin-primary,
   .iceberg-admin-secondary {
     width: 100%;
+    min-height: 48px;
   }
 }
