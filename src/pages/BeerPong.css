@@ -256,9 +256,14 @@
   justify-content: space-between;
   gap: 18px;
   min-height: 124px;
-  padding: 24px;
+  padding: 0;
   cursor: pointer;
   list-style: none;
+}
+
+.beer-validated-draft > summary > div {
+  min-width: 0;
+  padding: 28px 0 28px 28px;
 }
 
 .beer-validated-draft > summary::-webkit-details-marker {
@@ -285,6 +290,7 @@
   width: 40px;
   height: 40px;
   flex: 0 0 auto;
+  margin-right: 28px;
   color: #d9d9df;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
@@ -318,7 +324,15 @@
 
   .beer-validated-draft > summary {
     min-height: 154px;
-    padding: 34px 36px;
+    padding: 0;
+  }
+
+  .beer-validated-draft > summary > div {
+    padding: 34px 16px 34px 28px;
+  }
+
+  .beer-validated-draft > summary > i {
+    margin-right: 28px;
   }
 
   .beer-validated-draft__content {

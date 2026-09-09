@@ -877,47 +877,47 @@ function AdminDashboard() {
         </div>
 
         <div className="control-shortcuts__grid">
-          <Link to="/admin/info" className="control-shortcut"><span><i aria-hidden="true">i</i>Organisation</span><strong>Modifier les infos pratiques</strong><span>↗</span></Link>
-          <Link to="/admin/party-extras" className="control-shortcut"><span><i aria-hidden="true">✦</i>Les petits plus</span><strong>Capsule · Jukebox · Duos · Générique</strong><span>↗</span></Link>
+          <Link to="/admin/info" className="control-shortcut"><span><i aria-hidden="true">i</i>Infos pratiques</span><strong>Modifier la date, l’adresse et la tenue</strong><span>↗</span></Link>
+          <Link to="/admin/party-extras" className="control-shortcut"><span><i aria-hidden="true">✦</i>Petits plus</span><strong>Gérer Capsule, Jukebox, Duos et générique</strong><span>↗</span></Link>
           <Link to="/guests" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.guests}</i>Liste publique</span>
-            <strong>Voir les invités</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.guests}</i>Invités</span>
+            <strong>Voir la liste publique</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/iceberg" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.iceberg}</i>Aperçu public</span>
-            <strong>Voir l&apos;Iceberg</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.iceberg}</i>Iceberg</span>
+            <strong>Voir l&apos;aperçu public</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/beer-pong" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons['beer-pong']}</i>Mode soirée</span>
-            <strong>Beer Pong</strong>
+            <span><i aria-hidden="true">{partyModuleIcons['beer-pong']}</i>Beer Pong</span>
+            <strong>Ouvrir le tournoi</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/bingo" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.bingo}</i>Jeu public</span>
-            <strong>Voir le Bingo</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.bingo}</i>Bingo</span>
+            <strong>Ouvrir le jeu public</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/missions" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.missions}</i>Infiltration</span>
-            <strong>Missions secrètes</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.missions}</i>Missions secrètes</span>
+            <strong>Ouvrir les missions</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/admin/room" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.room}</i>Régie live</span>
-            <strong>Gérer La Salle</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.room}</i>La Salle</span>
+            <strong>Ouvrir la régie complète</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/room" className="control-shortcut">
-            <span><i aria-hidden="true">{partyModuleIcons.room}</i>Vue publique</span>
-            <strong>Voir La Salle</strong>
+            <span><i aria-hidden="true">{partyModuleIcons.room}</i>La Salle</span>
+            <strong>Voir l&apos;écran public</strong>
             <span>↗</span>
           </Link>
         </div>
