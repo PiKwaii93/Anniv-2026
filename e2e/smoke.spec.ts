@@ -72,9 +72,12 @@ const rpcFixtures: Record<string, unknown> = {
 
 type BrowserGuard = {
   consoleErrors: string[]
+  reactWarnings: string[]
   pageErrors: string[]
   rejectedWrites: string[]
 }
+
+const seriousReactWarning = /(?:each child in a list|encountered two children|cannot update a component|react does not recognize|validateDOMNesting|hydration|not wrapped in act|invalid hook call)/i
 
 function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({
@@ -92,12 +95,17 @@ function json(route: Route, body: unknown, status = 200) {
 async function guardBrowser(page: Page): Promise<BrowserGuard> {
   const guard: BrowserGuard = {
     consoleErrors: [],
+    reactWarnings: [],
     pageErrors: [],
     rejectedWrites: [],
   }
 
   page.on('console', message => {
-    if (message.type() === 'error') guard.consoleErrors.push(message.text())
+    const text = message.text()
+    if (message.type() === 'error') guard.consoleErrors.push(text)
+    if (message.type() === 'warning' && seriousReactWarning.test(text)) {
+      guard.reactWarnings.push(text)
+    }
   })
   page.on('pageerror', error => guard.pageErrors.push(error.message))
 
@@ -146,6 +154,7 @@ function expectCleanBrowser(guard: BrowserGuard) {
   expect(guard.rejectedWrites).toEqual([])
   expect(guard.pageErrors).toEqual([])
   expect(guard.consoleErrors).toEqual([])
+  expect(guard.reactWarnings).toEqual([])
 }
 
 test('practical information loads without a production dependency', async ({ page }) => {
