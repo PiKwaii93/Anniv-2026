@@ -13,11 +13,14 @@
 
 @media(max-width:700px){
   .extras-page{padding:max(18px,env(safe-area-inset-top)) 14px max(120px,env(safe-area-inset-bottom))}
-  .extras-hero{padding:36px 0 24px}
-  .extras-hero h1{font-size:3.15rem;margin:12px 0}
+  .extras-hero{padding:20px 0 18px}
+  .extras-hero h1{font-size:clamp(2.35rem,12vw,3.15rem);line-height:1;margin:9px 0}
   .extras-hero>p:last-child{font-size:.94rem;line-height:1.6;color:#d0ccc4}
-  .extras-panel{padding:18px 16px;border-radius:18px}
+  .extras-page>.guest-tabs{position:sticky;z-index:20;top:8px;margin-bottom:14px;padding:6px;background:#101116e8;backdrop-filter:blur(16px)}
+  .extras-panel{padding:18px 14px;border-radius:18px;margin-bottom:14px}
   .extras-panel h2{font-size:1.4rem}
+  .extras-panel>p:first-of-type{margin-top:8px}
+  .extras-panel>button{width:100%;min-height:48px}
   .extras-toggle{min-height:56px}
   .extras-panel input:not([type=checkbox]),.extras-panel textarea,.extras-panel select{min-height:48px;font-size:16px}
   .extras-actions{display:grid;grid-template-columns:1fr}
@@ -25,4 +28,8 @@
   .extras-actions>.extras-link{display:flex;align-items:center}
   .extras-page details>summary{min-height:44px;display:flex;align-items:center}
   .extras-panel[id]{scroll-margin-top:18px}
+  .extras-duo-name{font-size:clamp(2rem,13vw,3rem)}
+  .extras-duo-prompt{margin:18px -4px;padding:18px 14px;background:#202127;border:1px solid #3b3d45;border-radius:14px;font-size:1.12rem!important;line-height:1.45!important}
+  .extras-checks{display:grid;grid-template-columns:1fr;margin:16px 0;gap:8px}
+  .extras-checks span{min-height:44px;display:flex;align-items:center}
 }

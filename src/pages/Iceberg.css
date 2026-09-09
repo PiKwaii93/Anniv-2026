@@ -2089,6 +2089,18 @@
 }
 
 @media (max-width: 699px) {
+  .iceberg-scatter-item,
+  .iceberg-scatter-item--0,
+  .iceberg-scatter-item--1,
+  .iceberg-scatter-item--2,
+  .iceberg-scatter-item--3,
+  .iceberg-scatter-item--4,
+  .iceberg-scatter-item--5 {
+    top: var(--scatter-y-mobile);
+    left: var(--scatter-x-mobile);
+    text-align: center;
+  }
+
   .iceberg-page--list {
     padding-inline: 14px;
   }

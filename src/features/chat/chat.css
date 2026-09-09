@@ -40,4 +40,16 @@
 .chat-composer > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
 .chat-composer small, .chat-composer > p { color: #b2bfb8; font-size: 12px; line-height: 1.5; }
 .chat-composer button { background: #b5dbc4; color: #16251c; font-weight: 750; border: 0; padding-inline: 18px; }
-@media (max-width: 600px) { .chat-page { padding-inline: 16px; } .chat-message { max-width: 94%; padding-inline: 12px; } .chat-heading { margin-top: 8px; margin-bottom: 18px; } }
+@media (max-width: 600px) {
+  .chat-page { padding: 4px 14px 28px; }
+  .chat-heading { margin: 4px 0 14px; }
+  .chat-heading h1 { margin-block: 6px 10px; font-size: clamp(2rem, 10vw, 2.65rem); }
+  .chat-heading > p:last-child { margin-bottom: 0; line-height: 1.45; }
+  .chat-room-info { gap: 5px; padding: 12px; background: #111815; border: 1px solid #2c3535; border-radius: 14px; }
+  .chat-room-info > * { width: 100%; }
+  .chat-messages { height: min(43dvh, 430px); padding-top: 14px; }
+  .chat-message { max-width: 94%; min-width: min(190px, 86%); padding-inline: 12px; }
+  .chat-composer { position: sticky; z-index: 12; bottom: calc(72px + env(safe-area-inset-bottom)); padding: 12px; border-radius: 16px; box-shadow: 0 -18px 45px #070a09cc; }
+  .chat-composer textarea { min-height: 68px; }
+  .chat-composer button { min-width: 112px; }
+}
