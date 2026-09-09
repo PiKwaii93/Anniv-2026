@@ -243,6 +243,7 @@
 }
 
 .beer-validated-draft {
+  margin-top: 24px;
   padding: 0;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.075);
@@ -254,8 +255,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 92px;
-  padding: 18px 20px;
+  min-height: 124px;
+  padding: 24px;
   cursor: pointer;
   list-style: none;
 }
@@ -265,15 +266,17 @@
 }
 
 .beer-validated-draft > summary h2 {
-  margin: 5px 0 2px;
+  margin: 9px 0 7px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: clamp(1.35rem, 5vw, 2rem);
   letter-spacing: -0.04em;
 }
 
 .beer-validated-draft > summary div > span {
+  display: block;
   color: #74747e;
   font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .beer-validated-draft > summary > i {
@@ -294,13 +297,37 @@
 }
 
 .beer-validated-draft__content {
-  padding: 0 20px 20px;
+  padding: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.065);
 }
 
 .beer-validated-draft__content > .beer-reset-button {
   display: block;
-  margin: 18px 0 14px auto;
+  margin: 0 0 24px auto;
+}
+
+.beer-validated-draft__content .beer-teams {
+  gap: 16px;
+}
+
+@media (max-width: 620px) {
+  .beer-validated-draft {
+    margin-top: 34px;
+    border-radius: 24px;
+  }
+
+  .beer-validated-draft > summary {
+    min-height: 138px;
+    padding: 26px 22px;
+  }
+
+  .beer-validated-draft__content {
+    padding: 26px 18px 30px;
+  }
+
+  .beer-validated-draft__content > .beer-reset-button {
+    margin-bottom: 26px;
+  }
 }
 
 .beer-section__heading {

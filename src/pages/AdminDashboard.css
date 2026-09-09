@@ -1392,19 +1392,25 @@
 
   .control-shortcut {
     min-height: 62px;
-    padding: 11px 13px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr) auto;
+    gap: 14px;
+    padding: 14px 16px;
   }
 
   .control-shortcut > span:first-child {
-    color: #5f616b;
-    font-size: 0.62rem;
+    color: #f1f2f6;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1.18;
   }
 
   .control-shortcut strong {
-    color: #f7f7fa;
-    font-size: 1.08rem;
-    font-weight: 800;
-    line-height: 1.18;
+    color: #858894;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.3;
   }
 }
 
