@@ -6,6 +6,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useGuests } from '../features/guests/GuestsContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import AdminGuestSessions from '../features/identity/AdminGuestSessions'
 import AdminPartyDataReset from '../features/identity/AdminPartyDataReset'
 import type {
@@ -27,7 +28,49 @@ function createPlusOne(): PlusOne {
   return {
     id: crypto.randomUUID(),
     name: '',
+    avatarPath: null,
   }
+}
+
+function AvatarEditor({
+  name,
+  path,
+  busy,
+  compact = false,
+  onChange,
+}: {
+  name: string
+  path: string | null
+  busy: boolean
+  compact?: boolean
+  onChange: (file: File | null) => void
+}) {
+  return (
+    <div className={compact ? 'guest-avatar-editor guest-avatar-editor--compact' : 'guest-avatar-editor'}>
+      <GuestAvatar name={name} path={path} size={compact ? 'small' : 'large'} />
+      <div>
+        <label className="guest-avatar-editor__upload">
+          <span>{path ? 'Changer' : 'Ajouter une photo'}</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={busy}
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) onChange(file)
+              event.target.value = ''
+            }}
+          />
+        </label>
+        {path && (
+          <button type="button" disabled={busy} onClick={() => onChange(null)}>
+            Retirer
+          </button>
+        )}
+        {busy && <span role="status">Envoi…</span>}
+      </div>
+    </div>
+  )
 }
 
 function withoutKey<T>(
@@ -47,6 +90,7 @@ function Admin() {
     addGuest,
     updateGuest,
     removeGuest,
+    updateGuestAvatar,
   } = useGuests()
 
   const [name, setName] = useState('')
@@ -69,6 +113,20 @@ function Admin() {
 
   const [pendingPlusOnes, setPendingPlusOnes] =
     useState<Record<string, PlusOne>>({})
+
+  const [avatarBusy, setAvatarBusy] =
+    useState<Record<string, boolean>>({})
+
+  const changeAvatar = async (
+    kind: 'guest' | 'plus-one',
+    id: string,
+    file: File | null,
+  ) => {
+    const key = `${kind}:${id}`
+    setAvatarBusy((current) => ({ ...current, [key]: true }))
+    await updateGuestAvatar({ kind, id }, file)
+    setAvatarBusy((current) => withoutKey(current, key))
+  }
 
   const stats = useMemo(() => {
     const confirmed = guests.filter(
@@ -627,11 +685,12 @@ function Admin() {
                   }`}
                 >
                   <div className="guest-row__identity">
-                    <div className="guest-avatar">
-                      {guest.name
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
+                    <GuestAvatar
+                      name={guest.name}
+                      path={guest.avatarPath}
+                      size="medium"
+                      className="guest-avatar"
+                    />
 
                     <div>
                       <input
@@ -683,6 +742,13 @@ function Admin() {
                   </div>
 
                   <div className="guest-row__content">
+                    <AvatarEditor
+                      name={guest.name}
+                      path={guest.avatarPath}
+                      busy={Boolean(avatarBusy[`guest:${guest.id}`])}
+                      onChange={(file) => void changeAvatar('guest', guest.id, file)}
+                    />
+
                     <div className="guest-row__controls">
                       <select
                         value={guest.status}
@@ -779,8 +845,15 @@ function Admin() {
                             return (
                               <div
                                 key={plusOne.id}
-                                className="plus-one-field"
+                                className="plus-one-field plus-one-field--with-avatar"
                               >
+                                <AvatarEditor
+                                  compact
+                                  name={plusOne.name}
+                                  path={plusOne.avatarPath}
+                                  busy={Boolean(avatarBusy[`plus-one:${plusOne.id}`])}
+                                  onChange={(file) => void changeAvatar('plus-one', plusOne.id, file)}
+                                />
                                 <input
                                   type="text"
                                   placeholder="Nom du +1"

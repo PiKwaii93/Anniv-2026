@@ -24,6 +24,7 @@ export type PartyIdentityPlayer = {
   key: string
   name: string
   detail: string
+  avatarPath: string | null
 }
 
 type StoredIdentity = {
@@ -144,6 +145,7 @@ function PartyIdentityProvider({
             key: `guest:${guest.id}`,
             name: guest.name,
             detail: 'Invité',
+            avatarPath: guest.avatarPath,
           })
 
           guest.plusOnes.forEach((plusOne) => {
@@ -151,6 +153,7 @@ function PartyIdentityProvider({
               key: `plus:${plusOne.id}`,
               name: plusOne.name,
               detail: `+1 de ${guest.name}`,
+              avatarPath: plusOne.avatarPath,
             })
           })
         })

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
 import { useGuests } from '../features/guests/GuestsContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
 
 function Guests() {
   const [search, setSearch] = useState('')
@@ -86,6 +87,7 @@ function Guests() {
               {
                 id: guest.id,
                 name: guest.name,
+                avatarPath: guest.avatarPath,
                 label:
                   guest.plusOnes.length > 0
                     ? `Vient avec ${guest.plusOnes.length} +1`
@@ -94,6 +96,7 @@ function Guests() {
               ...guest.plusOnes.map((plusOne) => ({
                 id: plusOne.id,
                 name: plusOne.name,
+                avatarPath: plusOne.avatarPath,
                 label: `+1 de ${guest.name}`,
               })),
             ]
@@ -103,11 +106,12 @@ function Guests() {
                 key={person.id}
                 className="public-guest-card"
               >
-                <div className="guest-avatar">
-                  {person.name
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
+                <GuestAvatar
+                  name={person.name}
+                  path={person.avatarPath}
+                  size="medium"
+                  className="guest-avatar"
+                />
 
                 <div>
                   <h2>{person.name}</h2>

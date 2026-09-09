@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react'
 import { Link } from 'react-router-dom'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import { rememberMission } from '../features/guest/activityMemory'
 import MissionValidation from '../features/missions/MissionValidation'
 
@@ -49,6 +50,7 @@ type AvailablePlayer = {
   key: string
   name: string
   detail: string
+  avatarPath: string | null
 }
 
 type ScoreRow = {
@@ -175,6 +177,7 @@ function SecretMissions() {
             key: `guest:${guest.id}`,
             name: guest.name,
             detail: 'Invité',
+            avatarPath: guest.avatarPath,
           })
 
           guest.plusOnes.forEach((plusOne) => {
@@ -182,6 +185,7 @@ function SecretMissions() {
               key: `plus:${plusOne.id}`,
               name: plusOne.name,
               detail: `+1 de ${guest.name}`,
+              avatarPath: plusOne.avatarPath,
             })
           })
         })
@@ -607,29 +611,22 @@ function SecretMissions() {
                 Ton identité
               </label>
 
-              <select
-                id="mission-player"
-                value={selectedPlayerKey}
-                disabled={busy}
-                onChange={(event) =>
-                  setSelectedPlayerKey(
-                    event.target.value,
-                  )
-                }
-              >
-                <option value="">
-                  Choisir mon nom...
-                </option>
-
+              <div id="mission-player" className="missions-identity-people">
                 {availablePlayers.map((player) => (
-                  <option
+                  <button
                     key={player.key}
-                    value={player.key}
+                    type="button"
+                    disabled={busy}
+                    className={selectedPlayerKey === player.key ? 'missions-identity-person missions-identity-person--selected' : 'missions-identity-person'}
+                    aria-pressed={selectedPlayerKey === player.key}
+                    onClick={() => setSelectedPlayerKey(player.key)}
                   >
-                    {player.name} — {player.detail}
-                  </option>
+                    <GuestAvatar name={player.name} path={player.avatarPath} size="small" />
+                    <span><strong>{player.name}</strong><small>{player.detail}</small></span>
+                    <b aria-hidden="true">{selectedPlayerKey === player.key ? '✓' : '→'}</b>
+                  </button>
                 ))}
-              </select>
+              </div>
 
               <button
                 type="button"

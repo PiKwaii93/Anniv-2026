@@ -18,6 +18,120 @@
   gap: 7px;
 }
 
+.guest-avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+.guest-avatar-editor > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.guest-avatar-editor button,
+.guest-avatar-editor__upload {
+  min-height: 38px;
+  padding: 0 12px;
+  color: #dfe3ec;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.guest-avatar-editor__upload {
+  display: inline-flex;
+  align-items: center;
+}
+
+.guest-avatar-editor__upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.guest-avatar-editor button:disabled,
+.guest-avatar-editor__upload:has(input:disabled) {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.guest-avatar-editor [role='status'] {
+  color: #9ed8ad;
+  font-size: 0.7rem;
+}
+
+.guest-avatar-editor--compact {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 4px;
+  border-radius: 11px;
+}
+
+.guest-avatar-editor--compact > div {
+  position: absolute;
+  inset: 0;
+}
+
+.guest-avatar-editor--compact .guest-avatar-editor__upload {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.guest-avatar-editor--compact .guest-avatar-editor__upload span,
+.guest-avatar-editor--compact [role='status'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.guest-avatar-editor--compact button {
+  position: absolute;
+  z-index: 2;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  padding: 0;
+  color: #fff;
+  background: #8d3342;
+  border-radius: 999px;
+  font-size: 0;
+}
+
+.guest-avatar-editor--compact button::after {
+  content: '×';
+  font-size: 0.8rem;
+}
+
+.plus-one-field--with-avatar {
+  grid-template-columns: 44px minmax(0, 1fr) 42px;
+}
+
 .guest-row__notes-editor > span {
   color: #686873;
   font-size: 0.65rem;
@@ -87,6 +201,10 @@
 }
 
 @media (max-width: 749px) {
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) {
+    align-items: flex-start;
+  }
+
   .guest-row__notes-editor textarea {
     min-height: 78px;
   }

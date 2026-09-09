@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import GuestAvatar from '../guests/GuestAvatar'
 import { supabase } from '../../lib/supabase'
 import './MissionValidation.css'
 
 type Identity = { playerKey: string; sessionToken: string }
 type Mission = { id: string; assignedAt: string | null }
-type Player = { key: string; name: string; detail: string }
+type Player = { key: string; name: string; detail: string; avatarPath: string | null }
 type OwnCheck = { id: string; status: 'pending' | 'rejected'; reviewerName: string; missionId: string; assignedAt: string }
 type Incoming = { id: string; playerName: string; text: string }
 type Checks = { ok: boolean; open: boolean; own: OwnCheck | null; incoming: Incoming[] }
@@ -50,11 +51,24 @@ function RequestForm({ players, busy, send }: { players: Player[]; busy: boolean
     if (request.current?.reviewer !== reviewer) request.current = { reviewer, id: crypto.randomUUID() }
     void send(reviewer, request.current.id).then(ok => { if (ok) { request.current = null; setOpened(false) } })
   }}>
-    <label htmlFor="mission-witness">Qui a vu ta mission accomplie ?</label>
-    <select id="mission-witness" required value={reviewer} disabled={busy} onChange={event => setReviewer(event.target.value)}>
-      <option value="">Choisir un témoin…</option>
-      {players.map(player => <option key={player.key} value={player.key}>{player.name} — {player.detail}</option>)}
-    </select>
+    <fieldset className="mission-witness-picker" disabled={busy}>
+      <legend>Qui a vu ta mission accomplie ?</legend>
+      <div>
+        {players.map(player => (
+          <button
+            key={player.key}
+            type="button"
+            className={reviewer === player.key ? 'mission-witness mission-witness--selected' : 'mission-witness'}
+            aria-pressed={reviewer === player.key}
+            onClick={() => setReviewer(player.key)}
+          >
+            <GuestAvatar name={player.name} path={player.avatarPath} size="small" />
+            <span><strong>{player.name}</strong><small>{player.detail}</small></span>
+            <b aria-hidden="true">{reviewer === player.key ? '✓' : '→'}</b>
+          </button>
+        ))}
+      </div>
+    </fieldset>
     <p>Seul ce témoin verra ta mission. Il trouvera la demande sur son accueil et dans Missions, depuis son téléphone.</p>
     {players.length === 0 && <p>Aucun autre invité confirmé n’est encore disponible.</p>}
     <div className="mission-check-actions">
