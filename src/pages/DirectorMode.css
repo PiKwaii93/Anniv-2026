@@ -547,9 +547,30 @@
 .director-panel__footer {
   justify-content: flex-start;
   flex-wrap: wrap;
+  gap: 8px;
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.director-panel__footer a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  color: #dce3f2;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.director-panel__footer a span {
+  color: #9fb2f3;
+  font-size: 0.85rem;
 }
 
 .director-feature {
@@ -848,9 +869,11 @@ button:disabled {
   }
 
   .director-panel__footer a {
-    min-height: 34px;
+    min-height: 46px;
     display: flex;
     align-items: center;
+    padding: 0 14px;
+    font-size: 0.78rem;
   }
 
   .director-shortcuts {

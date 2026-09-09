@@ -894,8 +894,8 @@ function DirectorMode() {
                 ? '✓ À la une'
                 : 'Mettre à la une'}
             </button>
-            <Link to="/admin/room">Régie complète ↗</Link>
-            <Link to="/room">Vue publique ↗</Link>
+            <Link to="/admin/room">Ouvrir la régie complète <span aria-hidden="true">↗</span></Link>
+            <Link to="/room">Ouvrir la vue publique <span aria-hidden="true">↗</span></Link>
           </div>
         </article>
 
@@ -946,7 +946,7 @@ function DirectorMode() {
                 ? '✓ À la une'
                 : 'Mettre à la une'}
             </button>
-            <Link to="/beer-pong">Ouvrir ↗</Link>
+            <Link to="/beer-pong">Gérer le tournoi complet <span aria-hidden="true">↗</span></Link>
           </div>
         </article>
 
@@ -997,7 +997,7 @@ function DirectorMode() {
                 ? '✓ À la une'
                 : 'Mettre à la une'}
             </button>
-            <Link to="/admin/missions">Gérer ↗</Link>
+            <Link to="/admin/missions">Gérer toutes les missions <span aria-hidden="true">↗</span></Link>
           </div>
         </article>
 
@@ -1058,8 +1058,8 @@ function DirectorMode() {
                 ? '✓ À la une'
                 : 'Mettre à la une'}
             </button>
-            <Link to="/admin/photos">Modérer ↗</Link>
-            <Link to="/photos">Vue publique ↗</Link>
+            <Link to="/admin/photos">Ouvrir la modération <span aria-hidden="true">↗</span></Link>
+            <Link to="/photos">Ouvrir la vue publique <span aria-hidden="true">↗</span></Link>
           </div>
         </article>
 

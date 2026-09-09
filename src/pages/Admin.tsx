@@ -717,7 +717,15 @@ function Admin() {
                       : ''
                   }`}
                 >
-                  <div className="guest-row__identity">
+                  <div
+                    className="guest-row__identity"
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement
+                      if (target.closest('button, label, a')) return
+                      if (isExpanded && target.closest('input')) return
+                      toggleGuest(guest.id)
+                    }}
+                  >
                     <GuestAvatar
                       name={guest.name}
                       path={guest.avatarPath}
@@ -759,6 +767,7 @@ function Admin() {
                       type="button"
                       className="guest-row__toggle"
                       aria-expanded={isExpanded}
+                      aria-controls={`guest-details-${guest.id}`}
                       aria-label={
                         isExpanded
                           ? `Replier ${guest.name}`
@@ -774,7 +783,7 @@ function Admin() {
                     </button>
                   </div>
 
-                  <div className="guest-row__content">
+                  <div id={`guest-details-${guest.id}`} className="guest-row__content">
                     <AvatarEditor
                       name={guest.name}
                       path={guest.avatarPath}

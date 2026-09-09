@@ -58,6 +58,8 @@ test('avatar initials remain visible and uploads are cropped before storage', as
   assert.match(cropper, /canvas\.toBlob\(resolve, 'image\/webp'/)
   assert.match(admin, /setCropFile\(file\)/)
   assert.match(admin, /onChange\(croppedFile\)/)
+  assert.match(admin, /guest-details-\$\{guest\.id\}/)
+  assert.match(admin, /toggleGuest\(guest\.id\)/)
 })
 
 test('Beer Pong keeps and displays guest photos throughout the tournament', async () => {
