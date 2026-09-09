@@ -495,7 +495,7 @@
   }
 
   .live-room__waiting {
-    min-height: 360px;
+    min-height: 280px;
   }
 
   .live-room__choices,
@@ -512,6 +512,55 @@
   .live-room__leaderboard {
     margin-top: 16px;
     padding: 14px 12px;
+  }
+
+  .live-room__header {
+    gap: 10px;
+  }
+
+  .live-room__identity {
+    max-width: 62%;
+  }
+
+  .live-room__identity span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .live-room__round-meta {
+    margin-bottom: 14px;
+  }
+
+  .live-room__round > h1,
+  .live-room__reveal > h1,
+  .live-room__waiting > h1 {
+    font-size: clamp(1.8rem, 9vw, 2.8rem);
+    line-height: 1.03;
+  }
+
+  .live-room__choices,
+  .live-room__people-grid {
+    margin-top: 20px;
+  }
+
+  .live-room__people-list {
+    max-height: min(390px, 42dvh);
+  }
+
+  .live-room__vote-status {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .live-room__choices,
+  .live-room__people-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-room__choice {
+    min-height: 70px;
   }
 }
 

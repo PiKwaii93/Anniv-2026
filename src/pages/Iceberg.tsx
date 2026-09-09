@@ -536,8 +536,65 @@ function Iceberg() {
         </div>
       </header>
 
-      <div className="guest-tabs" aria-label="Lecture de l’Iceberg"><button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Par niveaux</button><button type="button" aria-pressed={view === 'scene'} onClick={() => setView('scene')}>Vue illustrée</button></div>
-      {view === 'list' && !loading && <div className="iceberg-readable">{levels.map(level => <section className="guest-section" key={level.level}><h2>{level.number} · {level.title}</h2><p className="guest-empty">{level.subtitle}</p><div className="guest-activity-list">{(entriesByLevel.get(level.level) ?? []).map(entry => <details key={entry.id}><summary>{entry.title}</summary><p>{entry.description.trim() || 'Cette histoire se raconte de vive voix. Demande autour de toi !'}</p></details>)}</div>{!(entriesByLevel.get(level.level)?.length) && <p className="guest-empty">Pas encore d’histoire à ce niveau.</p>}</section>)}</div>}
+      <div className="iceberg-view-controls">
+        <div className="guest-tabs" aria-label="Lecture de l’Iceberg">
+          <button
+            type="button"
+            aria-pressed={view === 'list'}
+            onClick={() => setView('list')}
+          >
+            Par niveaux
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'scene'}
+            onClick={() => setView('scene')}
+          >
+            Vue illustrée
+          </button>
+        </div>
+        {!loading && (
+          <p>
+            {entries.length} archive{entries.length !== 1 ? 's' : ''} à explorer
+          </p>
+        )}
+      </div>
+
+      {view === 'list' && !loading && (
+        <div className="iceberg-readable">
+          {levels.map((level) => {
+            const levelEntries = entriesByLevel.get(level.level) ?? []
+
+            return (
+              <section className="guest-section" key={level.level}>
+                <div className="iceberg-readable__heading">
+                  <div>
+                    <span>Niveau {level.number}</span>
+                    <h2>{level.title}</h2>
+                  </div>
+                  <strong>{levelEntries.length}</strong>
+                </div>
+                <p className="guest-empty">{level.subtitle}</p>
+                {levelEntries.length > 0 ? (
+                  <div className="guest-activity-list">
+                    {levelEntries.map((entry) => (
+                      <details key={entry.id}>
+                        <summary>{entry.title}</summary>
+                        <p>
+                          {entry.description.trim() ||
+                            'Cette histoire se raconte de vive voix. Demande autour de toi !'}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="guest-empty">Pas encore d’histoire à ce niveau.</p>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      )}
       {error && <div className="iceberg-error">{error}</div>}
 
       {loading ? (

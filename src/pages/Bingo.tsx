@@ -412,6 +412,10 @@ function Bingo() {
             <span>/ {TOTAL_CELLS}</span>
           </div>
         </div>
+
+        <div className="bingo-progress" aria-hidden="true">
+          <span style={{ width: `${(checkedCount / TOTAL_CELLS) * 100}%` }} />
+        </div>
       </header>
 
       {error && (
