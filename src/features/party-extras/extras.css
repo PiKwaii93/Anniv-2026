@@ -24,5 +24,5 @@
   .extras-actions>button,.extras-actions>.extras-link{width:100%;min-height:46px;box-sizing:border-box}
   .extras-actions>.extras-link{display:flex;align-items:center}
   .extras-page details>summary{min-height:44px;display:flex;align-items:center}
-  .extras-panel[id]{scroll-margin-top:88px}
+  .extras-panel[id]{scroll-margin-top:18px}
 }
