@@ -67,11 +67,14 @@ function PhotoHuntScreen() {
         .from('photo_hunt_challenges')
         .select('id, prompt, hint, sort_order, is_active')
         .eq('is_active', true),
-    ])
+  ])
 
-    if (!photoResult.error) {
-      setPhotos((photoResult.data ?? []) as PhotoHuntSubmission[])
-    } else {
+  if (!photoResult.error) {
+    const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
+    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / WALL_SIZE))
+    setPhotos(nextPhotos)
+    setPage((current) => Math.min(current, nextPageCount - 1))
+  } else {
       console.error('Unable to load Photo Hunt TV photos:', photoResult.error)
     }
 
@@ -133,10 +136,6 @@ function PhotoHuntScreen() {
   )
 
   const pageCount = Math.max(1, Math.ceil(diversifiedPhotos.length / WALL_SIZE))
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, pageCount - 1))
-  }, [pageCount])
 
   useEffect(() => {
     if (pageCount <= 1) return
