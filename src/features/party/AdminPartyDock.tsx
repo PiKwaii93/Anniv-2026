@@ -24,6 +24,7 @@ import {
 import './AdminPartyDock.css'
 import './AdminDirectorLaunch.css'
 import './AdminRegie.css'
+import './MobileRegie.css'
 import type { DirectorTool } from './DirectorTools'
 
 const DirectorTools = lazy(() => import('./DirectorTools'))
@@ -162,22 +163,55 @@ function AdminPartyDockRoute() {
     })
   }
 
+  const mobileLinkClass = (active: boolean) =>
+    active
+      ? 'admin-regie__mobile-link admin-regie__mobile-link--active'
+      : 'admin-regie__mobile-link'
+
   return (
     <>
       <div className="admin-regie" ref={dockRef} inert={open}>
-        <button
-          ref={launcherRef}
-          type="button"
-          className="admin-regie__launcher"
-          aria-expanded={toolsOpen}
-          aria-controls="admin-regie-tools"
-          onClick={() => { setToolsOpen(value => !value); setPanel(null) }}
-        >
-          <span aria-hidden="true">⌘</span>
-          <strong>Régie</strong>
-          <small>{currentPhase.label}</small>
-          <span aria-hidden="true">{toolsOpen ? '×' : '⌃'}</span>
-        </button>
+        <div className="admin-regie__bar">
+          <nav className="admin-regie__mobile-nav" aria-label="Navigation administration">
+            <Link
+              to="/admin"
+              className={mobileLinkClass(location.pathname === '/admin')}
+              aria-current={location.pathname === '/admin' ? 'page' : undefined}
+            >
+              <span aria-hidden="true">⌂</span>
+              <strong>Accueil</strong>
+            </Link>
+            <Link
+              to="/admin/live"
+              className={mobileLinkClass(location.pathname === '/admin/live')}
+              aria-current={location.pathname === '/admin/live' ? 'page' : undefined}
+            >
+              <span aria-hidden="true">▶</span>
+              <strong>Directeur</strong>
+            </Link>
+            <Link
+              to="/admin/guests"
+              className={mobileLinkClass(location.pathname.startsWith('/admin/guests'))}
+              aria-current={location.pathname.startsWith('/admin/guests') ? 'page' : undefined}
+            >
+              <span aria-hidden="true">♙</span>
+              <strong>Invités</strong>
+            </Link>
+          </nav>
+          <button
+            ref={launcherRef}
+            type="button"
+            className={toolsOpen ? 'admin-regie__launcher admin-regie__launcher--active' : 'admin-regie__launcher'}
+            aria-expanded={toolsOpen}
+            aria-controls="admin-regie-tools"
+            onClick={() => { setToolsOpen(value => !value); setPanel(null) }}
+          >
+            <span aria-hidden="true">⌘</span>
+            <strong>Régie</strong>
+            <small>{currentPhase.label}</small>
+            <span aria-hidden="true">{toolsOpen ? '×' : '⌃'}</span>
+          </button>
+        </div>
         {toolsOpen && <section id="admin-regie-tools" className="admin-regie__panel" aria-label="Outils de régie">
           <header className="admin-regie__header">
             <div><small>ANNIV 2026</small><h2>La régie</h2></div>

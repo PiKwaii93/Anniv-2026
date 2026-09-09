@@ -555,6 +555,17 @@ function AdminDashboard() {
             Connecté avec <span>{user.email}</span>
           </p>
         )}
+
+        <div className="control-header__actions">
+          <Link to="/admin/live" className="control-primary-action">
+            <span aria-hidden="true">▶</span>
+            <span>
+              <small>Jour J</small>
+              <strong>Ouvrir le Mode Directeur</strong>
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </header>
 
       {error && (
@@ -725,8 +736,8 @@ function AdminDashboard() {
         </Link>
       </section>
 
-      <section className="control-overview">
-        <div className="control-section-heading">
+      <details className="control-overview">
+        <summary className="control-section-heading">
           <div>
             <p className="control-eyebrow">Vue d&apos;ensemble</p>
             <h2>État de la soirée</h2>
@@ -735,7 +746,7 @@ function AdminDashboard() {
             <span />
             Live
           </span>
-        </div>
+        </summary>
 
         <div className="control-overview__grid">
           <article className="control-overview-card">
@@ -854,7 +865,7 @@ function AdminDashboard() {
             </p>
           </article>
         </div>
-      </section>
+      </details>
 
       <section className="control-shortcuts">
         <div className="control-section-heading">

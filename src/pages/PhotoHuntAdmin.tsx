@@ -19,7 +19,6 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntAdmin.css'
-import '../features/party/MobileRegie.css'
 
 type ChallengeDraft = {
   prompt: string
