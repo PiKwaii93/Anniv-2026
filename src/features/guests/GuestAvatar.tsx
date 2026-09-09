@@ -40,7 +40,9 @@ function GuestAvatar({
           decoding="async"
           onError={() => setFailedPath(path ?? null)}
         />
-      ) : initial}
+      ) : (
+        <span className="guest-profile-avatar__initial">{initial}</span>
+      )}
     </span>
   )
 }

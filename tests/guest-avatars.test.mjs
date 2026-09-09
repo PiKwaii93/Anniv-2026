@@ -40,3 +40,21 @@ test('profile photos appear where guests identify people and choose witnesses', 
     assert.match(source, /<GuestAvatar/)
   }
 })
+
+test('avatar initials remain visible and uploads are cropped before storage', async () => {
+  const [avatar, avatarStyles, cropper, admin] = await Promise.all([
+    readFile('src/features/guests/GuestAvatar.tsx', 'utf8'),
+    readFile('src/features/guests/GuestAvatar.css', 'utf8'),
+    readFile('src/features/guests/AvatarCropDialog.tsx', 'utf8'),
+    readFile('src/pages/Admin.tsx', 'utf8'),
+  ])
+
+  assert.match(avatar, /guest-profile-avatar__initial/)
+  assert.match(avatarStyles, /\.guest-profile-avatar\.guest-profile-avatar/)
+  assert.match(cropper, /type="range"/)
+  assert.match(cropper, /onPointerMove/)
+  assert.match(cropper, /context\.drawImage/)
+  assert.match(cropper, /canvas\.toBlob\(resolve, 'image\/webp'/)
+  assert.match(admin, /setCropFile\(file\)/)
+  assert.match(admin, /onChange\(croppedFile\)/)
+})

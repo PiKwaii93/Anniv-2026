@@ -73,6 +73,12 @@
   font-size: 0.7rem;
 }
 
+.guest-avatar-editor .guest-avatar-editor__error {
+  flex-basis: 100%;
+  color: #ff9aa8;
+  font-size: 0.7rem;
+}
+
 .guest-avatar-editor--compact {
   position: relative;
   display: grid;

@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 
 import { useGuests } from '../features/guests/GuestsContext'
 import GuestAvatar from '../features/guests/GuestAvatar'
+import AvatarCropDialog from '../features/guests/AvatarCropDialog'
 import AdminGuestSessions from '../features/identity/AdminGuestSessions'
 import AdminPartyDataReset from '../features/identity/AdminPartyDataReset'
 import type {
@@ -45,31 +46,63 @@ function AvatarEditor({
   compact?: boolean
   onChange: (file: File | null) => void
 }) {
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState('')
+
+  const chooseFile = (file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setFileError('Choisis une image JPG, PNG ou WebP.')
+      return
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      setFileError('Choisis une image de moins de 20 Mo.')
+      return
+    }
+
+    setFileError('')
+    setCropFile(file)
+  }
+
   return (
-    <div className={compact ? 'guest-avatar-editor guest-avatar-editor--compact' : 'guest-avatar-editor'}>
-      <GuestAvatar name={name} path={path} size={compact ? 'small' : 'large'} />
-      <div>
-        <label className="guest-avatar-editor__upload">
-          <span>{path ? 'Changer' : 'Ajouter une photo'}</span>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={busy}
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) onChange(file)
-              event.target.value = ''
-            }}
-          />
-        </label>
-        {path && (
-          <button type="button" disabled={busy} onClick={() => onChange(null)}>
-            Retirer
-          </button>
-        )}
-        {busy && <span role="status">Envoi…</span>}
+    <>
+      <div className={compact ? 'guest-avatar-editor guest-avatar-editor--compact' : 'guest-avatar-editor'}>
+        <GuestAvatar name={name} path={path} size={compact ? 'small' : 'large'} />
+        <div>
+          <label className="guest-avatar-editor__upload">
+            <span>{path ? 'Changer' : 'Ajouter une photo'}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={busy}
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) chooseFile(file)
+                event.target.value = ''
+              }}
+            />
+          </label>
+          {path && (
+            <button type="button" disabled={busy} onClick={() => onChange(null)}>
+              Retirer
+            </button>
+          )}
+          {busy && <span role="status">Envoi…</span>}
+          {fileError && !compact && <span className="guest-avatar-editor__error" role="alert">{fileError}</span>}
+        </div>
       </div>
-    </div>
+      {cropFile && (
+        <AvatarCropDialog
+          file={cropFile}
+          name={name}
+          onCancel={() => setCropFile(null)}
+          onConfirm={(croppedFile) => {
+            setCropFile(null)
+            onChange(croppedFile)
+          }}
+        />
+      )}
+    </>
   )
 }
 
