@@ -1,0 +1,49 @@
+.guest-profile-avatar.guest-profile-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  margin: 0;
+  overflow: hidden;
+  color: #dbe4ff;
+  font-weight: 900;
+  line-height: 1;
+  background: rgba(87, 119, 255, 0.14);
+  border: 1px solid rgba(112, 140, 255, 0.24);
+  border-radius: 50%;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.guest-profile-avatar.guest-profile-avatar--small {
+  width: 34px;
+  height: 34px;
+  font-size: 0.72rem;
+}
+
+.guest-profile-avatar.guest-profile-avatar--medium {
+  width: 44px;
+  height: 44px;
+  font-size: 0.84rem;
+}
+
+.guest-profile-avatar.guest-profile-avatar--large {
+  width: 68px;
+  height: 68px;
+  font-size: 1.1rem;
+}
+
+.guest-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.guest-profile-avatar .guest-profile-avatar__initial {
+  display: block;
+  margin: 0;
+  overflow: visible;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  white-space: normal;
+}

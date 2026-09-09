@@ -19,7 +19,7 @@ import type {
 
 type GuestInput = Omit<
   Guest,
-  'id' | 'createdAt'
+  'id' | 'createdAt' | 'avatarPath'
 >
 
 type GuestPatch = Partial<
@@ -39,11 +39,16 @@ type GuestsContextValue = {
     data: GuestPatch,
   ) => void
   removeGuest: (id: string) => void
+  updateGuestAvatar: (
+    target: { kind: 'guest' | 'plus-one'; id: string },
+    file: File | null,
+  ) => Promise<boolean>
 }
 
 type GuestRow = {
   id: string
   name: string
+  avatar_path: string | null
   status: GuestStatus
   created_at: string
 }
@@ -52,6 +57,7 @@ type PlusOneRow = {
   id: string
   guest_id: string
   name: string
+  avatar_path: string | null
   created_at: string
 }
 
@@ -116,7 +122,7 @@ export function GuestsProvider({
         supabase
           .from('guests')
           .select(
-            'id, name, status, created_at',
+            'id, name, avatar_path, status, created_at',
           )
           .order('created_at', {
             ascending: true,
@@ -125,7 +131,7 @@ export function GuestsProvider({
         supabase
           .from('plus_ones')
           .select(
-            'id, guest_id, name, created_at',
+            'id, guest_id, name, avatar_path, created_at',
           )
           .order('created_at', {
             ascending: true,
@@ -230,6 +236,7 @@ export function GuestsProvider({
         current.push({
           id: plusOne.id,
           name: plusOne.name,
+          avatarPath: plusOne.avatar_path,
         })
 
         plusOnesByGuest.set(
@@ -252,6 +259,7 @@ export function GuestsProvider({
         guestRows.map((guest) => ({
           id: guest.id,
           name: guest.name,
+          avatarPath: guest.avatar_path,
           status: guest.status,
           plusOnes:
             plusOnesByGuest.get(
@@ -446,6 +454,7 @@ export function GuestsProvider({
     const newGuest: Guest = {
       id,
       name: cleanName,
+      avatarPath: null,
       status: guest.status,
       plusOnes: cleanPlusOnes,
       notes: cleanNotes,
@@ -484,6 +493,7 @@ export function GuestsProvider({
                   id: plusOne.id,
                   guest_id: id,
                   name: plusOne.name,
+                  avatar_path: plusOne.avatarPath,
                 }),
               ),
             )
@@ -679,6 +689,12 @@ export function GuestsProvider({
                 plusOne.id,
             )
 
+        const removedAvatarPaths =
+          previousGuest.plusOnes
+            .filter((plusOne) => removedIds.includes(plusOne.id))
+            .map((plusOne) => plusOne.avatarPath)
+            .filter((path): path is string => Boolean(path))
+
         if (removedIds.length > 0) {
           const deleteResult =
             await supabase
@@ -692,6 +708,15 @@ export function GuestsProvider({
           if (deleteResult.error) {
             throw deleteResult.error
           }
+
+          if (removedAvatarPaths.length > 0) {
+            const storageResult = await supabase.storage
+              .from('guest-avatars')
+              .remove(removedAvatarPaths)
+            if (storageResult.error) {
+              console.error('Unable to remove deleted plus-one avatars:', storageResult.error)
+            }
+          }
         }
 
         if (nextPlusOnes.length > 0) {
@@ -704,6 +729,7 @@ export function GuestsProvider({
                     id: plusOne.id,
                     guest_id: id,
                     name: plusOne.name,
+                    avatar_path: plusOne.avatarPath,
                   }),
                 ),
                 {
@@ -730,11 +756,11 @@ export function GuestsProvider({
       return
     }
 
-    if (
-      !guestsRef.current.some(
-        (guest) => guest.id === id,
-      )
-    ) {
+    const removedGuest = guestsRef.current.find(
+      (guest) => guest.id === id,
+    )
+
+    if (!removedGuest) {
       return
     }
 
@@ -754,7 +780,128 @@ export function GuestsProvider({
       if (error) {
         throw error
       }
+
+      const avatarPaths = [
+        removedGuest.avatarPath,
+        ...removedGuest.plusOnes.map((plusOne) => plusOne.avatarPath),
+      ].filter((path): path is string => Boolean(path))
+
+      if (avatarPaths.length > 0) {
+        const storageResult = await supabase.storage
+          .from('guest-avatars')
+          .remove(avatarPaths)
+        if (storageResult.error) {
+          console.error('Unable to remove deleted guest avatars:', storageResult.error)
+        }
+      }
     })
+  }
+
+  const updateGuestAvatar = async (
+    target: { kind: 'guest' | 'plus-one'; id: string },
+    file: File | null,
+  ) => {
+    if (!isAdmin) {
+      setSynchronizationError(
+        'Seul un administrateur peut modifier les photos de profil.',
+      )
+      return false
+    }
+
+    const guest = guestsRef.current.find((candidate) =>
+      target.kind === 'guest'
+        ? candidate.id === target.id
+        : candidate.plusOnes.some((plusOne) => plusOne.id === target.id),
+    )
+    const person = target.kind === 'guest'
+      ? guest
+      : guest?.plusOnes.find((plusOne) => plusOne.id === target.id)
+
+    if (!guest || !person) return false
+
+    if (
+      file
+      && (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
+        || file.size > 2 * 1024 * 1024)
+    ) {
+      setSynchronizationError(
+        'Choisis une image JPG, PNG ou WebP de 2 Mo maximum.',
+      )
+      return false
+    }
+
+    const previousPath = person.avatarPath
+    let nextPath: string | null = null
+
+    if (file) {
+      const extension = file.type === 'image/png'
+        ? 'png'
+        : file.type === 'image/webp'
+          ? 'webp'
+          : 'jpg'
+      const folder = target.kind === 'guest' ? 'guests' : 'plus-ones'
+      nextPath = `${folder}/${target.id}/${crypto.randomUUID()}.${extension}`
+
+      const uploadResult = await supabase.storage
+        .from('guest-avatars')
+        .upload(nextPath, file, {
+          cacheControl: '31536000',
+          contentType: file.type,
+          upsert: false,
+        })
+
+      if (uploadResult.error) {
+        console.error('Unable to upload guest avatar:', uploadResult.error)
+        setSynchronizationError('La photo n’a pas pu être envoyée.')
+        return false
+      }
+    }
+
+    const table = target.kind === 'guest' ? 'guests' : 'plus_ones'
+    const updateResult = await supabase
+      .from(table)
+      .update({ avatar_path: nextPath })
+      .eq('id', target.id)
+
+    if (updateResult.error) {
+      console.error('Unable to save guest avatar:', updateResult.error)
+      if (nextPath) {
+        await supabase.storage.from('guest-avatars').remove([nextPath])
+      }
+      setSynchronizationError('La photo n’a pas pu être enregistrée.')
+      return false
+    }
+
+    const nextGuests = guestsRef.current.map((currentGuest) => {
+      if (target.kind === 'guest' && currentGuest.id === target.id) {
+        return { ...currentGuest, avatarPath: nextPath }
+      }
+      if (target.kind === 'plus-one' && currentGuest.id === guest.id) {
+        return {
+          ...currentGuest,
+          plusOnes: currentGuest.plusOnes.map((plusOne) =>
+            plusOne.id === target.id
+              ? { ...plusOne, avatarPath: nextPath }
+              : plusOne,
+          ),
+        }
+      }
+      return currentGuest
+    })
+
+    replaceGuests(nextGuests)
+    setSynchronizationError('')
+
+    if (previousPath && previousPath !== nextPath) {
+      const removeResult = await supabase.storage
+        .from('guest-avatars')
+        .remove([previousPath])
+      if (removeResult.error) {
+        console.error('Unable to remove previous guest avatar:', removeResult.error)
+      }
+    }
+
+    return true
   }
 
   return (
@@ -766,6 +913,7 @@ export function GuestsProvider({
         addGuest,
         updateGuest,
         removeGuest,
+        updateGuestAvatar,
       }}
     >
       {children}

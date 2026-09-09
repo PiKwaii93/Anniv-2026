@@ -34,7 +34,7 @@ after(()=>rm(cache,{recursive:true}))
 let dom,root,f,calls,timers,changes
 const identity={playerKey:'guest:a',sessionToken:'token-a'}
 const mission={id:'m1',assignedAt:'2026-09-04T10:00:00+00:00',text:'Fais applaudir la salle.',difficulty:'easy'}
-const players=[{key:'guest:a',name:'Adam',detail:'Invité'},{key:'guest:b',name:'Léa',detail:'Invitée'}]
+const players=[{key:'guest:a',name:'Adam',detail:'Invité',avatarPath:null},{key:'guest:b',name:'Léa',detail:'Invitée',avatarPath:null}]
 const button=text=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes(text))
 const click=async el=>{assert.ok(el);await act(async()=>el.click())}
 const writes=()=>calls.filter(c=>c.name!=='get_secret_mission_checks'&&c.name!=='get_secret_mission_state')
@@ -44,7 +44,7 @@ async function render(parent=false,props={}){
 }
 async function choose(){
   await click(button('Faire valider'))
-  await act(async()=>{const el=document.querySelector('select');el.value='guest:b';el.dispatchEvent(new window.Event('change',{bubbles:true}))})
+  await click(button('Léa'))
 }
 beforeEach(()=>{
   dom=new JSDOM('<div id="root"/>',{url:'https://mission.test/missions',pretendToBeVisual:true})
@@ -72,8 +72,8 @@ beforeEach(()=>{
 afterEach(async()=>{await act(async()=>root.unmount());dom.window.close();delete globalThis.window;delete globalThis.document;delete globalThis.localStorage;delete globalThis.__mission})
 test('witness selection is explicit and excludes the author',async()=>{
   await render();assert.equal(writes().length,0);await click(button('Faire valider'))
-  assert.equal(document.querySelector('option[value="guest:a"]'),null)
-  assert.equal(document.querySelector('label[for="mission-witness"]').textContent,'Qui a vu ta mission accomplie ?')
+  assert.equal(button('Adam'),undefined)
+  assert.equal(document.querySelector('.mission-witness-picker legend').textContent,'Qui a vu ta mission accomplie ?')
   assert.equal(button('Demander la validation').disabled,true)
 })
 test('request waits for witness instead of self-awarding',async()=>{

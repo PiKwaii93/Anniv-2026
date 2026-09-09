@@ -5,6 +5,7 @@ import {
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import GuestAvatar from '../guests/GuestAvatar'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './PartyIdentity.css'
@@ -81,8 +82,11 @@ function IdentityPicker({
             }
             onClick={() => setSelected(player.key)}
           >
-            <strong>{player.name}</strong>
-            <span>{player.detail}</span>
+            <GuestAvatar name={player.name} path={player.avatarPath} size="small" />
+            <span className="party-identity-picker__person-copy">
+              <strong>{player.name}</strong>
+              <small>{player.detail}</small>
+            </span>
           </button>
         ))}
       </div>
@@ -155,6 +159,7 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
   const location = useLocation()
   const {
     identity,
+    availablePlayers,
     loading,
     busy,
     error,
@@ -170,6 +175,10 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
     location.pathname === '/qr'
 
   if (hidden || loading) return null
+
+  const currentPlayer = identity
+    ? availablePlayers.find((player) => player.key === identity.playerKey)
+    : null
 
   const changeIdentity = async () => {
     if (!identity) {
@@ -214,9 +223,12 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
 
           {identity && !changing ? (
             <div className="party-identity-popover__current">
-              <span className="party-identity-popover__avatar">
-                {identity.playerName.slice(0, 1).toUpperCase()}
-              </span>
+              <GuestAvatar
+                name={identity.playerName}
+                path={currentPlayer?.avatarPath}
+                size="medium"
+                className="party-identity-popover__avatar"
+              />
               <div>
                 <strong>{identity.playerName}</strong>
                 <span>{identity.detail}</span>
@@ -263,11 +275,13 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
           if (open) setChanging(false)
         }}
       >
-        <span>
-          {identity
-            ? identity.playerName.slice(0, 1).toUpperCase()
-            : '?'}
-        </span>
+        {identity ? (
+          <GuestAvatar
+            name={identity.playerName}
+            path={currentPlayer?.avatarPath}
+            size="small"
+          />
+        ) : <span>?</span>}
         <div>
           <small>{identity ? 'Ton profil' : 'Première étape'}</small>
           <strong>

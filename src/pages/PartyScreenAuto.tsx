@@ -7,6 +7,8 @@ import {
 } from 'react'
 
 import { useParty } from '../features/party/PartyContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
+import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 import PhotoHuntScreen from './PhotoHuntScreen'
 
@@ -16,6 +18,7 @@ import './PartyScreenAuto.css'
 type PlayerSnapshot = {
   id: string
   name: string
+  avatarPath?: string | null
 }
 
 type Team = {
@@ -59,6 +62,7 @@ const AUTO_SLIDE_DURATION = 12000
 
 function PartyScreenAuto() {
   const { settings } = useParty()
+  const { guests } = useGuests()
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
   const [photoCount, setPhotoCount] = useState(0)
@@ -173,12 +177,31 @@ function PartyScreenAuto() {
   )
 
   const playerById = useMemo(
-    () => new Map(
-      (beerPongState.playerSnapshots ?? []).map(
-        (player) => [player.id, player],
-      ),
-    ),
-    [beerPongState.playerSnapshots],
+    () => {
+      const players = new Map(
+        (beerPongState.playerSnapshots ?? []).map(
+          (player) => [player.id, player],
+        ),
+      )
+
+      guests.forEach((guest) => {
+        players.set(`guest:${guest.id}`, {
+          id: `guest:${guest.id}`,
+          name: guest.name,
+          avatarPath: guest.avatarPath,
+        })
+        guest.plusOnes.forEach((plusOne) => {
+          players.set(`plus-one:${plusOne.id}`, {
+            id: `plus-one:${plusOne.id}`,
+            name: plusOne.name,
+            avatarPath: plusOne.avatarPath,
+          })
+        })
+      })
+
+      return players
+    },
+    [beerPongState.playerSnapshots, guests],
   )
 
   const teamById = useMemo(
@@ -313,6 +336,17 @@ function PartyScreenAuto() {
 
   if (activeSlide === 'beer-pong') {
     const champion = teamName(beerPongState.championTeamId)
+    const highlightedTeamIds = beerPongState.championTeamId
+      ? [beerPongState.championTeamId]
+      : nextMatch
+        ? [nextMatch.teamAId, nextMatch.teamBId].filter(
+            (teamId): teamId is string => Boolean(teamId),
+          )
+        : []
+    const highlightedPlayers = highlightedTeamIds
+      .flatMap((teamId) => teamById.get(teamId)?.playerIds ?? [])
+      .map((playerId) => playerById.get(playerId))
+      .filter((player): player is PlayerSnapshot => Boolean(player))
 
     return (
       <main className="party-screen party-screen--auto party-screen--auto-pong">
@@ -339,6 +373,20 @@ function PartyScreenAuto() {
                     ? 'Le tableau avance. Le prochain duel arrive.'
                     : `${selectedPlayerCount} joueur${selectedPlayerCount !== 1 ? 's' : ''} prêt${selectedPlayerCount !== 1 ? 's' : ''} pour le tournoi.`}
             </p>
+            {highlightedPlayers.length > 0 && (
+              <div className="party-screen-auto__player-faces">
+                {highlightedPlayers.map((player) => (
+                  <div key={player.id}>
+                    <GuestAvatar
+                      name={player.name}
+                      path={player.avatarPath}
+                      size="large"
+                    />
+                    <span>{player.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="party-screen-auto__big-stats">

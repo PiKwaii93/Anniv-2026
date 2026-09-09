@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
+import GuestAvatar from '../guests/GuestAvatar'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './HomeIdentityOnboarding.css'
@@ -136,7 +137,7 @@ function HomeIdentityOnboarding() {
               }
               onClick={() => setSelected(player.key)}
             >
-              <span>{player.name.slice(0, 1).toUpperCase()}</span>
+              <GuestAvatar name={player.name} path={player.avatarPath} size="small" />
               <div>
                 <strong>{player.name}</strong>
                 <small>{player.detail}</small>
