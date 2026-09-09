@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { supabase } from '../lib/supabase'
 
 import './ContentManager.css'
@@ -155,11 +156,11 @@ type ImportResult = {
 }
 
 const moduleMeta: Record<ModuleKey, { label: string; icon: string; detail: string }> = {
-  bingo: { label: 'Bingo', icon: '▦', detail: 'Cases de grilles' },
-  missions: { label: 'Missions', icon: '⌁', detail: 'Missions secrètes' },
-  room: { label: 'La Salle', icon: '◉', detail: 'Questions live' },
-  iceberg: { label: 'Iceberg', icon: '◇', detail: 'Dossiers publiés' },
-  photos: { label: 'Photo Hunt', icon: '▣', detail: 'Défis photo' },
+  bingo: { label: 'Bingo', icon: partyModuleIcons.bingo, detail: 'Cases de grilles' },
+  missions: { label: 'Missions', icon: partyModuleIcons.missions, detail: 'Missions secrètes' },
+  room: { label: 'La Salle', icon: partyModuleIcons.room, detail: 'Questions live' },
+  iceberg: { label: 'Iceberg', icon: partyModuleIcons.iceberg, detail: 'Dossiers publiés' },
+  photos: { label: 'Photo Hunt', icon: partyModuleIcons.photos, detail: 'Défis photo' },
 }
 
 const moduleKeys: ModuleKey[] = ['bingo', 'missions', 'room', 'iceberg', 'photos']

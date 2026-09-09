@@ -10,6 +10,7 @@ import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 import AdminPartyEnvironment from '../features/party/AdminPartyEnvironment'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 
 import './AdminDashboard.css'
 
@@ -582,7 +583,7 @@ function AdminDashboard() {
           className="control-module control-module--guests"
         >
           <div className="control-module__top">
-            <span className="control-module__index">01</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons.guests}</b><small>01</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -608,7 +609,7 @@ function AdminDashboard() {
           className="control-module control-module--iceberg"
         >
           <div className="control-module__top">
-            <span className="control-module__index">02</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons.iceberg}</b><small>02</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -640,7 +641,7 @@ function AdminDashboard() {
           className="control-module control-module--beer"
         >
           <div className="control-module__top">
-            <span className="control-module__index">03</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons['beer-pong']}</b><small>03</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -663,7 +664,7 @@ function AdminDashboard() {
           className="control-module control-module--bingo"
         >
           <div className="control-module__top">
-            <span className="control-module__index">04</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons.bingo}</b><small>04</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -689,7 +690,7 @@ function AdminDashboard() {
           className="control-module control-module--missions"
         >
           <div className="control-module__top">
-            <span className="control-module__index">05</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons.missions}</b><small>05</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -715,7 +716,7 @@ function AdminDashboard() {
           className="control-module control-module--room"
         >
           <div className="control-module__top">
-            <span className="control-module__index">06</span>
+            <span className="control-module__index"><b aria-hidden="true">{partyModuleIcons.room}</b><small>06</small></span>
             <span className="control-module__arrow">↗</span>
           </div>
           <div className="control-module__body">
@@ -751,7 +752,7 @@ function AdminDashboard() {
         <div className="control-overview__grid">
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>Invités</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons.guests}</i>Invités</span>
               <strong>{guests.length}</strong>
             </div>
             <div className="control-stat-list">
@@ -765,7 +766,7 @@ function AdminDashboard() {
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>Iceberg</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons.iceberg}</i>Iceberg</span>
               <strong>{loading ? '—' : icebergStats.total}</strong>
             </div>
             <div className="control-progress">
@@ -798,7 +799,7 @@ function AdminDashboard() {
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>Beer Pong</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons['beer-pong']}</i>Beer Pong</span>
               <span
                 className={`control-tournament-status control-tournament-status--${beerPongStatus.tone}`}
               >
@@ -817,7 +818,7 @@ function AdminDashboard() {
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>Bingo</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons.bingo}</i>Bingo</span>
               <strong>{loading ? '—' : bingoStats.active}</strong>
             </div>
             <div className="control-stat-list">
@@ -834,7 +835,7 @@ function AdminDashboard() {
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>Missions</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons.missions}</i>Missions</span>
               <strong>{loading ? '—' : missionStats.players}</strong>
             </div>
             <div className="control-stat-list">
@@ -851,7 +852,7 @@ function AdminDashboard() {
 
           <article className="control-overview-card">
             <div className="control-overview-card__heading">
-              <span>La Salle</span>
+              <span className="control-overview-card__title"><i aria-hidden="true">{partyModuleIcons.room}</i>La Salle</span>
               <strong>{loading ? '—' : roomStats.players}</strong>
             </div>
             <div className="control-stat-list">
@@ -876,46 +877,46 @@ function AdminDashboard() {
         </div>
 
         <div className="control-shortcuts__grid">
-          <Link to="/admin/info" className="control-shortcut"><span>Organisation</span><strong>Modifier les infos pratiques</strong><span>↗</span></Link>
-          <Link to="/admin/party-extras" className="control-shortcut"><span>Les petits plus</span><strong>Capsule · Jukebox · Duos · Générique</strong><span>↗</span></Link>
+          <Link to="/admin/info" className="control-shortcut"><span><i aria-hidden="true">i</i>Organisation</span><strong>Modifier les infos pratiques</strong><span>↗</span></Link>
+          <Link to="/admin/party-extras" className="control-shortcut"><span><i aria-hidden="true">✦</i>Les petits plus</span><strong>Capsule · Jukebox · Duos · Générique</strong><span>↗</span></Link>
           <Link to="/guests" className="control-shortcut">
-            <span>Liste publique</span>
+            <span><i aria-hidden="true">{partyModuleIcons.guests}</i>Liste publique</span>
             <strong>Voir les invités</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/iceberg" className="control-shortcut">
-            <span>Aperçu public</span>
+            <span><i aria-hidden="true">{partyModuleIcons.iceberg}</i>Aperçu public</span>
             <strong>Voir l&apos;Iceberg</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/beer-pong" className="control-shortcut">
-            <span>Mode soirée</span>
+            <span><i aria-hidden="true">{partyModuleIcons['beer-pong']}</i>Mode soirée</span>
             <strong>Beer Pong</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/bingo" className="control-shortcut">
-            <span>Jeu public</span>
+            <span><i aria-hidden="true">{partyModuleIcons.bingo}</i>Jeu public</span>
             <strong>Voir le Bingo</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/missions" className="control-shortcut">
-            <span>Infiltration</span>
+            <span><i aria-hidden="true">{partyModuleIcons.missions}</i>Infiltration</span>
             <strong>Missions secrètes</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/admin/room" className="control-shortcut">
-            <span>Régie live</span>
+            <span><i aria-hidden="true">{partyModuleIcons.room}</i>Régie live</span>
             <strong>Gérer La Salle</strong>
             <span>↗</span>
           </Link>
 
           <Link to="/room" className="control-shortcut">
-            <span>Vue publique</span>
+            <span><i aria-hidden="true">{partyModuleIcons.room}</i>Vue publique</span>
             <strong>Voir La Salle</strong>
             <span>↗</span>
           </Link>

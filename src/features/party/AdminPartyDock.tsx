@@ -26,6 +26,7 @@ import './AdminDirectorLaunch.css'
 import './AdminRegie.css'
 import './MobileRegie.css'
 import type { DirectorTool } from './DirectorTools'
+import { partyModuleIcons } from './moduleVisuals'
 
 const DirectorTools = lazy(() => import('./DirectorTools'))
 
@@ -54,14 +55,15 @@ const phaseOptions: Array<{
 const moduleOptions: Array<{
   value: PartyVisibilityModule
   label: string
+  icon: string
 }> = [
-  { value: 'iceberg', label: 'Iceberg' },
-  { value: 'beer-pong', label: 'Beer Pong' },
-  { value: 'bingo', label: 'Bingo' },
-  { value: 'missions', label: 'Missions secrètes' },
-  { value: 'room', label: 'La Salle' },
-  { value: 'photos', label: 'Photo Hunt' },
-  { value: 'guests', label: 'Invités' },
+  { value: 'iceberg', label: 'Iceberg', icon: partyModuleIcons.iceberg },
+  { value: 'beer-pong', label: 'Beer Pong', icon: partyModuleIcons['beer-pong'] },
+  { value: 'bingo', label: 'Bingo', icon: partyModuleIcons.bingo },
+  { value: 'missions', label: 'Missions secrètes', icon: partyModuleIcons.missions },
+  { value: 'room', label: 'La Salle', icon: partyModuleIcons.room },
+  { value: 'photos', label: 'Photo Hunt', icon: partyModuleIcons.photos },
+  { value: 'guests', label: 'Invités', icon: partyModuleIcons.guests },
 ]
 
 function visibilityPatch(
@@ -350,7 +352,7 @@ function AdminPartyDockRoute() {
                       aria-pressed={visible}
                       onClick={() => void toggleModule(module.value)}
                     >
-                      <span>{module.label}</span>
+                      <span><b aria-hidden="true">{module.icon}</b>{module.label}</span>
                       <strong>{visible ? 'Visible' : 'Masqué'}</strong>
                       <i aria-hidden="true" />
                     </button>
@@ -365,15 +367,15 @@ function AdminPartyDockRoute() {
                 Mode Directeur
               </Link>
               <Link to="/admin/room" className="party-drawer__qr-link">
-                <span>◉</span>
+                <span>{partyModuleIcons.room}</span>
                 Régie La Salle
               </Link>
               <Link to="/admin/missions" className="party-drawer__qr-link">
-                <span>◎</span>
+                <span>{partyModuleIcons.missions}</span>
                 Gérer les missions
               </Link>
               <Link to="/admin/photos" className="party-drawer__qr-link">
-                <span>▧</span>
+                <span>{partyModuleIcons.photos}</span>
                 Régie Photo Hunt
               </Link>
               <Link to="/admin/chat" className="party-drawer__qr-link">

@@ -1,11 +1,12 @@
 import { isPartyModuleVisible, type PartySettings, type PartyVisibilityModule } from '../party/PartyContext'
+import { partyModuleIcons } from '../party/moduleVisuals'
 import type { ExtrasSettings } from '../party-extras/model'
 
 export const activities: { key: PartyVisibilityModule; title: string; detail: string; path: string; icon: string }[] = [
-  { key: 'room', title: 'La Salle', detail: 'Vote avec tout le monde.', path: '/room', icon: '◉' },
-  { key: 'missions', title: 'Missions secrètes', detail: 'Un objectif à accomplir discrètement.', path: '/missions', icon: '◇' },
-  { key: 'bingo', title: 'Bingo', detail: 'Observe la soirée et coche les scènes.', path: '/bingo', icon: '▦' },
-  { key: 'beer-pong', title: 'Beer Pong', detail: 'Les équipes et les prochains matchs.', path: '/beer-pong', icon: '◌' },
+  { key: 'room', title: 'La Salle', detail: 'Vote avec tout le monde.', path: '/room', icon: partyModuleIcons.room },
+  { key: 'missions', title: 'Missions secrètes', detail: 'Un objectif à accomplir discrètement.', path: '/missions', icon: partyModuleIcons.missions },
+  { key: 'bingo', title: 'Bingo', detail: 'Observe la soirée et coche les scènes.', path: '/bingo', icon: partyModuleIcons.bingo },
+  { key: 'beer-pong', title: 'Beer Pong', detail: 'Les équipes et les prochains matchs.', path: '/beer-pong', icon: partyModuleIcons['beer-pong'] },
 ]
 
 export function guestTabs(settings: PartySettings, extras?: ExtrasSettings) {

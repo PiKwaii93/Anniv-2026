@@ -494,6 +494,9 @@
 }
 
 .control-module__index {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: #41414b;
 
   font-family:
@@ -735,6 +738,29 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
+}
+
+.control-module__index b {
+  color: #b9c3e8;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.control-module__index small {
+  color: #41414b;
+  font-size: 0.58rem;
+}
+
+.control-overview-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.control-overview-card__title i {
+  color: #aeb9df;
+  font-size: 1.15rem;
+  font-style: normal;
 }
 
 .control-overview > summary {
@@ -1042,6 +1068,9 @@
 
 .control-shortcut
   > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   color: #52525c;
 
   font-size: 0.62rem;
@@ -1230,6 +1259,14 @@
   }
 }
 
+.control-shortcut > span:first-child i {
+  width: 20px;
+  color: #aeb9df;
+  font-size: 1rem;
+  font-style: normal;
+  text-align: center;
+}
+
 /* Mobile admin home: keep actions immediate and secondary reporting folded away. */
 @media (max-width: 699px) {
   .control-room {
@@ -1285,7 +1322,11 @@
     grid-column: 1;
     grid-row: 1;
     align-self: start;
-    padding-top: 3px;
+    justify-content: center;
+  }
+
+  .control-module__index small {
+    display: none;
   }
 
   .control-module__arrow {

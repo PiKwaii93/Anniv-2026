@@ -14,6 +14,7 @@ import {
   type PartySettings,
   useParty,
 } from '../features/party/PartyContext'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { supabase } from '../lib/supabase'
 import { useNow } from '../hooks/useNow'
 
@@ -108,48 +109,56 @@ const moduleOptions: Array<{
   label: string
   shortLabel: string
   href: string
+  icon: string
 }> = [
   {
     value: 'room',
     label: 'La Salle',
     shortLabel: 'Salle',
     href: '/room',
+    icon: partyModuleIcons.room,
   },
   {
     value: 'beer-pong',
     label: 'Beer Pong',
     shortLabel: 'Pong',
     href: '/beer-pong',
+    icon: partyModuleIcons['beer-pong'],
   },
   {
     value: 'missions',
     label: 'Missions secrètes',
     shortLabel: 'Missions',
     href: '/missions',
+    icon: partyModuleIcons.missions,
   },
   {
     value: 'bingo',
     label: 'Bingo',
     shortLabel: 'Bingo',
     href: '/bingo',
+    icon: partyModuleIcons.bingo,
   },
   {
     value: 'iceberg',
     label: 'Iceberg',
     shortLabel: 'Iceberg',
     href: '/iceberg',
+    icon: partyModuleIcons.iceberg,
   },
   {
     value: 'photos',
     label: 'Photo Hunt',
     shortLabel: 'Photos',
     href: '/photos',
+    icon: partyModuleIcons.photos,
   },
   {
     value: 'guests',
     label: 'Invités',
     shortLabel: 'Invités',
     href: '/guests',
+    icon: partyModuleIcons.guests,
   },
 ]
 
@@ -774,7 +783,7 @@ function DirectorMode() {
                 disabled={partyLoading || partySaving}
                 onClick={() => void featureModule(module.value)}
               >
-                <span>{module.shortLabel}</span>
+                <span><b aria-hidden="true">{module.icon}</b>{module.shortLabel}</span>
                 <small>
                   {active ? 'À la une' : 'Mettre en avant'}
                 </small>
@@ -789,7 +798,7 @@ function DirectorMode() {
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Vote collectif</p>
-              <h2>La Salle</h2>
+              <h2><span aria-hidden="true">{partyModuleIcons.room}</span> La Salle</h2>
             </div>
             <span
               className={`director-status director-status--${roomState.phase}`}
@@ -903,7 +912,7 @@ function DirectorMode() {
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Tournoi</p>
-              <h2>Beer Pong</h2>
+              <h2><span aria-hidden="true">{partyModuleIcons['beer-pong']}</span> Beer Pong</h2>
             </div>
             <span
               className={`director-status director-status--${beerPongStatus.tone}`}
@@ -954,7 +963,7 @@ function DirectorMode() {
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Infiltration</p>
-              <h2>Missions</h2>
+              <h2><span aria-hidden="true">{partyModuleIcons.missions}</span> Missions</h2>
             </div>
             <span className="director-status director-status--ready">
               {missionPlayers.length} agents
@@ -1005,7 +1014,7 @@ function DirectorMode() {
           <div className="director-panel__top">
             <div>
               <p className="director-eyebrow">Chasse photo</p>
-              <h2>Photo Hunt</h2>
+              <h2><span aria-hidden="true">{partyModuleIcons.photos}</span> Photo Hunt</h2>
             </div>
             <span
               className={
@@ -1088,7 +1097,7 @@ function DirectorMode() {
                   disabled={partyLoading || partySaving}
                   onClick={() => void toggleModule(module.value)}
                 >
-                  <span>{module.label}</span>
+                  <span className="director-visibility__label"><b aria-hidden="true">{module.icon}</b>{module.label}</span>
                   <strong>{visible ? 'Visible' : 'Masqué'}</strong>
                   <i aria-hidden="true" />
                 </button>
@@ -1173,21 +1182,21 @@ function DirectorMode() {
           </div>
         </Link>
         <Link to="/admin/room" className="director-shortcut">
-          <span>◉</span>
+          <span>{partyModuleIcons.room}</span>
           <div>
             <small>Vote live</small>
             <strong>Préparer La Salle</strong>
           </div>
         </Link>
         <Link to="/admin/missions" className="director-shortcut">
-          <span>◎</span>
+          <span>{partyModuleIcons.missions}</span>
           <div>
             <small>Contenu</small>
             <strong>Gérer les missions</strong>
           </div>
         </Link>
         <Link to="/admin/photos" className="director-shortcut">
-          <span>▣</span>
+          <span>{partyModuleIcons.photos}</span>
           <div>
             <small>Photo Hunt</small>
             <strong>Modérer les photos</strong>
