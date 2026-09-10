@@ -11,9 +11,11 @@ import {
   type TournamentTeam,
 } from '../features/beer-pong/tournament'
 import { useAuth } from '../features/auth/AuthContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import { supabase } from '../lib/supabase'
 
 import './BeerPongBracket.css'
+import './BeerPongChampion.css'
 
 type Player = { id: string; name: string; avatarPath?: string | null }
 type State = {
@@ -102,6 +104,7 @@ export default function BeerPongBracketPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [dismissedChampionId, setDismissedChampionId] = useState<string | null>(null)
   const pendingWriteRef = useRef(false)
   const deferredRefreshRef = useRef(false)
   const loadRequestRef = useRef(0)
@@ -151,10 +154,40 @@ export default function BeerPongBracketPage() {
 
   const rounds = state.rounds ?? emptyRounds
   const activeRoundIndex = getActiveRoundIndex(rounds)
+  const championTeamId = state.championTeamId ?? getChampionTeamId(rounds)
+  const championTeam = state.teams?.find((team) => team.id === championTeamId)
+  const championPlayers = championTeam?.playerIds.map((playerId) => (
+    state.playerSnapshots?.find((player) => player.id === playerId)
+      ?? { id: playerId, name: 'Joueur' }
+  )) ?? []
+  const championModalOpen = Boolean(
+    championTeamId
+    && championTeam
+    && dismissedChampionId !== championTeamId,
+  )
   const completedMatches = useMemo(() => rounds.flat().filter(
     (match) => match.teamAId && match.teamBId && match.winnerTeamId,
   ).length, [rounds])
   const totalMatches = Math.max(0, (state.teams?.length ?? 0) - 1)
+
+  useEffect(() => {
+    if (!championModalOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && championTeamId) {
+        setDismissedChampionId(championTeamId)
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [championModalOpen, championTeamId])
 
   const pickWinner = async (
     roundIndex: number,
@@ -289,6 +322,62 @@ export default function BeerPongBracketPage() {
             onPickWinner={isAdmin ? pickWinner : undefined}
           />
         </>
+      )}
+
+      {championModalOpen && championTeamId && (
+        <div
+          className="beer-bracket-champion"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setDismissedChampionId(championTeamId)
+            }
+          }}
+        >
+          <section
+            className="beer-bracket-champion__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="beer-bracket-champion-title"
+          >
+            <button
+              className="beer-bracket-champion__close"
+              type="button"
+              aria-label="Fermer"
+              onClick={() => setDismissedChampionId(championTeamId)}
+            >
+              ×
+            </button>
+
+            <div className="beer-bracket-champion__trophy" aria-hidden="true">♛</div>
+            <p className="beer-bracket-champion__eyebrow">Tournoi terminé</p>
+            <h2 id="beer-bracket-champion-title">Champions du Beer Pong</h2>
+
+            <div className="beer-bracket-champion__players">
+              {championPlayers.map((player) => (
+                <div className="beer-bracket-champion__player" key={player.id}>
+                  <GuestAvatar
+                    name={player.name}
+                    path={player.avatarPath}
+                    size="small"
+                  />
+                  <strong>{player.name}</strong>
+                </div>
+              ))}
+            </div>
+
+            <p className="beer-bracket-champion__message">
+              Ils remportent le tournoi 2026.
+            </p>
+            <button
+              className="beer-bracket-champion__action"
+              type="button"
+              onClick={() => setDismissedChampionId(championTeamId)}
+            >
+              Revoir l’arbre
+            </button>
+          </section>
+        </div>
       )}
     </main>
   )
