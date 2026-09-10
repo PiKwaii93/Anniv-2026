@@ -191,3 +191,29 @@
     padding: 34px;
   }
 }
+
+@media (max-width: 699px) {
+  .admin-login {
+    min-height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+  }
+
+  .admin-login__card {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .admin-login h1 {
+    font-size: clamp(2.45rem, 13vw, 3.35rem);
+  }
+
+  .admin-login__description {
+    margin: 13px 0 22px;
+  }
+
+  .admin-login__form input,
+  .admin-login__submit {
+    min-height: 50px;
+    font-size: 1rem;
+  }
+}
