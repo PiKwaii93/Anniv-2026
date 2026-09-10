@@ -220,6 +220,50 @@ function expectCleanBrowser(guard: BrowserGuard) {
   expect(guard.reactWarnings).toEqual([])
 }
 
+test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', async ({ page }) => {
+  const players = Array.from({ length: 42 }, (_, index) => ({
+    id: `player-${index + 1}`,
+    name: `Joueur ${index + 1}`,
+  }))
+  const teams = Array.from({ length: 21 }, (_, index) => ({
+    id: `team-${index + 1}`,
+    playerIds: [`player-${index * 2 + 1}`, `player-${index * 2 + 2}`],
+  }))
+  const firstRound = Array.from({ length: 16 }, (_, index) => {
+    const competitive = index < 5
+    const teamAIndex = competitive ? index * 2 : index + 5
+    return {
+      id: `match-${index + 1}`,
+      teamAId: teams[teamAIndex].id,
+      teamBId: competitive ? teams[index * 2 + 1].id : null,
+      winnerTeamId: competitive ? null : teams[teamAIndex].id,
+    }
+  })
+  const guard = await guardBrowser(page, {
+    tables: {
+      party_state: { ...partyState, phase: 'live' },
+      beer_pong_state: {
+        id: 'main',
+        state: {
+          draftValidated: true,
+          playerSnapshots: players,
+          teams,
+          rounds: [firstRound],
+        },
+      },
+    },
+  })
+
+  await page.goto('/beer-pong/bracket')
+  const tree = page.locator('.tournament-tree')
+  await expect(tree).toBeVisible()
+  await tree.hover()
+  await page.mouse.wheel(0, 700)
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300)
+  expectCleanBrowser(guard)
+})
+
 test('practical information loads without a production dependency', async ({ page }) => {
   const guard = await guardBrowser(page)
   await page.goto('/info')
