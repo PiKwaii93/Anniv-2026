@@ -51,7 +51,7 @@ export function GuestPlusOneRequests() {
   return (
     <section className="plus-one-request plus-one-request--guest">
       <div className="plus-one-request__intro">
-        <span className="plus-one-request__icon" aria-hidden="true">＋</span>
+        <span className="plus-one-request__icon" aria-hidden="true">+1</span>
         <div>
           <p className="page-eyebrow">Invitation</p>
           <h2>Tu veux venir accompagné ?</h2>
