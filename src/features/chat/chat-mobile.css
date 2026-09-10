@@ -241,6 +241,10 @@
 }
 
 @media (max-width: 720px) {
+  .chat-page:not(.chat-page--admin) {
+    padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+  }
+
   .chat-messages {
     height: auto;
     max-height: none;
@@ -251,6 +255,17 @@
 
   .chat-message {
     max-width: 84%;
+  }
+
+  .chat-page:not(.chat-page--admin) .chat-composer {
+    position: fixed;
+    right: auto;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    left: 50%;
+    width: min(calc(100% - 28px), 732px);
+    margin: 0;
+    transform: translateX(-50%);
+    z-index: 70;
   }
 
   .chat-message-sheet {
