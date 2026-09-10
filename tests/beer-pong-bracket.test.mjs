@@ -154,3 +154,41 @@ test('a winner is selected by its exact bracket position even with duplicate IDs
   assert.equal(updated[0][0].winnerTeamId, null)
   assert.equal(updated[0][1].winnerTeamId, 'team-4')
 })
+
+test('round connections are rebuilt by position when legacy source IDs are corrupt', () => {
+  let id = 0
+  let rounds = tournament.createTournamentBracket(teams(8), {
+    id: () => `match-${++id}`,
+    random: () => 0.5,
+  })
+
+  for (const match of rounds[0]) {
+    rounds = tournament.updateTournamentWinner(
+      rounds,
+      match.id,
+      match.teamAId,
+    )
+  }
+
+  const corrupted = rounds.map((round, roundIndex) => round.map((match) => (
+    roundIndex === 0
+      ? match
+      : {
+          ...match,
+          teamASourceMatchId: 'ancien-identifiant-duplique',
+          teamBSourceMatchId: 'ancien-identifiant-duplique',
+        }
+  )))
+
+  const secondMatchWinner = corrupted[1][1].teamBId
+  const updated = tournament.updateTournamentWinnerAt(
+    corrupted,
+    1,
+    1,
+    secondMatchWinner,
+  )
+
+  assert.equal(updated[1][1].winnerTeamId, secondMatchWinner)
+  assert.equal(updated[2][0].teamBId, secondMatchWinner)
+  assert.equal(updated[2][0].teamBSourceMatchId, updated[1][1].id)
+})

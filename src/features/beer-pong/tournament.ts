@@ -62,11 +62,16 @@ function resolveRounds(rounds: TournamentMatch[][]) {
   for (let roundIndex = 0; roundIndex < resolved.length; roundIndex += 1) {
     const round = resolved[roundIndex]
 
-    for (const match of round) {
+    for (let matchIndex = 0; matchIndex < round.length; matchIndex += 1) {
+      const match = round[matchIndex]
+
       if (roundIndex > 0) {
         const previousRound = resolved[roundIndex - 1]
-        const sourceA = previousRound.find((candidate) => candidate.id === match.teamASourceMatchId)
-        const sourceB = previousRound.find((candidate) => candidate.id === match.teamBSourceMatchId)
+        const sourceA = previousRound[matchIndex * 2]
+        const sourceB = previousRound[matchIndex * 2 + 1]
+
+        match.teamASourceMatchId = sourceA?.id ?? null
+        match.teamBSourceMatchId = sourceB?.id ?? null
         match.teamAId = sourceA?.winnerTeamId ?? null
         match.teamBId = sourceB?.winnerTeamId ?? null
       }

@@ -55,6 +55,22 @@ function parseState(value: unknown): State {
   } as State
 }
 
+function getStoredWinner(
+  value: unknown,
+  roundIndex: number,
+  matchIndex: number,
+) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const rawRounds = (value as Record<string, unknown>).rounds
+  if (!Array.isArray(rawRounds)) return null
+  const rawRound = rawRounds[roundIndex]
+  if (!Array.isArray(rawRound)) return null
+  const rawMatch = rawRound[matchIndex]
+  if (!rawMatch || typeof rawMatch !== 'object' || Array.isArray(rawMatch)) return null
+  const winner = (rawMatch as Record<string, unknown>).winnerTeamId
+  return typeof winner === 'string' ? winner : null
+}
+
 export default function BeerPongBracketPage() {
   const { isAdmin, loading: authLoading } = useAuth()
   const [state, setState] = useState<State>({})
@@ -153,12 +169,25 @@ export default function BeerPongBracketPage() {
       await load()
       setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
     } else {
+      const storedWinner = getStoredWinner(
+        savedRow.state,
+        roundIndex,
+        matchIndex,
+      )
       const savedState = parseState(savedRow.state)
       const savedWinner = savedState.rounds?.[roundIndex]?.[matchIndex]?.winnerTeamId
 
-      if (savedWinner !== teamId) {
+      if (storedWinner !== teamId) {
         await load()
         setError('Supabase n’a pas conservé ce résultat. L’arbre a été resynchronisé.')
+        setBusy(false)
+        return
+      }
+
+      if (savedWinner !== teamId) {
+        deferredRefreshRef.current = false
+        setState(nextState)
+        setError('Le résultat est enregistré, mais la reconstruction de l’arbre a échoué.')
         setBusy(false)
         return
       }
