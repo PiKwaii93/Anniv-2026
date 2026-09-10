@@ -192,3 +192,33 @@ test('round connections are rebuilt by position when legacy source IDs are corru
   assert.equal(updated[2][0].teamBId, secondMatchWinner)
   assert.equal(updated[2][0].teamBSourceMatchId, updated[1][1].id)
 })
+
+test('normalization preserves the winner of every match in later rounds', () => {
+  let id = 0
+  let rounds = tournament.createTournamentBracket(teams(8), {
+    id: () => `match-${++id}`,
+    random: () => 0.5,
+  })
+
+  for (const match of rounds[0]) {
+    rounds = tournament.updateTournamentWinner(
+      rounds,
+      match.id,
+      match.teamAId,
+    )
+  }
+
+  const expectedWinner = rounds[1][1].teamBId
+  rounds = tournament.updateTournamentWinnerAt(
+    rounds,
+    1,
+    1,
+    expectedWinner,
+  )
+
+  const reopened = tournament.normalizeTournamentRounds(rounds)
+
+  assert.equal(reopened[1][0].winnerTeamId, null)
+  assert.equal(reopened[1][1].winnerTeamId, expectedWinner)
+  assert.equal(reopened[2][0].teamBId, expectedWinner)
+})

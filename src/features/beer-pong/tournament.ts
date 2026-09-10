@@ -196,7 +196,7 @@ export function completeTournamentBracket(rounds: TournamentMatch[][]) {
     const nextRound: TournamentMatch[] = []
 
     for (let index = 0; index < previousRound.length; index += 2) {
-      const existing = existingRound[index]
+      const existing = existingRound[index / 2]
       const sourceA = previousRound[index]
       const sourceB = previousRound[index + 1]
       nextRound.push({
