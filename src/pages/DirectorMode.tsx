@@ -1207,7 +1207,7 @@ function DirectorMode() {
           <span>{partyModuleIcons.photos}</span>
           <div>
             <small>Photo Hunt</small>
-            <strong>Modérer les photos</strong>
+            <strong>Voir les photos</strong>
           </div>
         </Link>
         <Link to="/admin/chat" className="director-shortcut">

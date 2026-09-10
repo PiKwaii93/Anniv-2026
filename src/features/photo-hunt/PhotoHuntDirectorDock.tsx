@@ -15,23 +15,15 @@ import './PhotoHuntDirectorDock.css'
 
 function PhotoHuntDirectorDock() {
   const { settings, saving, updateSettings } = useParty()
-  const [pending, setPending] = useState(0)
   const [approved, setApproved] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    const [pendingResult, approvedResult] = await Promise.all([
-      supabase
+    const approvedResult = await supabase
         .from('photo_hunt_submissions')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending'),
-      supabase
-        .from('photo_hunt_submissions')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved'),
-    ])
+        .eq('status', 'approved')
 
-    if (!pendingResult.error) setPending(pendingResult.count ?? 0)
     if (!approvedResult.error) setApproved(approvedResult.count ?? 0)
     setLoading(false)
   }, [])
@@ -73,12 +65,9 @@ function PhotoHuntDirectorDock() {
           <strong>
             {loading
               ? 'Synchronisation…'
-              : pending > 0
-                ? `${pending} photo${pending !== 1 ? 's' : ''} à valider`
-                : `${approved} publiée${approved !== 1 ? 's' : ''}`}
+              : `${approved} photo${approved !== 1 ? 's' : ''} publiée${approved !== 1 ? 's' : ''}`}
           </strong>
         </div>
-        {pending > 0 && <b>{pending}</b>}
       </Link>
 
       <button

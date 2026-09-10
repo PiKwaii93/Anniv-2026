@@ -440,10 +440,14 @@
 
 .photo-hunt-admin__submission-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   margin-top: auto;
   padding: 0 12px 12px;
+}
+
+.photo-review__actions:has(> button:only-child) > button {
+  width: 100%;
 }
 
 .photo-hunt-admin__submission-actions button,
@@ -462,6 +466,12 @@
 .photo-hunt-admin__delete {
   color: #e69aa8 !important;
   border-color: rgba(236, 99, 121, 0.14) !important;
+}
+
+.photo-hunt-admin__remove {
+  color: #ffb0bc !important;
+  background: rgba(236, 99, 121, 0.055) !important;
+  border-color: rgba(236, 99, 121, 0.2) !important;
 }
 
 .photo-hunt-admin__empty {
@@ -686,6 +696,10 @@ button:disabled {
     display: grid;
     grid-template-columns: 1fr 1fr;
     margin-top: 12px;
+  }
+
+  .photo-hunt-admin .photo-review__actions:has(> button:only-child) {
+    grid-template-columns: 1fr;
   }
 
   .photo-hunt-admin__metrics {

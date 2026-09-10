@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 
 import { useGuests } from '../features/guests/GuestsContext'
 import GuestAvatar from '../features/guests/GuestAvatar'
+import { GuestPlusOneRequests } from '../features/plus-ones/PlusOneRequests'
 
 function Guests() {
   const [search, setSearch] = useState('')
@@ -79,6 +80,8 @@ function Guests() {
           </p>
         </div>
       </header>
+
+      <GuestPlusOneRequests />
 
       {!loading && confirmedGuests.length > 0 && (
         <div className="guest-directory-tools">

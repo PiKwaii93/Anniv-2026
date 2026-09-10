@@ -71,7 +71,7 @@ export default function Home() {
     ...(own?.settings.duos_visible && phase !== 'ended' && own.duo?.status === 'active' ? [{ path: '/duos', title: `Ton duo avec ${own.duo.partner}`, detail: own.duo.confirmed ? 'Tu as confirmé · en attente de ton partenaire' : 'Votre défi est prêt.', icon: '↔' }] : []),
     ...(own?.settings.duos_visible && phase !== 'ended' && own.waiting ? [{ path: '/duos', title: 'Recherche de ton partenaire', detail: 'Tu es dans la file des duos.', icon: '↔' }] : []),
     ...(currentPersonal?.mission && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions', title: 'Reprendre tes missions', detail: 'Retrouve ta mission discrètement.', icon: '◇' }] : []),
-    ...(currentPersonal?.pending && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.pending} photo${currentPersonal.pending > 1 ? 's' : ''} en validation`, detail: 'Tes envois sont bien reçus.', icon: '▧' }] : []),
+    ...(currentPersonal?.pending && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.pending} photo${currentPersonal.pending > 1 ? 's' : ''} en publication`, detail: 'Tes envois sont bien reçus.', icon: '▧' }] : []),
     ...(currentPersonal?.retry && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.retry} photo${currentPersonal.retry > 1 ? 's' : ''} à refaire`, detail: 'Tu peux retenter ces défis.', icon: '▧' }] : []),
   ]
 

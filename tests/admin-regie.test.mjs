@@ -79,7 +79,7 @@ test('one launcher replaces the pile, and every command belongs to its tools pan
     assert.ok(query('#admin-regie-tools').querySelector(selector), selector)
   }
   assert.equal(query('a[href="/screen"]').target, '_blank')
-  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos à valider'), true)
+  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos publiées'), true)
   assert.deepEqual(writes, [])
 })
 test('scenes and announcements expand in normal DOM order, one at a time', async () => {

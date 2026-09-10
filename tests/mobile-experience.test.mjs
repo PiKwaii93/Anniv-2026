@@ -252,7 +252,7 @@ test('Home prioritizes the live question over featured Photos without assigning 
   await render(ui.Home)
   assert.match(q('.guest-now').textContent,/À toi de voter/)
   assert.equal(q('.guest-now a').getAttribute('href'),'/room')
-  assert.match(text(),/1 photo en validation/)
+  assert.match(text(),/1 photo en publication/)
   assert.equal(document.querySelectorAll('.module-card').length,0)
   assert.equal(q('a[href="/admin"]'),null)
   assert.ok(!reads.includes('get_secret_mission_state'))

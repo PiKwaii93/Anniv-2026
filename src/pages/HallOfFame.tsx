@@ -202,7 +202,7 @@ function HallOfFame() {
       {settings.photosVisible && hall.photos && <section className="hall-photo-stats" aria-label="Photo Hunt en chiffres">
         <p><strong>{hall.photos.published}</strong> photos publiées</p>
         <p><strong>{hall.photos.photographers}</strong> photographes</p>
-        <span>Les photos en validation ou refusées ne comptent pas.</span>
+        <span>Les photos retirées du mur ne comptent pas.</span>
       </section>}
 
       <section className="hall-rankings">

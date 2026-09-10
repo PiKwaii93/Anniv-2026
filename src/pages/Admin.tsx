@@ -10,6 +10,7 @@ import GuestAvatar from '../features/guests/GuestAvatar'
 import AvatarCropDialog from '../features/guests/AvatarCropDialog'
 import AdminGuestSessions from '../features/identity/AdminGuestSessions'
 import AdminPartyDataReset from '../features/identity/AdminPartyDataReset'
+import { AdminPlusOneRequests } from '../features/plus-ones/PlusOneRequests'
 import type {
   Guest,
   GuestStatus,
@@ -535,6 +536,8 @@ function Admin() {
           </strong>
         </article>
       </section>
+
+      <AdminPlusOneRequests />
 
       <section className="admin-section">
         <div className="section-heading">
