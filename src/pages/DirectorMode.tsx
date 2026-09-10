@@ -15,6 +15,10 @@ import {
   useParty,
 } from '../features/party/PartyContext'
 import { partyModuleIcons } from '../features/party/moduleVisuals'
+import {
+  getChampionTeamId,
+  normalizeTournamentRounds,
+} from '../features/beer-pong/tournament'
 import { supabase } from '../lib/supabase'
 import { useNow } from '../hooks/useNow'
 
@@ -479,9 +483,12 @@ function DirectorMode() {
     beerPongState.selectedPlayerIds?.length ?? 0
   const teamCount = beerPongState.teams?.length ?? 0
   const roundCount = beerPongState.rounds?.length ?? 0
+  const beerPongChampionTeamId = getChampionTeamId(
+    normalizeTournamentRounds(beerPongState.rounds),
+  )
 
   const beerPongStatus = useMemo(() => {
-    if (beerPongState.championTeamId) {
+    if (beerPongChampionTeamId) {
       return {
         label: 'Terminé',
         detail: 'Le tournoi a son champion.',
@@ -523,6 +530,7 @@ function DirectorMode() {
     }
   }, [
     beerPongState,
+    beerPongChampionTeamId,
     roundCount,
     selectedPlayerCount,
     teamCount,

@@ -34,7 +34,7 @@ export function isGuestPathAvailable(path: string, phase: PartySettings['phase']
 }
 
 export function activeGuestTab(path: string) {
-  if (path === '/play' || path === '/duos' || activities.some(item => item.path === path)) return '/play'
+  if (path === '/play' || path === '/duos' || path.startsWith('/beer-pong/') || activities.some(item => item.path === path)) return '/play'
   if (path === '/photos' || path === '/jukebox') return path
   return '/'
 }

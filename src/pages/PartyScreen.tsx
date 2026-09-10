@@ -12,6 +12,12 @@ import {
 import { supabase } from '../lib/supabase'
 import { useNow } from '../hooks/useNow'
 import PhotoHuntScreen from './PhotoHuntScreen'
+import TournamentBracket from '../features/beer-pong/TournamentBracket'
+import {
+  getActiveRoundIndex,
+  getChampionTeamId,
+  normalizeTournamentRounds,
+} from '../features/beer-pong/tournament'
 
 import './PartyScreen.css'
 
@@ -55,6 +61,7 @@ type RoomStateRow = {
 type PlayerSnapshot = {
   id: string
   name: string
+  avatarPath?: string | null
 }
 
 type Team = {
@@ -67,6 +74,8 @@ type Match = {
   teamAId: string | null
   teamBId: string | null
   winnerTeamId: string | null
+  teamASourceMatchId?: string | null
+  teamBSourceMatchId?: string | null
 }
 
 type BeerPongState = {
@@ -158,6 +167,7 @@ function PartyScreen() {
     phase: 'idle',
   })
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
+  const [beerPongView, setBeerPongView] = useState<'match' | 'tree'>('match')
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -306,8 +316,9 @@ function PartyScreen() {
     [playerById, teamById],
   )
 
-  const rounds = beerPongState.rounds ?? []
-  const currentRoundIndex = Math.max(0, rounds.length - 1)
+  const rounds = normalizeTournamentRounds(beerPongState.rounds)
+  const beerPongChampionTeamId = getChampionTeamId(rounds)
+  const currentRoundIndex = getActiveRoundIndex(rounds)
   const currentRound = rounds[currentRoundIndex] ?? []
   const currentMatch = currentRound.find(
     (match) =>
@@ -326,6 +337,21 @@ function PartyScreen() {
   const activeModule = roomIsLive
     ? 'room'
     : settings.featuredModule
+
+  useEffect(() => {
+    if (
+      activeModule !== 'beer-pong'
+      || !beerPongState.draftValidated
+      || beerPongChampionTeamId
+      || rounds.length === 0
+    ) return
+
+    const timeout = window.setTimeout(
+      () => setBeerPongView((current) => current === 'match' ? 'tree' : 'match'),
+      beerPongView === 'match' ? 12000 : 7000,
+    )
+    return () => window.clearTimeout(timeout)
+  }, [activeModule, beerPongChampionTeamId, beerPongState.draftValidated, beerPongView, rounds.length])
 
   const sortedResults = useMemo(
     () => [...(roomState.result?.rows ?? [])]
@@ -480,7 +506,25 @@ function PartyScreen() {
   }
 
   if (activeModule === 'beer-pong') {
-    const championName = teamName(beerPongState.championTeamId)
+    const championName = teamName(beerPongChampionTeamId)
+
+    if (beerPongState.draftValidated && !beerPongChampionTeamId && beerPongView === 'tree') {
+      return (
+        <main className="party-screen party-screen--pong-tree">
+          <header className="party-screen__topline">
+            <div><span className="party-screen__live-dot" />Beer Pong · arbre complet</div>
+            <span>Prochain match dans un instant</span>
+          </header>
+          <TournamentBracket
+            rounds={rounds}
+            teams={beerPongState.teams ?? []}
+            players={beerPongState.playerSnapshots ?? []}
+            activeRoundIndex={currentRoundIndex}
+            variant="tv"
+          />
+        </main>
+      )
+    }
 
     return (
       <main className="party-screen party-screen--pong">
@@ -497,7 +541,7 @@ function PartyScreen() {
           </span>
         </header>
 
-        {beerPongState.championTeamId ? (
+        {beerPongChampionTeamId ? (
           <section className="party-screen__champion">
             <p className="party-screen__eyebrow">🏆 Champions</p>
             <h1>{championName}</h1>

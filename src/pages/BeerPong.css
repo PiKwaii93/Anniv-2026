@@ -1473,6 +1473,21 @@
   gap: 42px;
 }
 
+.beer-bracket-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 15px;
+  color: #f1c6ca;
+  background: rgba(255, 61, 84, 0.055);
+  border: 1px solid rgba(255, 91, 108, 0.2);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
 .beer-round__title {
   display: flex;
   align-items: baseline;

@@ -55,6 +55,10 @@ const BeerPong = lazy(
   () => import('./pages/BeerPong'),
 )
 
+const BeerPongBracket = lazy(
+  () => import('./pages/BeerPongBracket'),
+)
+
 const Bingo = lazy(
   () => import('./pages/Bingo'),
 )
@@ -262,12 +266,13 @@ function GuestPhaseGate({ children }: { children: ReactNode }) {
 
 function App() {
   const { pathname } = useLocation()
+  const immersive = pathname === '/beer-pong/bracket'
   const content = <AppRoutes />
   return (
     <>
       <PartyEnvironmentBanner />
-      <AdminPartyDock />
-      <LiveAnnouncementOverlay />
+      {!immersive && <AdminPartyDock />}
+      {!immersive && <LiveAnnouncementOverlay />}
       {isGuestPath(pathname) ? <GuestShell><GuestPhaseGate>{content}</GuestPhaseGate></GuestShell> : content}
     </>
   )
@@ -317,6 +322,15 @@ function AppRoutes() {
             element={
               <ModuleGate module="beer-pong">
                 <BeerPong />
+              </ModuleGate>
+            }
+          />
+
+          <Route
+            path="/beer-pong/bracket"
+            element={
+              <ModuleGate module="beer-pong">
+                <BeerPongBracket />
               </ModuleGate>
             }
           />

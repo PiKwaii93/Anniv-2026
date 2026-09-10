@@ -11,6 +11,11 @@ import GuestAvatar from '../features/guests/GuestAvatar'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 import PhotoHuntScreen from './PhotoHuntScreen'
+import {
+  getActiveRoundIndex,
+  getChampionTeamId,
+  normalizeTournamentRounds,
+} from '../features/beer-pong/tournament'
 
 import './PartyScreen.css'
 import './PartyScreenAuto.css'
@@ -224,15 +229,16 @@ function PartyScreenAuto() {
     [playerById, teamById],
   )
 
-  const rounds = beerPongState.rounds ?? []
-  const currentRound = rounds[Math.max(0, rounds.length - 1)] ?? []
+  const rounds = normalizeTournamentRounds(beerPongState.rounds)
+  const beerPongChampionTeamId = getChampionTeamId(rounds)
+  const currentRound = rounds[getActiveRoundIndex(rounds)] ?? []
   const nextMatch = currentRound.find(
     (match) => match.teamAId && match.teamBId && !match.winnerTeamId,
   )
   const teamCount = beerPongState.teams?.length ?? 0
   const selectedPlayerCount = beerPongState.selectedPlayerIds?.length ?? 0
   const hasBeerPongActivity = Boolean(
-    beerPongState.championTeamId
+    beerPongChampionTeamId
     || beerPongState.draftValidated
     || teamCount > 0
     || selectedPlayerCount > 0,
@@ -335,9 +341,9 @@ function PartyScreenAuto() {
   }
 
   if (activeSlide === 'beer-pong') {
-    const champion = teamName(beerPongState.championTeamId)
-    const highlightedTeamIds = beerPongState.championTeamId
-      ? [beerPongState.championTeamId]
+    const champion = teamName(beerPongChampionTeamId)
+    const highlightedTeamIds = beerPongChampionTeamId
+      ? [beerPongChampionTeamId]
       : nextMatch
         ? [nextMatch.teamAId, nextMatch.teamBId].filter(
             (teamId): teamId is string => Boolean(teamId),
@@ -357,15 +363,15 @@ function PartyScreenAuto() {
         <section className="party-screen-auto__split">
           <div>
             <p className="party-screen__eyebrow">
-              {beerPongState.championTeamId ? '🏆 Tournoi terminé' : 'Tournoi'}
+              {beerPongChampionTeamId ? '🏆 Tournoi terminé' : 'Tournoi'}
             </p>
             <h1>
-              {beerPongState.championTeamId
+              {beerPongChampionTeamId
                 ? 'Les champions.'
                 : 'Ça chauffe.'}
             </h1>
             <p className="party-screen-auto__lead">
-              {beerPongState.championTeamId
+              {beerPongChampionTeamId
                 ? champion
                 : nextMatch
                   ? `${teamName(nextMatch.teamAId)} vs ${teamName(nextMatch.teamBId)}`
