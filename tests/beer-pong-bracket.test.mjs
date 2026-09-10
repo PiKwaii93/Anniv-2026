@@ -90,3 +90,40 @@ test('a legacy first round is expanded without changing its results', () => {
   assert.equal(upgraded[1][0].winnerTeamId, null)
   assert.equal(upgraded[2][0].teamAId, null)
 })
+
+test('duplicate legacy match IDs are repaired before winners propagate', () => {
+  let id = 0
+  const complete = tournament.createTournamentBracket(teams(8), {
+    id: () => `match-${++id}`,
+    random: () => 0.5,
+  })
+  const firstRound = complete[0].map((match) => ({
+    ...match,
+    winnerTeamId: match.teamAId,
+  }))
+  const legacySecondRound = complete[1].map((match, index) => ({
+    ...match,
+    id: 'duplicated-legacy-id',
+    teamAId: firstRound[index * 2].winnerTeamId,
+    teamBId: firstRound[index * 2 + 1].winnerTeamId,
+    winnerTeamId: null,
+  }))
+  const repaired = tournament.completeTournamentBracket([
+    firstRound,
+    legacySecondRound,
+  ])
+
+  assert.equal(new Set(repaired.flat().map((match) => match.id)).size, 7)
+  const firstSemi = repaired[1][0]
+  const secondSemi = repaired[1][1]
+  const updated = tournament.updateTournamentWinner(
+    repaired,
+    secondSemi.id,
+    secondSemi.teamAId,
+  )
+
+  assert.equal(updated[1][0].winnerTeamId, firstSemi.winnerTeamId)
+  assert.equal(updated[1][1].winnerTeamId, secondSemi.teamAId)
+  assert.equal(updated[2][0].teamAId, null)
+  assert.equal(updated[2][0].teamBId, secondSemi.teamAId)
+})

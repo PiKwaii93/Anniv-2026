@@ -236,9 +236,15 @@ test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', 
       id: `match-${index + 1}`,
       teamAId: teams[teamAIndex].id,
       teamBId: competitive ? teams[index * 2 + 1].id : null,
-      winnerTeamId: competitive ? null : teams[teamAIndex].id,
+      winnerTeamId: teams[teamAIndex].id,
     }
   })
+  const duplicatedLegacyRound = Array.from({ length: 8 }, (_, index) => ({
+    id: 'duplicated-legacy-id',
+    teamAId: firstRound[index * 2].winnerTeamId,
+    teamBId: firstRound[index * 2 + 1].winnerTeamId,
+    winnerTeamId: null,
+  }))
   const guard = await guardBrowser(page, {
     tables: {
       party_state: { ...partyState, phase: 'live' },
@@ -248,7 +254,7 @@ test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', 
           draftValidated: true,
           playerSnapshots: players,
           teams,
-          rounds: [firstRound],
+          rounds: [firstRound, duplicatedLegacyRound],
         },
       },
     },
@@ -256,7 +262,10 @@ test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', 
 
   await page.goto('/beer-pong/bracket')
   const tree = page.locator('.tournament-tree')
-  await expect(tree).toBeVisible()
+  await expect(tree).toBeVisible({ timeout: 20_000 })
+  const matchLabels = await tree.locator('.tournament-tree__match-number').allTextContents()
+  expect(matchLabels).toHaveLength(31)
+  expect(new Set(matchLabels).size).toBe(31)
   await tree.hover()
   await page.mouse.wheel(0, 700)
 

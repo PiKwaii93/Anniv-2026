@@ -155,8 +155,31 @@ export function createTournamentBracket(
 export function completeTournamentBracket(rounds: TournamentMatch[][]) {
   if (rounds.length === 0 || rounds[0].length === 0) return rounds
 
-  const completed: TournamentMatch[][] = [rounds[0].map((match) => ({
+  const usedIds = new Set<string>()
+  const uniqueId = (
+    preferredId: string,
+    roundIndex: number,
+    matchIndex: number,
+  ) => {
+    if (!usedIds.has(preferredId)) {
+      usedIds.add(preferredId)
+      return preferredId
+    }
+
+    const base = `bracket-${roundIndex}-${matchIndex}`
+    let candidate = base
+    let suffix = 1
+    while (usedIds.has(candidate)) {
+      candidate = `${base}-${suffix}`
+      suffix += 1
+    }
+    usedIds.add(candidate)
+    return candidate
+  }
+
+  const completed: TournamentMatch[][] = [rounds[0].map((match, index) => ({
     ...match,
+    id: uniqueId(match.id, 0, index),
     teamASourceMatchId: null,
     teamBSourceMatchId: null,
   }))]
@@ -172,7 +195,11 @@ export function completeTournamentBracket(rounds: TournamentMatch[][]) {
       const sourceA = previousRound[index]
       const sourceB = previousRound[index + 1]
       nextRound.push({
-        id: existing?.id ?? `bracket-${roundIndex}-${index / 2}-${sourceA.id}-${sourceB.id}`,
+        id: uniqueId(
+          existing?.id ?? `bracket-${roundIndex}-${index / 2}`,
+          roundIndex,
+          index / 2,
+        ),
         teamAId: existing?.teamAId ?? null,
         teamBId: existing?.teamBId ?? null,
         winnerTeamId: existing?.winnerTeamId ?? null,

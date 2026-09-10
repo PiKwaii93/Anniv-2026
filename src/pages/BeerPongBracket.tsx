@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import TournamentBracket from '../features/beer-pong/TournamentBracket'
@@ -61,8 +61,16 @@ export default function BeerPongBracketPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const pendingWriteRef = useRef(false)
+  const deferredRefreshRef = useRef(false)
 
   const load = useCallback(async () => {
+    if (pendingWriteRef.current) {
+      deferredRefreshRef.current = true
+      return
+    }
+    deferredRefreshRef.current = false
+
     const { data, error: loadError } = await supabase
       .from('beer_pong_state')
       .select('state')
@@ -106,9 +114,14 @@ export default function BeerPongBracketPage() {
     const nextState = { ...state, rounds: nextRounds, championTeamId: getChampionTeamId(nextRounds) }
     setBusy(true)
     setState(nextState)
+    pendingWriteRef.current = true
     const { error: saveError } = await supabase.from('beer_pong_state').update({ state: nextState }).eq('id', 'main')
+    pendingWriteRef.current = false
     if (saveError) {
       setError('Le résultat n’a pas été enregistré. L’arbre va être resynchronisé.')
+      await load()
+    } else if (deferredRefreshRef.current) {
+      deferredRefreshRef.current = false
       await load()
     }
     setBusy(false)
