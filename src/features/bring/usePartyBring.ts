@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAuth } from '../auth/AuthContext'
 import { usePartyIdentity } from '../identity/PartyIdentityContext'
 import { supabase } from '../../lib/supabase'
 
@@ -31,7 +30,6 @@ function bringError(error: unknown) {
 
 export function usePartyBring() {
   const { identity } = usePartyIdentity()
-  const { isAdmin } = useAuth()
   const key = identity?.playerKey ?? null
   const token = identity?.sessionToken ?? null
   const enabled = !!key && !!token
@@ -43,12 +41,12 @@ export function usePartyBring() {
     if (!enabled) return
     const request = ++generation.current
     const { data: next, error: failure } = await supabase.rpc('get_party_bring', {
-      p_player_key: key, p_session_token: token, p_admin: isAdmin,
+      p_player_key: key, p_session_token: token, p_admin: false,
     }).abortSignal(AbortSignal.timeout(12000))
     if (request !== generation.current) return
     if (failure || !next?.ok) setError(bringError(failure))
     else { setData(next as BringState); setError('') }
-  }, [enabled, key, token, isAdmin])
+  }, [enabled, key, token])
 
   useEffect(() => {
     let running = false
@@ -71,11 +69,11 @@ export function usePartyBring() {
 
   const action = useCallback(async (name: 'create' | 'update' | 'delete', payload: Record<string, unknown>) => {
     const { data: result, error: failure } = await supabase.rpc('party_bring_action', {
-      p_action: name, p_payload: payload, p_player_key: key, p_session_token: token, p_admin: isAdmin,
+      p_action: name, p_payload: payload, p_player_key: key, p_session_token: token, p_admin: false,
     }).abortSignal(AbortSignal.timeout(12000))
     if (failure || !result?.ok) throw new Error(bringError(failure))
     await refresh()
-  }, [key, token, isAdmin, refresh])
+  }, [key, token, refresh])
 
   return { data, error, loading: enabled && !data && !error, action }
 }
