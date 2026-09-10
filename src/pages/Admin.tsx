@@ -795,13 +795,26 @@ function Admin() {
                       <select
                         value={guest.status}
                         aria-label={`Statut de ${guest.name}`}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextStatus =
+                            event.target
+                              .value as GuestStatus
+
+                          console.info(
+                            '[Guests][STATUS_SELECT]',
+                            {
+                              guestId: guest.id,
+                              previousStatus:
+                                guest.status,
+                              requestedStatus:
+                                nextStatus,
+                            },
+                          )
+
                           updateGuest(guest.id, {
-                            status:
-                              event.target
-                                .value as GuestStatus,
+                            status: nextStatus,
                           })
-                        }
+                        }}
                       >
                         {Object.entries(
                           statusLabels,

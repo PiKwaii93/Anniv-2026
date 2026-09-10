@@ -627,14 +627,86 @@ export function GuestsProvider({
         Object.keys(guestPatch)
           .length > 0
       ) {
+        const statusTrace =
+          guestPatch.status !== undefined
+            ? {
+                traceId: crypto.randomUUID(),
+                guestId: id,
+                previousStatus:
+                  previousGuest.status,
+                requestedStatus:
+                  guestPatch.status,
+              }
+            : null
+
+        if (statusTrace) {
+          console.info(
+            '[Guests][STATUS_UPDATE_REQUEST]',
+            statusTrace,
+          )
+        }
+
         const guestResult =
           await supabase
             .from('guests')
             .update(guestPatch)
             .eq('id', id)
+            .select('id, status')
+            .maybeSingle()
+
+        if (statusTrace) {
+          console.info(
+            '[Guests][STATUS_UPDATE_RESPONSE]',
+            {
+              ...statusTrace,
+              returnedRow:
+                guestResult.data ?? null,
+              error: guestResult.error
+                ? {
+                    code:
+                      guestResult.error.code,
+                    message:
+                      guestResult.error.message,
+                    details:
+                      guestResult.error.details,
+                    hint:
+                      guestResult.error.hint,
+                  }
+                : null,
+            },
+          )
+        }
 
         if (guestResult.error) {
           throw guestResult.error
+        }
+
+        if (statusTrace) {
+          const returnedStatus =
+            guestResult.data?.status
+
+          if (
+            returnedStatus !==
+            statusTrace.requestedStatus
+          ) {
+            console.error(
+              '[Guests][STATUS_UPDATE_MISMATCH]',
+              {
+                ...statusTrace,
+                returnedStatus:
+                  returnedStatus ?? null,
+                likelyCause:
+                  returnedStatus ===
+                  statusTrace.previousStatus
+                    ? 'The database returned the previous row. Check that migration 20260910143000_fix_guest_status_session_revocation.sql is applied to this Supabase project.'
+                    : 'The update returned no matching row or an unexpected status. Check RLS and database triggers.',
+              },
+            )
+
+            throw new Error(
+              'Supabase did not persist the requested guest status.',
+            )
+          }
         }
       }
 

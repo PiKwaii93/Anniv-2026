@@ -152,7 +152,11 @@ function ChatRoom({ admin }: { admin: boolean }) {
             onPointerDown={event => event.stopPropagation()}
             onClick={() => openMessageDetails(message)}
           >
-            ···
+            <svg className="chat-message__options-icon" viewBox="0 0 18 18" aria-hidden="true">
+              <circle cx="4" cy="9" r="1.35" />
+              <circle cx="9" cy="9" r="1.35" />
+              <circle cx="14" cy="9" r="1.35" />
+            </svg>
           </button>
         </header>
         <p className="chat-message__body">{message.body}</p>
