@@ -63,6 +63,7 @@ export default function BeerPongBracketPage() {
   const [error, setError] = useState('')
   const pendingWriteRef = useRef(false)
   const deferredRefreshRef = useRef(false)
+  const loadRequestRef = useRef(0)
 
   const load = useCallback(async () => {
     if (pendingWriteRef.current) {
@@ -71,11 +72,21 @@ export default function BeerPongBracketPage() {
     }
     deferredRefreshRef.current = false
 
+    const requestId = loadRequestRef.current + 1
+    loadRequestRef.current = requestId
+
     const { data, error: loadError } = await supabase
       .from('beer_pong_state')
       .select('state')
       .eq('id', 'main')
       .maybeSingle()
+
+    if (requestId !== loadRequestRef.current) return
+    if (pendingWriteRef.current) {
+      deferredRefreshRef.current = true
+      return
+    }
+
     if (loadError) setError('Impossible de synchroniser l’arbre du tournoi.')
     else {
       setState(parseState(data?.state))
@@ -114,12 +125,21 @@ export default function BeerPongBracketPage() {
     const nextState = { ...state, rounds: nextRounds, championTeamId: getChampionTeamId(nextRounds) }
     setBusy(true)
     setState(nextState)
+    setError('')
+    loadRequestRef.current += 1
     pendingWriteRef.current = true
-    const { error: saveError } = await supabase.from('beer_pong_state').update({ state: nextState }).eq('id', 'main')
+
+    const { error: saveError } = await supabase
+      .from('beer_pong_state')
+      .upsert(
+        { id: 'main', state: nextState },
+        { onConflict: 'id' },
+      )
+
     pendingWriteRef.current = false
     if (saveError) {
-      setError('Le résultat n’a pas été enregistré. L’arbre va être resynchronisé.')
       await load()
+      setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
     } else if (deferredRefreshRef.current) {
       deferredRefreshRef.current = false
       await load()
