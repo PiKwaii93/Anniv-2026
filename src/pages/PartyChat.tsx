@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { useAuth } from '../features/auth/AuthContext'
 import { chatError, usePartyChat, type ChatMessage } from '../features/chat/usePartyChat'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import '../features/chat/chat.css'
 import '../features/chat/chat-mobile.css'
 
@@ -133,34 +134,36 @@ function ChatRoom({ admin }: { admin: boolean }) {
     }}>
       {loading && <p className="chat-empty">Ouverture de la discussion…</p>}
       {data && data.messages.length === 0 && <div className="chat-empty"><span aria-hidden="true">✳</span><h2>{before ? 'Plus de messages ici.' : 'Tout commence par un petit mot.'}</h2><p>{before ? 'Reviens aux derniers messages pour retrouver la discussion.' : <>« Qui est partant pour une photo ? »<br />« On se retrouve près du gâteau ! »</>}</p></div>}
-      {data?.messages.map(message => <article
-        key={message.id}
-        className={`chat-message${message.mine ? ' chat-message--mine' : ''}`}
-        onPointerDown={() => startMessageHold(message)}
-        onPointerUp={cancelMessageHold}
-        onPointerCancel={cancelMessageHold}
-        onPointerMove={cancelMessageHold}
-        onPointerLeave={cancelMessageHold}
-        onContextMenu={(event) => { event.preventDefault(); openMessageDetails(message) }}
-      >
-        <header className="chat-message__header">
-          <strong className="chat-message__author">{message.mine ? 'Toi' : message.name}</strong>
-          <button
-            className="chat-message__options"
-            type="button"
-            aria-label={`Options du message de ${message.mine ? 'toi' : message.name}`}
-            onPointerDown={event => event.stopPropagation()}
-            onClick={() => openMessageDetails(message)}
-          >
-            <svg className="chat-message__options-icon" viewBox="0 0 18 18" aria-hidden="true">
-              <circle cx="4" cy="9" r="1.35" />
-              <circle cx="9" cy="9" r="1.35" />
-              <circle cx="14" cy="9" r="1.35" />
-            </svg>
-          </button>
-        </header>
-        <p className="chat-message__body">{message.body}</p>
-      </article>)}
+      {data?.messages.map(message => <div key={message.id} className={`chat-message-row${message.mine ? ' chat-message-row--mine' : ''}`}>
+        {!message.mine && <GuestAvatar name={message.name} path={message.avatarPath} size="small" className="chat-message__avatar" />}
+        <article
+          className={`chat-message${message.mine ? ' chat-message--mine' : ''}`}
+          onPointerDown={() => startMessageHold(message)}
+          onPointerUp={cancelMessageHold}
+          onPointerCancel={cancelMessageHold}
+          onPointerMove={cancelMessageHold}
+          onPointerLeave={cancelMessageHold}
+          onContextMenu={(event) => { event.preventDefault(); openMessageDetails(message) }}
+        >
+          <header className="chat-message__header">
+            <strong className="chat-message__author">{message.mine ? 'Toi' : message.name}</strong>
+            <button
+              className="chat-message__options"
+              type="button"
+              aria-label={`Options du message de ${message.mine ? 'toi' : message.name}`}
+              onPointerDown={event => event.stopPropagation()}
+              onClick={() => openMessageDetails(message)}
+            >
+              <svg className="chat-message__options-icon" viewBox="0 0 18 18" aria-hidden="true">
+                <circle cx="4" cy="9" r="1.35" />
+                <circle cx="9" cy="9" r="1.35" />
+                <circle cx="14" cy="9" r="1.35" />
+              </svg>
+            </button>
+          </header>
+          <p className="chat-message__body">{message.body}</p>
+        </article>
+      </div>)}
     </div>
     {!before && !following && !!data?.unread && <button className="chat-jump" onClick={() => setFollowing(true)}>Derniers messages ↓</button>}
     <div className="chat-status" role="status" aria-live="polite">{notice}</div>

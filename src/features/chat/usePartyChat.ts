@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { usePartyIdentity } from '../identity/PartyIdentityContext'
 import { supabase } from '../../lib/supabase'
 
-export type ChatMessage = { id: string; name: string; body: string; created_at: string; mine: boolean }
+export type ChatMessage = { id: string; name: string; body: string; created_at: string; mine: boolean; avatarPath: string | null }
 export type ChatState = { messages: ChatMessage[]; unread: number; latest: string; open: boolean; more: boolean; oldest: string | null }
 
 export function chatError(error: unknown) {

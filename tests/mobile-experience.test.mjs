@@ -127,6 +127,12 @@ beforeEach(async()=>{
       },
       channel:()=>{const c={on(){return c},subscribe(){return c}};return c},
       removeChannel:async()=>{},
+      storage:{
+        from(bucket){
+          assert.equal(bucket,'guest-avatars')
+          return {getPublicUrl:path=>({data:{publicUrl:`https://party.test/storage/${path}`}})}
+        },
+      },
     }
   }
 })
@@ -517,7 +523,7 @@ test('profile release still requires confirmation and a successful response',asy
   assert.deepEqual(actions,['releaseIdentity','releaseIdentity'])
 })
 
-const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine})
+const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine,avatarPath:mine?'guests/camille/avatar.jpg':'guests/lea/avatar.jpg'})
 const chatWrites=()=>actions.filter(a=>a.name==='party_chat_action')
 async function editChat(value) {
   const input=q('#chat-message')
@@ -557,6 +563,7 @@ test('chat renders compact plain-text messages and keeps details in an options s
   fixture.chat.latest='2'
   await render(ui.Chat,'/chat')
   assert.equal(document.querySelectorAll('.chat-message').length,2)
+  assert.equal(document.querySelectorAll('.chat-message__avatar').length,1)
   assert.match(text(),/<script>alert\(1\)<\/script>/)
   assert.equal(q('.chat-message script'),null)
   assert.equal(document.querySelectorAll('.chat-message__options').length,2)
