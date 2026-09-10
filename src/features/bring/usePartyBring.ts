@@ -56,7 +56,7 @@ export function usePartyBring() {
       try { await refresh() } finally { running = false }
     }
     void visible()
-    const timer = window.setInterval(() => void visible(), 4000)
+    const timer = window.setInterval(() => void visible(), 8000)
     document.addEventListener('visibilitychange', visible)
     window.addEventListener('online', visible)
     return () => {

@@ -51,7 +51,7 @@ export function usePartyChat({ admin = false, summary = false, before = null }: 
       try { await refresh() } finally { running = false }
     }
     void visible()
-    const timer = window.setInterval(() => void visible(), summary ? 20000 : 3000)
+    const timer = window.setInterval(() => void visible(), summary ? 30000 : 5000)
     document.addEventListener('visibilitychange', visible)
     window.addEventListener('online', visible)
     return () => {

@@ -220,7 +220,7 @@ function expectCleanBrowser(guard: BrowserGuard) {
   expect(guard.reactWarnings).toEqual([])
 }
 
-test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', async ({ page }) => {
+test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', async ({ page, browserName }) => {
   const players = Array.from({ length: 42 }, (_, index) => ({
     id: `player-${index + 1}`,
     name: `Joueur ${index + 1}`,
@@ -266,8 +266,15 @@ test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', 
   const matchLabels = await tree.locator('.tournament-tree__match-number').allTextContents()
   expect(matchLabels).toHaveLength(31)
   expect(new Set(matchLabels).size).toBe(31)
-  await tree.hover()
-  await page.mouse.wheel(0, 700)
+  if (browserName === 'webkit') {
+    // Playwright does not expose a touch swipe and mobile WebKit rejects mouse.wheel.
+    // Scrolling the viewport still catches the overflow/body-lock regression here;
+    // Chromium keeps the pointer-over-canvas interaction coverage below.
+    await page.evaluate(() => window.scrollBy(0, 700))
+  } else {
+    await tree.hover()
+    await page.mouse.wheel(0, 700)
+  }
 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300)
   expectCleanBrowser(guard)

@@ -353,6 +353,7 @@ export function GuestsProvider({
       return
     }
 
+    let realtimeReady = false
     const channel = supabase
       .channel(
         'anniv-2026-guests-live',
@@ -375,12 +376,18 @@ export function GuestsProvider({
         },
         requestRefresh,
       )
-      .subscribe()
+      .subscribe((status) => {
+        realtimeReady = status === 'SUBSCRIBED'
+      })
 
     const refreshInterval =
       window.setInterval(
-        requestRefresh,
-        15000,
+        () => {
+          if (!realtimeReady && document.visibilityState === 'visible') {
+            requestRefresh()
+          }
+        },
+        60000,
       )
 
     const handleVisibilityChange =

@@ -113,7 +113,7 @@ export function usePlusOneRequests(admin = false) {
 
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh()
-    }, 10000)
+    }, 30000)
     const onVisible = () => {
       if (document.visibilityState === 'visible') void refresh()
     }

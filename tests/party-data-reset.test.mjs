@@ -20,7 +20,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   },
   load(id) {
     if (id === '\0auth') return 'export const useAuth=()=>globalThis.__reset.auth'
-    if (id === '\0db') return `export const supabase={rpc:(...args)=>{const p=globalThis.__reset.rpc(...args);p.abortSignal=()=>p;return p},storage:{from:bucket=>({remove:paths=>globalThis.__reset.remove(bucket,paths)})}}`
+    if (id === '\0db') return `export const supabase={rpc:(...args)=>{const p=globalThis.__reset.rpc(...args);p.abortSignal=()=>p;return p},channel:()=>({on(){return this},subscribe(){return this}}),removeChannel:async()=>{},storage:{from:bucket=>({remove:paths=>globalThis.__reset.remove(bucket,paths)})}}`
     if (id === '\0reset') return `export * from ${JSON.stringify(resolve('src/features/identity/partyDataReset.ts'))};export {default as Admin} from ${JSON.stringify(resolve('src/features/identity/AdminPartyDataReset.tsx'))};export {default as Boundary} from ${JSON.stringify(resolve('src/features/identity/PartyDataBoundary.tsx'))};`
   },
 }], build: { ssr: 'virtual:reset', write: false, minify: false } })
