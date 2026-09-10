@@ -228,6 +228,29 @@ export function updateTournamentWinner(
   return resolveRounds(updated)
 }
 
+export function updateTournamentWinnerAt(
+  rounds: TournamentMatch[][],
+  roundIndex: number,
+  matchIndex: number,
+  teamId: string,
+) {
+  const selectedMatch = rounds[roundIndex]?.[matchIndex]
+  if (
+    !selectedMatch
+    || (selectedMatch.teamAId !== teamId && selectedMatch.teamBId !== teamId)
+  ) {
+    return resolveRounds(rounds)
+  }
+
+  const updated = rounds.map((round, currentRoundIndex) => round.map((match, currentMatchIndex) => (
+    currentRoundIndex === roundIndex && currentMatchIndex === matchIndex
+      ? { ...match, winnerTeamId: teamId }
+      : { ...match }
+  )))
+
+  return resolveRounds(updated)
+}
+
 export function getActiveRoundIndex(rounds: TournamentMatch[][]) {
   const index = rounds.findIndex((round) => round.some(
     (match) => match.teamAId && match.teamBId && !match.winnerTeamId,

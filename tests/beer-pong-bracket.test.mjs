@@ -127,3 +127,30 @@ test('duplicate legacy match IDs are repaired before winners propagate', () => {
   assert.equal(updated[2][0].teamAId, null)
   assert.equal(updated[2][0].teamBId, secondSemi.teamAId)
 })
+
+test('a winner is selected by its exact bracket position even with duplicate IDs', () => {
+  const duplicatedRounds = [[
+    {
+      id: 'legacy-match',
+      teamAId: 'team-1',
+      teamBId: 'team-2',
+      winnerTeamId: null,
+    },
+    {
+      id: 'legacy-match',
+      teamAId: 'team-3',
+      teamBId: 'team-4',
+      winnerTeamId: null,
+    },
+  ]]
+
+  const updated = tournament.updateTournamentWinnerAt(
+    duplicatedRounds,
+    0,
+    1,
+    'team-4',
+  )
+
+  assert.equal(updated[0][0].winnerTeamId, null)
+  assert.equal(updated[0][1].winnerTeamId, 'team-4')
+})

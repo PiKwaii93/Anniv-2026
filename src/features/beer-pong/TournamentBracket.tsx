@@ -15,7 +15,12 @@ type Props = {
   players: Player[]
   activeRoundIndex: number
   variant?: 'page' | 'tv'
-  onPickWinner?: (roundIndex: number, match: TournamentMatch, teamId: string) => void
+  onPickWinner?: (
+    roundIndex: number,
+    matchIndex: number,
+    match: TournamentMatch,
+    teamId: string,
+  ) => void
 }
 
 export default function TournamentBracket({
@@ -109,7 +114,12 @@ export default function TournamentBracket({
                         type="button"
                         disabled={!editable || !teamId}
                         className={`tournament-tree__slot${teamId && match.winnerTeamId === teamId ? ' is-winner' : ''}${!teamId ? ' is-waiting' : ''}`}
-                        onClick={() => teamId && onPickWinner?.(roundIndex, match, teamId)}
+                        onClick={() => teamId && onPickWinner?.(
+                          roundIndex,
+                          index,
+                          match,
+                          teamId,
+                        )}
                       >
                         {!tv && team && (
                           <span className="tournament-tree__faces" aria-hidden="true">

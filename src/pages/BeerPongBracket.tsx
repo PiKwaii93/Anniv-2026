@@ -6,7 +6,7 @@ import {
   getActiveRoundIndex,
   getChampionTeamId,
   normalizeTournamentRounds,
-  updateTournamentWinner,
+  updateTournamentWinnerAt,
   type TournamentMatch,
   type TournamentTeam,
 } from '../features/beer-pong/tournament'
@@ -115,13 +115,23 @@ export default function BeerPongBracketPage() {
   ).length, [rounds])
   const totalMatches = Math.max(0, (state.teams?.length ?? 0) - 1)
 
-  const pickWinner = async (roundIndex: number, match: TournamentMatch, teamId: string) => {
+  const pickWinner = async (
+    roundIndex: number,
+    matchIndex: number,
+    match: TournamentMatch,
+    teamId: string,
+  ) => {
     if (!isAdmin || busy || roundIndex > activeRoundIndex || match.winnerTeamId === teamId) return
     if (match.winnerTeamId || roundIndex < activeRoundIndex) {
       if (!window.confirm('Corriger ce résultat ? La branche concernée sera recalculée.')) return
     }
 
-    const nextRounds = updateTournamentWinner(rounds, match.id, teamId)
+    const nextRounds = updateTournamentWinnerAt(
+      rounds,
+      roundIndex,
+      matchIndex,
+      teamId,
+    )
     const nextState = { ...state, rounds: nextRounds, championTeamId: getChampionTeamId(nextRounds) }
     setBusy(true)
     setState(nextState)
@@ -129,18 +139,34 @@ export default function BeerPongBracketPage() {
     loadRequestRef.current += 1
     pendingWriteRef.current = true
 
-    const { error: saveError } = await supabase
+    const { data: savedRow, error: saveError } = await supabase
       .from('beer_pong_state')
       .upsert(
         { id: 'main', state: nextState },
         { onConflict: 'id' },
       )
+      .select('state')
+      .single()
 
     pendingWriteRef.current = false
-    if (saveError) {
+    if (saveError || !savedRow) {
       await load()
       setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
-    } else if (deferredRefreshRef.current) {
+    } else {
+      const savedState = parseState(savedRow.state)
+      const savedWinner = savedState.rounds?.[roundIndex]?.[matchIndex]?.winnerTeamId
+
+      if (savedWinner !== teamId) {
+        await load()
+        setError('Supabase n’a pas conservé ce résultat. L’arbre a été resynchronisé.')
+        setBusy(false)
+        return
+      }
+
+      setState(savedState)
+    }
+
+    if (!saveError && savedRow && deferredRefreshRef.current) {
       deferredRefreshRef.current = false
       await load()
     }
