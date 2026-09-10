@@ -71,6 +71,31 @@ function getStoredWinner(
   return typeof winner === 'string' ? winner : null
 }
 
+function describeRound(value: unknown, roundIndex: number) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
+  const rawRounds = (value as Record<string, unknown>).rounds
+  if (!Array.isArray(rawRounds)) return []
+  const rawRound = rawRounds[roundIndex]
+  if (!Array.isArray(rawRound)) return []
+
+  return rawRound.map((candidate, matchIndex) => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+      return { matchIndex, invalid: true }
+    }
+
+    const match = candidate as Record<string, unknown>
+    return {
+      matchIndex,
+      id: match.id ?? null,
+      teamAId: match.teamAId ?? null,
+      teamBId: match.teamBId ?? null,
+      winnerTeamId: match.winnerTeamId ?? null,
+      teamASourceMatchId: match.teamASourceMatchId ?? null,
+      teamBSourceMatchId: match.teamBSourceMatchId ?? null,
+    }
+  })
+}
+
 export default function BeerPongBracketPage() {
   const { isAdmin, loading: authLoading } = useAuth()
   const [state, setState] = useState<State>({})
@@ -166,6 +191,13 @@ export default function BeerPongBracketPage() {
 
     pendingWriteRef.current = false
     if (saveError || !savedRow) {
+      console.error('[BeerPongBracket][SAVE_FAILED]', {
+        roundIndex,
+        matchIndex,
+        matchId: match.id,
+        expectedWinnerTeamId: teamId,
+        error: saveError?.message ?? 'Supabase did not return the saved row',
+      })
       await load()
       setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
     } else {
@@ -178,6 +210,16 @@ export default function BeerPongBracketPage() {
       const savedWinner = savedState.rounds?.[roundIndex]?.[matchIndex]?.winnerTeamId
 
       if (storedWinner !== teamId) {
+        console.error('[BeerPongBracket][STORAGE_MISMATCH]', {
+          roundIndex,
+          matchIndex,
+          matchId: match.id,
+          expectedWinnerTeamId: teamId,
+          storedWinnerTeamId: storedWinner,
+          storedPreviousRound: describeRound(savedRow.state, roundIndex - 1),
+          storedRound: describeRound(savedRow.state, roundIndex),
+          storedNextRound: describeRound(savedRow.state, roundIndex + 1),
+        })
         await load()
         setError('Supabase n’a pas conservé ce résultat. L’arbre a été resynchronisé.')
         setBusy(false)
@@ -187,7 +229,21 @@ export default function BeerPongBracketPage() {
       if (savedWinner !== teamId) {
         deferredRefreshRef.current = false
         setState(nextState)
-        setError('Le résultat est enregistré, mais la reconstruction de l’arbre a échoué.')
+        console.error('[BeerPongBracket][REBUILD_MISMATCH]', {
+          roundIndex,
+          matchIndex,
+          matchId: match.id,
+          expectedWinnerTeamId: teamId,
+          storedWinnerTeamId: storedWinner,
+          rebuiltWinnerTeamId: savedWinner ?? null,
+          storedPreviousRound: describeRound(savedRow.state, roundIndex - 1),
+          storedRound: describeRound(savedRow.state, roundIndex),
+          storedNextRound: describeRound(savedRow.state, roundIndex + 1),
+          rebuiltPreviousRound: savedState.rounds?.[roundIndex - 1] ?? [],
+          rebuiltRound: savedState.rounds?.[roundIndex] ?? [],
+          rebuiltNextRound: savedState.rounds?.[roundIndex + 1] ?? [],
+        })
+        setError('Le résultat est enregistré, mais la reconstruction de l’arbre a échoué (diagnostic BP-REBUILD).')
         setBusy(false)
         return
       }
