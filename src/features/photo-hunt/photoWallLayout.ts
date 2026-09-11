@@ -1,6 +1,29 @@
 import type { PhotoHuntSubmission } from './photoHunt'
 
 export const PHOTO_WALL_PAGE_SIZE = 6
+export const PHOTO_WALL_GAP = 8
+export const PHOTO_WALL_CAPTION_HEIGHT = 64
+
+export function calculatePhotoRowWidth({
+  wallWidth,
+  wallHeight,
+  rowRatio,
+  photoCount,
+  rowCount,
+}: {
+  wallWidth: number
+  wallHeight: number
+  rowRatio: number
+  photoCount: number
+  rowCount: number
+}) {
+  const verticalGaps = Math.max(0, rowCount - 1) * PHOTO_WALL_GAP
+  const captions = rowCount * PHOTO_WALL_CAPTION_HEIGHT
+  const availableImageHeight = Math.max(0, wallHeight - verticalGaps - captions)
+  const imageHeight = availableImageHeight / Math.max(1, rowCount)
+  const horizontalGaps = Math.max(0, photoCount - 1) * PHOTO_WALL_GAP
+  return Math.max(0, Math.min(wallWidth, (rowRatio * imageHeight) + horizontalGaps))
+}
 
 export function getPhotoAspectRatio(photo: PhotoHuntSubmission) {
   const width = Number(photo.image_width)

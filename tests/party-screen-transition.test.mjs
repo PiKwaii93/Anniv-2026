@@ -25,7 +25,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
     if (key) return '\0fixture:' + key
   },
   load(id) {
-    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages, buildPhotoRows, getPhotoAspectRatio} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
+    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages, buildPhotoRows, calculatePhotoRowWidth, getPhotoAspectRatio} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
     if (id.startsWith('\0fixture:')) return mocks[id.slice(9)]
   },
 }], build: { ssr: 'virtual:screen-transition', write: false, minify: false } })
@@ -37,7 +37,7 @@ for (const output of bundle.output) {
   await mkdir(resolve(path, '..'), { recursive: true })
   await writeFile(path, output.code)
 }
-const { Router, Screen, buildPhotoPages, buildPhotoRows, getPhotoAspectRatio } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
+const { Router, Screen, buildPhotoPages, buildPhotoRows, calculatePhotoRowWidth, getPhotoAspectRatio } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
 after(() => rm(cache, { recursive: true }))
 
 const routerChannel = 'anniv-2026-party-screen-router'
@@ -177,6 +177,30 @@ test('Photo Hunt TV uses intrinsic images with contain and no cover backdrop', a
   assert.match(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*auto;[\s\S]*?max-height:\s*none;/)
   assert.doesNotMatch(screenStyles, /\.photo-hunt-image__backdrop/)
   assert.doesNotMatch(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?object-fit:\s*cover;/)
+})
+
+test('Photo Hunt row sizing always reserves captions and stays inside the measured wall', () => {
+  const wallWidth = 1303
+  const wallHeight = 705
+  const twoPortraits = calculatePhotoRowWidth({
+    wallWidth,
+    wallHeight,
+    rowRatio: 1.5,
+    photoCount: 2,
+    rowCount: 1,
+  })
+  const portraitRow = calculatePhotoRowWidth({
+    wallWidth,
+    wallHeight,
+    rowRatio: 2.25,
+    photoCount: 3,
+    rowCount: 2,
+  })
+
+  assert.ok(twoPortraits <= wallWidth)
+  assert.ok(portraitRow <= wallWidth)
+  assert.equal(twoPortraits, (1.5 * (wallHeight - 64)) + 8)
+  assert.equal(portraitRow, (2.25 * ((wallHeight - 8 - 128) / 2)) + 16)
 })
 test('TV polling reflects room changes when Realtime delivers no event', async () => {
   await render()

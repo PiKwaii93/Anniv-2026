@@ -132,6 +132,7 @@
 .photo-hunt-screen__wall {
   min-width: 0;
   height: min(78dvh, 820px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -206,6 +207,11 @@
   bottom: auto;
   left: auto;
   width: 100%;
+  height: 64px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
   max-width: none;
   padding: 10px 12px;
   color: rgba(255, 255, 255, 0.76);

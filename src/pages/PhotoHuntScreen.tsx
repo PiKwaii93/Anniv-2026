@@ -14,6 +14,7 @@ import {
 import {
   buildPhotoPages,
   buildPhotoRows,
+  calculatePhotoRowWidth,
   getPhotoAspectRatio,
   PHOTO_WALL_PAGE_SIZE,
 } from '../features/photo-hunt/photoWallLayout'
@@ -57,6 +58,32 @@ function PhotoHuntScreen() {
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
+  const wallRef = useRef<HTMLDivElement>(null)
+  const [wallSize, setWallSize] = useState<{ width: number; height: number } | null>(null)
+  const [naturalRatios, setNaturalRatios] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    const wall = wallRef.current
+    if (!wall) return
+
+    const measure = () => {
+      const bounds = wall.getBoundingClientRect()
+      if (bounds.width <= 0 || bounds.height <= 0) return
+      setWallSize((current) => (
+        current
+        && Math.abs(current.width - bounds.width) < 0.5
+        && Math.abs(current.height - bounds.height) < 0.5
+          ? current
+          : { width: bounds.width, height: bounds.height }
+      ))
+    }
+
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(wall)
+    return () => observer.disconnect()
+  }, [photos.length])
   const realtimeConnectedRef = useRef(false)
 
   const load = useCallback(async () => {
@@ -227,19 +254,47 @@ function PhotoHuntScreen() {
 
           <div
             key={displayPage}
+            ref={wallRef}
             className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
+            onLoadCapture={(event) => {
+              const image = event.target
+              if (!(image instanceof window.HTMLImageElement)) return
+              const photoId = image.closest<HTMLElement>('[data-photo-id]')?.dataset.photoId
+              const ratio = image.naturalWidth / image.naturalHeight
+              if (!photoId || !Number.isFinite(ratio) || ratio <= 0) return
+              setNaturalRatios((current) => (
+                Math.abs((current[photoId] ?? 0) - ratio) < 0.001
+                  ? current
+                  : { ...current, [photoId]: ratio }
+              ))
+            }}
           >
-            {buildPhotoRows(visiblePhotos).map((row, rowIndex, rows) => (
+            {buildPhotoRows(visiblePhotos.map((photo) => (
+              naturalRatios[photo.id]
+                ? { ...photo, image_width: naturalRatios[photo.id] * 1000, image_height: 1000 }
+                : photo
+            ))).map((row, rowIndex, rows) => (
               <div
                 key={`${displayPage}:row:${rowIndex}`}
                 className="photo-hunt-screen__row"
-                style={{ maxWidth: `${row.ratio * (rows.length === 1 ? 68 : 28)}vh` }}
+                style={{
+                  maxWidth: wallSize
+                    ? `${calculatePhotoRowWidth({
+                      wallWidth: wallSize.width,
+                      wallHeight: wallSize.height,
+                      rowRatio: row.ratio,
+                      photoCount: row.photos.length,
+                      rowCount: rows.length,
+                    })}px`
+                    : undefined,
+                }}
               >
               {row.photos.map((photo) => (
               <article
-                key={`${displayPage}:${photo.id}`}
-                className="photo-hunt-screen__photo"
-                style={{ flexGrow: getPhotoAspectRatio(photo) }}
+                    key={`${displayPage}:${photo.id}`}
+                    className="photo-hunt-screen__photo"
+                    data-photo-id={photo.id}
+                    style={{ flexGrow: getPhotoAspectRatio(photo) }}
               >
                 <PhotoHuntImage
                   path={photo.storage_path}
