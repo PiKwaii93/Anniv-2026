@@ -1,3 +1,5 @@
+import type { Ref } from 'react'
+
 import GuestAvatar from '../guests/GuestAvatar'
 import { getRoundName, type TournamentMatch, type TournamentTeam } from './tournament'
 
@@ -15,6 +17,7 @@ type Props = {
   players: Player[]
   activeRoundIndex: number
   variant?: 'page' | 'tv'
+  scrollRef?: Ref<HTMLDivElement>
   onPickWinner?: (
     roundIndex: number,
     matchIndex: number,
@@ -29,6 +32,7 @@ export default function TournamentBracket({
   players,
   activeRoundIndex,
   variant = 'page',
+  scrollRef,
   onPickWinner,
 }: Props) {
   if (rounds.length === 0) return null
@@ -68,7 +72,12 @@ export default function TournamentBracket({
   }
 
   return (
-    <div className={`tournament-tree tournament-tree--${variant}`} tabIndex={0} aria-label="Arbre complet du tournoi">
+    <div
+      ref={scrollRef}
+      className={`tournament-tree tournament-tree--${variant}`}
+      tabIndex={0}
+      aria-label="Arbre complet du tournoi"
+    >
       <div className="tournament-tree__canvas" style={{ width, height }}>
         <svg className="tournament-tree__connections" width={width} height={height} aria-hidden="true">
           {rounds.slice(0, -1).flatMap((round, roundIndex) => round.map((match, index) => {

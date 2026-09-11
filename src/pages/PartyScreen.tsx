@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -20,6 +21,12 @@ import {
 } from '../features/beer-pong/tournament'
 
 import './PartyScreen.css'
+
+const BEER_PONG_TREE_DISPLAY_MS = 30_000
+const BEER_PONG_TREE_SCROLL_DELAY_MS = 2_000
+const BEER_PONG_TREE_MAX_SCROLL_MS = 22_000
+const BEER_PONG_TREE_MIN_SCROLL_MS = 8_000
+const BEER_PONG_TREE_SCROLL_SPEED = 32
 
 type VoteMode =
   | 'likely'
@@ -168,6 +175,7 @@ function PartyScreen() {
   })
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
   const [beerPongView, setBeerPongView] = useState<'match' | 'tree'>('match')
+  const beerPongTreeRef = useRef<HTMLDivElement>(null)
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -348,9 +356,57 @@ function PartyScreen() {
 
     const timeout = window.setTimeout(
       () => setBeerPongView((current) => current === 'match' ? 'tree' : 'match'),
-      beerPongView === 'match' ? 12000 : 7000,
+      beerPongView === 'match' ? 12_000 : BEER_PONG_TREE_DISPLAY_MS,
     )
     return () => window.clearTimeout(timeout)
+  }, [activeModule, beerPongChampionTeamId, beerPongState.draftValidated, beerPongView, rounds.length])
+
+  useEffect(() => {
+    if (
+      activeModule !== 'beer-pong'
+      || beerPongView !== 'tree'
+      || !beerPongState.draftValidated
+      || beerPongChampionTeamId
+    ) return
+
+    const tree = beerPongTreeRef.current
+    if (!tree) return
+
+    tree.scrollTop = 0
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let animationFrame = 0
+    const startTimer = window.setTimeout(() => {
+      const maximumScroll = tree.scrollHeight - tree.clientHeight
+      if (maximumScroll <= 0) return
+
+      const duration = Math.min(
+        BEER_PONG_TREE_MAX_SCROLL_MS,
+        Math.max(
+          BEER_PONG_TREE_MIN_SCROLL_MS,
+          (maximumScroll / BEER_PONG_TREE_SCROLL_SPEED) * 1_000,
+        ),
+      )
+      const startedAt = window.performance.now()
+
+      const scroll = (timestamp: number) => {
+        const progress = Math.min(1, (timestamp - startedAt) / duration)
+        const easedProgress = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - ((-2 * progress + 2) ** 2) / 2
+
+        tree.scrollTop = maximumScroll * easedProgress
+        if (progress < 1) animationFrame = window.requestAnimationFrame(scroll)
+      }
+
+      animationFrame = window.requestAnimationFrame(scroll)
+    }, BEER_PONG_TREE_SCROLL_DELAY_MS)
+
+    return () => {
+      window.clearTimeout(startTimer)
+      window.cancelAnimationFrame(animationFrame)
+    }
   }, [activeModule, beerPongChampionTeamId, beerPongState.draftValidated, beerPongView, rounds.length])
 
   const sortedResults = useMemo(
@@ -513,9 +569,10 @@ function PartyScreen() {
         <main className="party-screen party-screen--pong-tree">
           <header className="party-screen__topline">
             <div><span className="party-screen__live-dot" />Beer Pong · arbre complet</div>
-            <span>Prochain match dans un instant</span>
+            <span>Défilement automatique · prochain match ensuite</span>
           </header>
           <TournamentBracket
+            scrollRef={beerPongTreeRef}
             rounds={rounds}
             teams={beerPongState.teams ?? []}
             players={beerPongState.playerSnapshots ?? []}

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const migrationPath = 'supabase/migrations/20260911213000_add_party_captains.sql'
+const deletionMigrationPath = 'supabase/migrations/20260911230000_allow_revoked_captain_auth_deletion.sql'
 
 test('captain invitations are private, temporary and limited to confirmed guests', async () => {
   const sql = await readFile(migrationPath, 'utf8')
@@ -47,6 +48,13 @@ test('captain activation requires an authenticated permanent account', async () 
   assert.match(join, /\/captain\?token=/)
   assert.match(auth, /select\('user_id, role'\)/)
   assert.match(auth, /data\?\.role === 'captain'/)
+})
+
+test('a revoked captain Auth account can be deleted without losing invite history', async () => {
+  const sql = await readFile(deletionMigrationPath, 'utf8')
+
+  assert.match(sql, /foreign key \(accepted_by\)/)
+  assert.match(sql, /references auth\.users\(id\)[\s\S]*?on delete set null/)
 })
 
 test('owner UI manages invitations while captain UI hides owner controls', async () => {
