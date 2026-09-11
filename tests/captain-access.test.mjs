@@ -70,10 +70,12 @@ test('captain onboarding explains the separate secure account and stays centered
   const managementCss = await readFile('src/pages/CaptainManagement.css', 'utf8')
   const join = await readFile('src/pages/CaptainJoin.tsx', 'utf8')
   const login = await readFile('src/pages/AdminLogin.tsx', 'utf8')
+  const navigation = await readFile('src/features/guest/navigation.ts', 'utf8')
 
   assert.match(management, /Elle doit ouvrir exactement ce lien/)
   assert.match(management, /Régénérer le lien/)
   assert.match(managementCss, /width: min\(100%, 900px\);[\s\S]*?margin: 0 auto 42px/)
   assert.match(join, /Ton profil invité et ton accès admin sont séparés/)
   assert.match(login, /Première connexion capitaine/)
+  assert.match(navigation, /path !== '\/captain'/)
 })
