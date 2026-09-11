@@ -12,6 +12,8 @@ import {
 const AUTO_SCROLL_PX_PER_SECOND = 28
 const VIRTUALIZATION_BUFFER_SCREENS = 1.5
 const VIRTUAL_WINDOW_UPDATE_PX = 32
+const LOOP_END_PAUSE_MS = 4000
+const LOOP_FADE_MS = 260
 
 type PhotoHuntMasonryProps = {
   photos: PhotoHuntSubmission[]
@@ -31,9 +33,13 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
   const scrollTopRef = useRef(0)
   const publishedScrollTopRef = useRef(0)
   const pendingAnchorRef = useRef<PendingAnchor | null>(null)
+  const bottomReachedAtRef = useRef<number | null>(null)
+  const resetPhaseRef = useRef<'idle' | 'fade-out' | 'fade-in'>('idle')
+  const resetPhaseStartedAtRef = useRef(0)
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 })
   const [virtualScrollTop, setVirtualScrollTop] = useState(0)
   const [naturalRatios, setNaturalRatios] = useState<Record<string, number>>({})
+  const [isLoopResetting, setIsLoopResetting] = useState(false)
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -117,7 +123,24 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
 
       if (viewport) {
         const maxScroll = Math.max(0, layoutRef.current.height - viewport.clientHeight)
-        if (scrollTopRef.current < maxScroll) {
+        const resetPhase = resetPhaseRef.current
+
+        if (resetPhase === 'fade-out') {
+          if (time - resetPhaseStartedAtRef.current >= LOOP_FADE_MS) {
+            viewport.scrollTop = 0
+            scrollTopRef.current = 0
+            publishedScrollTopRef.current = 0
+            setVirtualScrollTop(0)
+            resetPhaseRef.current = 'fade-in'
+            resetPhaseStartedAtRef.current = time
+          }
+        } else if (resetPhase === 'fade-in') {
+          if (time - resetPhaseStartedAtRef.current >= 50) {
+            setIsLoopResetting(false)
+            resetPhaseRef.current = 'idle'
+          }
+        } else if (scrollTopRef.current < maxScroll) {
+          bottomReachedAtRef.current = null
           const next = advanceAutoScroll(
             scrollTopRef.current,
             layoutRef.current.height,
@@ -131,6 +154,15 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
           if (Math.abs(next - publishedScrollTopRef.current) >= VIRTUAL_WINDOW_UPDATE_PX) {
             publishedScrollTopRef.current = next
             setVirtualScrollTop(next)
+          }
+        } else if (maxScroll > 0) {
+          if (bottomReachedAtRef.current === null) {
+            bottomReachedAtRef.current = time
+          } else if (time - bottomReachedAtRef.current >= LOOP_END_PAUSE_MS) {
+            bottomReachedAtRef.current = null
+            resetPhaseRef.current = 'fade-out'
+            resetPhaseStartedAtRef.current = time
+            setIsLoopResetting(true)
           }
         }
       }
@@ -175,7 +207,11 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
   const canvasHeight = Math.max(viewportSize.height, layout.height + verticalOffset * 2)
 
   return (
-    <div ref={viewportRef} className="photo-hunt-masonry" aria-label="Mur de photos en direct">
+    <div
+      ref={viewportRef}
+      className={`photo-hunt-masonry${isLoopResetting ? ' photo-hunt-masonry--resetting' : ''}`}
+      aria-label="Mur de photos en direct"
+    >
       <div className="photo-hunt-masonry__canvas" style={{ height: canvasHeight }}>
         {visibleItems.map((item) => {
           const photo = photoById.get(item.id)

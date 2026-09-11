@@ -1,10 +1,25 @@
 .photo-hunt-screen {
   --photo-accent: #f190b5;
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow: hidden;
   background:
     radial-gradient(circle at 12% 20%, rgba(129, 55, 76, 0.32), transparent 36%),
     radial-gradient(circle at 92% 92%, rgba(66, 63, 143, 0.28), transparent 34%),
     #05070b;
+}
+
+.photo-hunt-screen > .party-screen__meta {
+  right: clamp(28px, 3.5vw, 70px);
+  left: clamp(28px, 3.5vw, 70px);
+  width: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .photo-hunt-screen__layout {
@@ -96,6 +111,17 @@
   min-width: 0;
   overflow: hidden;
   contain: strict;
+  opacity: 1;
+  transition: opacity 260ms ease;
+  scrollbar-width: none;
+}
+
+.photo-hunt-masonry::-webkit-scrollbar {
+  display: none;
+}
+
+.photo-hunt-masonry--resetting {
+  opacity: 0;
 }
 
 .photo-hunt-masonry__canvas {
@@ -188,8 +214,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .photo-hunt-masonry,
   .photo-hunt-masonry__photo,
   .photo-hunt-image--loading {
     animation: none;
+    transition: none;
   }
 }

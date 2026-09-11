@@ -75,8 +75,8 @@ export function PhotoHuntScreen() {
   return (
     <main className="party-screen photo-hunt-screen">
       <div className="party-screen__meta">
-        <span><i aria-hidden="true" /> Photo Hunt · mur live</span>
-        <span>{photos.length} photo{photos.length > 1 ? 's' : ''} publiée{photos.length > 1 ? 's' : ''}</span>
+        <span><i aria-hidden="true" /> Mur en direct</span>
+        <span>{photos.length} souvenir{photos.length > 1 ? 's' : ''} partagé{photos.length > 1 ? 's' : ''}</span>
       </div>
 
       <section className="photo-hunt-screen__layout">
@@ -89,7 +89,7 @@ export function PhotoHuntScreen() {
           </div>
           <div className="photo-hunt-screen__rotation" aria-label="Défilement automatique">
             <strong>Défilement continu</strong>
-            <span>Les nouveaux souvenirs rejoignent le mur en direct.</span>
+            <span>Le mur reprend du début après une courte pause.</span>
             <i aria-hidden="true" />
           </div>
         </div>
