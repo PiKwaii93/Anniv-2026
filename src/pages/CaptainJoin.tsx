@@ -114,9 +114,9 @@ export default function CaptainJoin() {
       <section className="captain-join__card">
         <p className="captain-join__eyebrow">Anniv 2026 / équipe</p>
         <span className="captain-join__icon" aria-hidden="true">★</span>
-        <h1>Accès capitaine</h1>
+        <h1>Crée ton accès capitaine</h1>
         <p className="captain-join__lead">
-          Ton accès personnel pour piloter la soirée depuis ton téléphone.
+          Ton profil invité et ton accès admin sont séparés. Utilise ton adresse e-mail et choisis un mot de passe que tu réutiliseras depuis le bouton « Administration ».
         </p>
 
         {!validToken ? (
@@ -135,10 +135,10 @@ export default function CaptainJoin() {
           <>
             <div className="captain-join__switch" aria-label="Type de connexion">
               <button type="button" aria-pressed={mode === 'signup'} onClick={() => { setMode('signup'); setError(''); setNotice('') }}>
-                Créer mon accès
+                Première connexion
               </button>
               <button type="button" aria-pressed={mode === 'signin'} onClick={() => { setMode('signin'); setError(''); setNotice('') }}>
-                J’ai déjà un compte
+                Compte déjà créé
               </button>
             </div>
 

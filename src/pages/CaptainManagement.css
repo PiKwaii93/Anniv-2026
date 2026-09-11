@@ -9,21 +9,26 @@
 }
 
 .captain-management .back-link { color: #aaaebe; text-decoration: none; }
-.captain-management__hero { max-width: 860px; margin-bottom: 42px; }
+.captain-management__hero {
+  width: min(100%, 900px);
+  margin: 0 auto 42px;
+}
 .captain-management__eyebrow { margin: 22px 0 10px; color: #aaa0ff; font-size: .76rem; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
 .captain-management__hero h1 { margin: 0; font-size: clamp(3rem, 9vw, 7rem); line-height: .86; letter-spacing: -.07em; }
 .captain-management__hero h1 span { display: block; color: transparent; -webkit-text-stroke: 1px rgba(247, 245, 242, .32); }
 .captain-management__hero > p:last-child { max-width: 650px; color: #aeb1c0; font-size: clamp(1rem, 2vw, 1.28rem); line-height: 1.55; }
 
-.captain-management__notice { max-width: 900px; padding: 14px 18px; margin: 0 0 18px; border: 1px solid rgba(129, 224, 174, .32); border-radius: 15px; background: rgba(129, 224, 174, .08); color: #a7e9c7; }
+.captain-management__notice { width: min(100%, 900px); box-sizing: border-box; padding: 14px 18px; margin: 0 auto 18px; border: 1px solid rgba(129, 224, 174, .32); border-radius: 15px; background: rgba(129, 224, 174, .08); color: #a7e9c7; }
 .captain-management__notice--error { border-color: rgba(255, 111, 128, .35); background: rgba(255, 111, 128, .08); color: #ffabb5; }
 
 .captain-management__create,
 .captain-management__link,
 .captain-management__list,
+.captain-management__steps,
 .captain-management__permissions {
-  max-width: 900px;
-  margin-top: 20px;
+  width: min(100%, 900px);
+  box-sizing: border-box;
+  margin: 20px auto 0;
   padding: clamp(22px, 4vw, 34px);
   border: 1px solid #272934;
   border-radius: 26px;
@@ -50,6 +55,8 @@
 .captain-management button { min-height: 50px; padding: 0 18px; border: 1px solid #45415f; border-radius: 14px; background: #2a2840; color: #fff; font-weight: 800; }
 .captain-management button:disabled { opacity: .45; }
 .captain-management__create > small { display: block; margin-top: 12px; color: #858999; }
+.captain-management__steps ol { display: grid; gap: 12px; padding-left: 24px; margin: 22px 0 0; color: #b8bbca; line-height: 1.55; }
+.captain-management__steps li::marker { color: #aaa0ff; font-weight: 900; }
 .captain-management__link { display: grid; grid-template-columns: 1fr auto; gap: 12px; border-color: rgba(169, 160, 255, .42); }
 .captain-management__link > div, .captain-management__link > p { grid-column: 1 / -1; }
 .captain-management__link input { font-size: .86rem; }
@@ -75,7 +82,7 @@
 @media (max-width: 620px) {
   .captain-management { padding: 22px 14px 130px; }
   .captain-management__hero { margin-bottom: 28px; }
-  .captain-management__create, .captain-management__link, .captain-management__list, .captain-management__permissions { padding: 20px 16px; border-radius: 22px; }
+  .captain-management__create, .captain-management__link, .captain-management__list, .captain-management__steps, .captain-management__permissions { padding: 20px 16px; border-radius: 22px; }
   .captain-management__create-row, .captain-management__link { grid-template-columns: 1fr; }
   .captain-management__link > div, .captain-management__link > p { grid-column: auto; }
   .captain-management__card { grid-template-columns: auto minmax(0, 1fr); }

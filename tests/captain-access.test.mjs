@@ -64,3 +64,16 @@ test('owner UI manages invitations while captain UI hides owner controls', async
   assert.match(guests, /isOwner && <AdminGuestSessions/)
   assert.match(guests, /isOwner && <AdminPartyDataReset/)
 })
+
+test('captain onboarding explains the separate secure account and stays centered on desktop', async () => {
+  const management = await readFile('src/pages/CaptainManagement.tsx', 'utf8')
+  const managementCss = await readFile('src/pages/CaptainManagement.css', 'utf8')
+  const join = await readFile('src/pages/CaptainJoin.tsx', 'utf8')
+  const login = await readFile('src/pages/AdminLogin.tsx', 'utf8')
+
+  assert.match(management, /Elle doit ouvrir exactement ce lien/)
+  assert.match(management, /Régénérer le lien/)
+  assert.match(managementCss, /width: min\(100%, 900px\);[\s\S]*?margin: 0 auto 42px/)
+  assert.match(join, /Ton profil invité et ton accès admin sont séparés/)
+  assert.match(login, /Première connexion capitaine/)
+})

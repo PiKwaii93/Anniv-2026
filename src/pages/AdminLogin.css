@@ -75,12 +75,23 @@
 }
 
 .admin-login__description {
-  margin: 16px 0 28px;
+  margin: 16px 0 10px;
 
   color: #85858f;
 
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.admin-login__captain-help {
+  margin: 0 0 28px;
+  padding: 12px 14px;
+  color: #aaa0c9;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  background: rgba(135, 119, 235, 0.08);
+  border: 1px solid rgba(151, 136, 245, 0.18);
+  border-radius: 12px;
 }
 
 .admin-login__form {
@@ -208,7 +219,7 @@
   }
 
   .admin-login__description {
-    margin: 13px 0 22px;
+    margin-top: 13px;
   }
 
   .admin-login__form input,

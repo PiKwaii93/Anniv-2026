@@ -191,6 +191,17 @@ export default function CaptainManagement() {
         </section>
       )}
 
+      <section className="captain-management__steps" aria-labelledby="captain-steps-title">
+        <p className="captain-management__eyebrow">Première connexion</p>
+        <h2 id="captain-steps-title">Comment activer un capitaine ?</h2>
+        <ol>
+          <li>Crée son invitation puis copie le lien personnel affiché.</li>
+          <li>Envoie ce lien à la personne choisie. Elle doit ouvrir exactement ce lien, pas le bouton « Administration » de l’accueil.</li>
+          <li>Elle saisit son adresse e-mail et choisit un mot de passe pour créer son accès sécurisé.</li>
+          <li>Si elle reçoit un e-mail Supabase, elle clique sur le bouton de confirmation puis accède à l’administration.</li>
+        </ol>
+      </section>
+
       <section className="captain-management__list" aria-labelledby="captain-list-title">
         <div className="captain-management__heading">
           <div>
@@ -222,7 +233,7 @@ export default function CaptainManagement() {
                   <div><strong>{invite.guestName}</strong><span>Invitation en attente</span><small>Expire le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(invite.expiresAt))}</small></div>
                   <div className="captain-management__card-actions">
                     <button type="button" disabled={Boolean(busyGuestId)} onClick={() => void createInvite(invite.guestId)}>
-                      {busyGuestId === invite.guestId ? 'Création…' : 'Nouveau lien'}
+                      {busyGuestId === invite.guestId ? 'Création…' : 'Régénérer le lien'}
                     </button>
                     <button type="button" disabled={busyGuestId === invite.guestId} onClick={() => void revoke(invite.guestId, invite.guestName)}>Annuler</button>
                   </div>
