@@ -124,8 +124,11 @@ function AdminDashboard() {
 
   const {
     user,
+    adminRole,
     signOut,
   } = useAuth()
+
+  const isOwner = adminRole !== 'captain'
 
   const [icebergStats, setIcebergStats] =
     useState<PublicationStats>(emptyStats)
@@ -546,7 +549,7 @@ function AdminDashboard() {
           <div className="control-status">
             <span className="control-status__dot" />
             <div>
-              <strong>Admin connecté</strong>
+              <strong>{adminRole === 'captain' ? 'Capitaine connecté' : 'Propriétaire connecté'}</strong>
               <span>
                 {loading
                   ? 'Synchronisation...'
@@ -575,6 +578,16 @@ function AdminDashboard() {
             </span>
             <span aria-hidden="true">→</span>
           </Link>
+          {isOwner && (
+            <Link to="/admin/captains" className="control-primary-action control-primary-action--captains">
+              <span aria-hidden="true">★</span>
+              <span>
+                <small>Équipe</small>
+                <strong>Gérer les capitaines</strong>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          )}
         </div>
       </header>
 
@@ -584,7 +597,7 @@ function AdminDashboard() {
         </div>
       )}
 
-      <AdminPartyEnvironment />
+      {isOwner && <AdminPartyEnvironment />}
 
       <section className="control-modules">
         <Link

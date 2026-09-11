@@ -210,6 +210,8 @@
 
 .control-header__actions {
   display: none;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 24px;
 }
 

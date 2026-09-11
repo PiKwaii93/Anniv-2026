@@ -51,6 +51,14 @@ const AdminLogin = lazy(
   () => import('./pages/AdminLogin'),
 )
 
+const CaptainJoin = lazy(
+  () => import('./pages/CaptainJoin'),
+)
+
+const CaptainManagement = lazy(
+  () => import('./pages/CaptainManagement'),
+)
+
 const BeerPong = lazy(
   () => import('./pages/BeerPong'),
 )
@@ -399,10 +407,24 @@ function AppRoutes() {
           />
 
           <Route
+            path="/captain"
+            element={<CaptainJoin />}
+          />
+
+          <Route
             path="/admin"
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/captains"
+            element={
+              <AdminRoute>
+                <CaptainManagement />
               </AdminRoute>
             }
           />

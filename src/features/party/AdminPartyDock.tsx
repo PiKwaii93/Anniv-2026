@@ -90,7 +90,8 @@ function visibilityPatch(
 
 function AdminPartyDockRoute() {
   const location = useLocation()
-  const { isAdmin } = useAuth()
+  const { isAdmin, adminRole } = useAuth()
+  const isOwner = adminRole !== 'captain'
   const {
     settings,
     loading,
@@ -238,6 +239,14 @@ function AdminPartyDockRoute() {
         <strong>Contenu</strong>
         <small>Backup</small>
       </Link>
+
+      {isOwner && (
+        <Link to="/admin/captains" className="party-director-launch" aria-label="Gérer les capitaines de soirée">
+          <span aria-hidden="true">★</span>
+          <strong>Capitaines</strong>
+          <small>Accès</small>
+        </Link>
+      )}
 
       <Link to="/admin/chat" className="party-director-launch" aria-label="Modérer la discussion des invités">
         <span aria-hidden="true">☏</span>

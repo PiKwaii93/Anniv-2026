@@ -18,16 +18,21 @@ type SignInResult = {
   error: string | null
 }
 
+export type AdminRole = 'owner' | 'captain'
+
 type AuthContextValue = {
   session: Session | null
   user: User | null
   isAdmin: boolean
+  adminRole: AdminRole | null
+  isOwner: boolean
   loading: boolean
   signIn: (
     email: string,
     password: string,
   ) => Promise<SignInResult>
   signOut: () => Promise<void>
+  refreshAdminAccess: () => Promise<AdminRole | null>
 }
 
 const AuthContext =
@@ -48,6 +53,9 @@ export function AuthProvider({
 
   const [isAdmin, setIsAdmin] =
     useState(false)
+
+  const [adminRole, setAdminRole] =
+    useState<AdminRole | null>(null)
 
   const [adminLoading, setAdminLoading] =
     useState(true)
@@ -75,9 +83,11 @@ export function AuthProvider({
 
       if (identityChanged) {
         setIsAdmin(false)
+        setAdminRole(null)
         setAdminLoading(Boolean(nextUserId))
       } else if (!nextUserId) {
         setIsAdmin(false)
+        setAdminRole(null)
         setAdminLoading(false)
       }
 
@@ -119,6 +129,7 @@ export function AuthProvider({
 
     if (!userId) {
       setIsAdmin(false)
+      setAdminRole(null)
       setAdminLoading(false)
       return
     }
@@ -130,7 +141,7 @@ export function AuthProvider({
 
       const { data, error } = await supabase
         .from('app_admins')
-        .select('user_id')
+        .select('user_id, role')
         .eq('user_id', userId)
         .maybeSingle()
 
@@ -145,12 +156,20 @@ export function AuthProvider({
         )
 
         setIsAdmin(false)
+        setAdminRole(null)
         setAdminLoading(false)
 
         return
       }
 
-      setIsAdmin(Boolean(data))
+      const nextRole = data?.role === 'captain'
+        ? 'captain'
+        : data
+          ? 'owner'
+          : null
+
+      setAdminRole(nextRole)
+      setIsAdmin(Boolean(nextRole))
       setAdminLoading(false)
     }
 
@@ -197,16 +216,50 @@ export function AuthProvider({
     }
   }
 
+  const refreshAdminAccess = async () => {
+    const userId = session?.user.id
+
+    if (!userId) {
+      setAdminRole(null)
+      setIsAdmin(false)
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('app_admins')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Unable to refresh admin access:', error)
+      return null
+    }
+
+    const nextRole: AdminRole | null = data?.role === 'captain'
+      ? 'captain'
+      : data
+        ? 'owner'
+        : null
+
+    setAdminRole(nextRole)
+    setIsAdmin(Boolean(nextRole))
+    return nextRole
+  }
+
   return (
     <AuthContext.Provider
       value={{
         session,
         user: session?.user ?? null,
         isAdmin,
+        adminRole,
+        isOwner: adminRole === 'owner',
         loading:
           !initialized || adminLoading,
         signIn,
         signOut,
+        refreshAdminAccess,
       }}
     >
       {children}

@@ -51,6 +51,7 @@ const expectedMigrations = new Map(Object.entries({
   '20260910143000_fix_guest_status_session_revocation.sql': '86dd641186dca9d448e9514f19cb510a',
   '20260910203000_add_chat_message_avatars.sql': 'a3e5d3fd48533b45e5a920ec152b8fba',
   '20260911110000_add_plus_one_requests_and_auto_approve_photos.sql': '1db0accca1373ad32d10c6b58156c257',
+  '20260911213000_add_party_captains.sql': '4480c221c5998e3542a59c2961ca1edb',
 }))
 
 const normalizedMd5 = (sql) => createHash('md5')

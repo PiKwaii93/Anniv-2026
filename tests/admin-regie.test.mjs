@@ -126,6 +126,17 @@ test('mobile admin navigation exposes the primary admin destinations', async () 
   assert.equal(navigation.querySelector('a[href="/admin/guests"]')?.getAttribute('aria-current'), 'page')
   assert.deepEqual(writes, [])
 })
+test('only the owner receives captain management in the admin dock', async () => {
+  fixture.auth.adminRole = 'owner'
+  await render(); await openTools()
+  assert.ok(query('a[href="/admin/captains"]'))
+
+  await act(async () => root.unmount())
+  root = createRoot(query('#root'))
+  fixture.auth.adminRole = 'captain'
+  await render(); await openTools()
+  assert.equal(query('a[href="/admin/captains"]'), null)
+})
 test('Mode soirée opens its existing settings separately, without changing data', async () => {
   await render(); await openTools(); await click('.party-dock')
   assert.ok(query('[role="dialog"]'))

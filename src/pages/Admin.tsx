@@ -5,6 +5,7 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import GuestAvatar from '../features/guests/GuestAvatar'
 import AvatarCropDialog from '../features/guests/AvatarCropDialog'
@@ -117,6 +118,9 @@ function withoutKey<T>(
 }
 
 function Admin() {
+  const { adminRole } = useAuth()
+  const isOwner = adminRole !== 'captain'
+
   const {
     guests,
     loading,
@@ -510,8 +514,8 @@ function Admin() {
         </div>
       )}
 
-      <AdminGuestSessions />
-      <AdminPartyDataReset />
+      {isOwner && <AdminGuestSessions />}
+      {isOwner && <AdminPartyDataReset />}
 
       <section className="admin-stats">
         <article className="stat-card">
@@ -841,23 +845,25 @@ function Admin() {
                         + Ajouter un +1
                       </button>
 
-                      <button
-                        type="button"
-                        className="delete-button"
-                        onClick={() => {
-                          const shouldDelete =
-                            window.confirm(
-                              `Supprimer ${guest.name} ?`,
-                            )
+                      {isOwner && (
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() => {
+                            const shouldDelete =
+                              window.confirm(
+                                `Supprimer ${guest.name} ?`,
+                              )
 
-                          if (shouldDelete) {
-                            clearDraftsForGuest(guest.id)
-                            removeGuest(guest.id)
-                          }
-                        }}
-                      >
-                        Supprimer
-                      </button>
+                            if (shouldDelete) {
+                              clearDraftsForGuest(guest.id)
+                              removeGuest(guest.id)
+                            }
+                          }}
+                        >
+                          Supprimer
+                        </button>
+                      )}
                     </div>
 
                     <label className="guest-row__notes-editor">
