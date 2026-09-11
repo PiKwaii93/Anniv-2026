@@ -16,7 +16,7 @@ import { supabase } from '../lib/supabase'
 import './PhotoHuntScreen.css'
 import './PhotoHuntScreenPolish.css'
 
-const WALL_SIZE = 8
+const WALL_SIZE = 6
 const ROTATION_MS = 10000
 
 function diversifyPhotos(photos: PhotoHuntSubmission[]) {
@@ -174,7 +174,7 @@ function PhotoHuntScreen() {
         <div><span /> Photo Hunt · mur live</div>
         <b>
           {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-          {pageCount > 1 ? ` · mur ${page + 1}/${pageCount}` : ''}
+          {pageCount > 1 ? ` · sélection ${page + 1}/${pageCount}` : ''}
         </b>
       </header>
 
@@ -182,7 +182,7 @@ function PhotoHuntScreen() {
         <section className="photo-hunt-screen__empty">
           <p>Chasse photo</p>
           <h1>À vous de<br />remplir le mur.</h1>
-          <span>Les photos validées par la régie apparaîtront ici en direct.</span>
+          <span>Les photos envoyées apparaîtront ici en direct.</span>
           <div className="photo-hunt-screen__qr">
             <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
             <strong>Scanne · ouvre Photo Hunt</strong>
@@ -192,7 +192,7 @@ function PhotoHuntScreen() {
         <section className="photo-hunt-screen__layout">
           <div className="photo-hunt-screen__heading">
             <p>Souvenirs en direct</p>
-            <h1>Photo<br /><span>Hunt</span></h1>
+            <h1>Photo <span>Hunt</span></h1>
             <div>
               <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
               <span>Scanne pour participer</span>
@@ -217,10 +217,8 @@ function PhotoHuntScreen() {
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt-screen__image"
                 />
-                <div>
-                  <strong>{photo.player_name}</strong>
-                  <span>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
-                </div>
+                <strong className="photo-hunt-screen__author">{photo.player_name}</strong>
+                <span className="photo-hunt-screen__caption">{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
               </article>
             ))}
           </div>

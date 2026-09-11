@@ -65,6 +65,10 @@ beforeEach(() => {
         const rows = {
           live_vote_public_state: { state: structuredClone(fixture.room) },
           beer_pong_state: { state: {} }, secret_mission_scoreboard: [],
+          bingo_prompts: [{ id: 'bingo-1', text: 'Quelqu’un lance une chenille' }],
+          iceberg_entries: [{ id: 'iceberg-1', level: 1, title: 'Le dossier test', description: 'Une histoire à raconter.', sort_order: 0 }],
+          guests: [{ id: 'guest-1', name: 'Invité confirmé', avatar_path: null, status: 'confirmed' }],
+          plus_ones: [{ id: 'plus-1', guest_id: 'guest-1', name: 'Accompagnant test', avatar_path: null }],
           photo_hunt_submissions: fixture.photos,
           photo_hunt_challenges: [{ id: 'challenge-1', prompt: 'Défi photo test' }],
         }
@@ -145,6 +149,18 @@ for (const [module, expected] of [['bingo', 'Bingo'], ['missions', 'Missions sec
     await render()
     fixture.room = { phase: 'idle' }
     await emit(screenChannel); await emit(routerChannel)
+    assert.match(content(), new RegExp(expected))
+  })
+}
+for (const [module, expected] of [
+  ['bingo', 'Quelqu’un lance une chenille'],
+  ['iceberg', 'Le dossier test'],
+  ['guests', 'Accompagnant test'],
+]) {
+  test(`${module} renders useful live content instead of only its QR code`, async () => {
+    fixture.party.settings.featuredModule = module
+    fixture.room = { phase: 'idle' }
+    await render(Screen)
     assert.match(content(), new RegExp(expected))
   })
 }

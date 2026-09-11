@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase'
 import { useNow } from '../hooks/useNow'
 import PhotoHuntScreen from './PhotoHuntScreen'
 import TournamentBracket from '../features/beer-pong/TournamentBracket'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import {
   getActiveRoundIndex,
   getChampionTeamId,
@@ -27,6 +28,9 @@ const BEER_PONG_TREE_SCROLL_DELAY_MS = 2_000
 const BEER_PONG_TREE_MAX_SCROLL_MS = 22_000
 const BEER_PONG_TREE_MIN_SCROLL_MS = 8_000
 const BEER_PONG_TREE_SCROLL_SPEED = 32
+const TV_ROTATION_MS = 12_000
+const BINGO_PROMPTS_PER_PAGE = 6
+const GUESTS_PER_PAGE = 12
 
 type VoteMode =
   | 'likely'
@@ -103,6 +107,48 @@ type MissionScoreRow = {
   completed_count: number
 }
 
+type BingoPromptRow = {
+  id: string
+  text: string
+}
+
+type IcebergEntryRow = {
+  id: string
+  level: number
+  title: string
+  description: string
+  sort_order: number
+}
+
+type ScreenGuestRow = {
+  id: string
+  name: string
+  avatar_path: string | null
+  status: string
+}
+
+type ScreenPlusOneRow = {
+  id: string
+  guest_id: string
+  name: string
+  avatar_path: string | null
+}
+
+type ScreenPerson = {
+  id: string
+  name: string
+  avatarPath: string | null
+  detail: string
+}
+
+const icebergLevelCopy: Record<number, { number: string; title: string; subtitle: string }> = {
+  1: { number: '01', title: 'Surface', subtitle: 'Les histoires que tout le monde connaît.' },
+  2: { number: '02', title: 'Sous la surface', subtitle: 'Il faut déjà avoir été là quelques fois.' },
+  3: { number: '03', title: 'Profondeurs', subtitle: 'Les dossiers commencent à ressortir.' },
+  4: { number: '04', title: 'Abysses', subtitle: 'On entre dans les archives sensibles.' },
+  5: { number: '05', title: "Fond de l’iceberg", subtitle: 'Si tu comprends tout, tu en sais trop.' },
+}
+
 const moduleCopy: Record<
   PartyModule,
   {
@@ -177,10 +223,26 @@ function PartyScreen() {
   const [beerPongView, setBeerPongView] = useState<'match' | 'tree'>('match')
   const beerPongTreeRef = useRef<HTMLDivElement>(null)
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
+  const [bingoPrompts, setBingoPrompts] = useState<BingoPromptRow[]>([])
+  const [bingoPage, setBingoPage] = useState(0)
+  const [icebergEntries, setIcebergEntries] = useState<IcebergEntryRow[]>([])
+  const [icebergLevelIndex, setIcebergLevelIndex] = useState(0)
+  const [screenGuests, setScreenGuests] = useState<ScreenGuestRow[]>([])
+  const [screenPlusOnes, setScreenPlusOnes] = useState<ScreenPlusOneRow[]>([])
+  const [guestPage, setGuestPage] = useState(0)
   const [loading, setLoading] = useState(true)
+  const realtimeConnectedRef = useRef(false)
 
   const loadScreenData = useCallback(async () => {
-    const [roomResult, beerPongResult, missionResult] = await Promise.all([
+    const [
+      roomResult,
+      beerPongResult,
+      missionResult,
+      bingoResult,
+      icebergResult,
+      guestResult,
+      plusOneResult,
+    ] = await Promise.all([
       supabase
         .from('live_vote_public_state')
         .select('state')
@@ -194,6 +256,27 @@ function PartyScreen() {
       supabase
         .from('secret_mission_scoreboard')
         .select('player_id, completed_count'),
+      supabase
+        .from('bingo_prompts')
+        .select('id, text')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('iceberg_entries')
+        .select('id, level, title, description, sort_order')
+        .eq('is_published', true)
+        .order('level', { ascending: true })
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('guests')
+        .select('id, name, avatar_path, status')
+        .eq('status', 'confirmed')
+        .order('name', { ascending: true }),
+      supabase
+        .from('plus_ones')
+        .select('id, guest_id, name, avatar_path')
+        .order('name', { ascending: true }),
     ])
 
     if (!roomResult.error) {
@@ -214,6 +297,30 @@ function PartyScreen() {
       setMissionScores((missionResult.data ?? []) as MissionScoreRow[])
     } else {
       console.error('Unable to load TV mission scores:', missionResult.error)
+    }
+
+    if (!bingoResult.error) {
+      setBingoPrompts((bingoResult.data ?? []) as BingoPromptRow[])
+    } else {
+      console.error('Unable to load TV Bingo prompts:', bingoResult.error)
+    }
+
+    if (!icebergResult.error) {
+      setIcebergEntries((icebergResult.data ?? []) as IcebergEntryRow[])
+    } else {
+      console.error('Unable to load TV Iceberg entries:', icebergResult.error)
+    }
+
+    if (!guestResult.error) {
+      setScreenGuests((guestResult.data ?? []) as ScreenGuestRow[])
+    } else {
+      console.error('Unable to load TV guests:', guestResult.error)
+    }
+
+    if (!plusOneResult.error) {
+      setScreenPlusOnes((plusOneResult.data ?? []) as ScreenPlusOneRow[])
+    } else {
+      console.error('Unable to load TV plus-ones:', plusOneResult.error)
     }
 
     setLoading(false)
@@ -255,11 +362,37 @@ function PartyScreen() {
         },
         () => void loadScreenData(),
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bingo_prompts' },
+        () => void loadScreenData(),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'iceberg_entries' },
+        () => void loadScreenData(),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'guests' },
+        () => void loadScreenData(),
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'plus_ones' },
+        () => void loadScreenData(),
+      )
+      .subscribe((status) => {
+        realtimeConnectedRef.current = status === 'SUBSCRIBED'
+      })
 
     const fallback = window.setInterval(
-      () => void loadScreenData(),
-      15000,
+      () => {
+        if (!realtimeConnectedRef.current && document.visibilityState === 'visible') {
+          void loadScreenData()
+        }
+      },
+      30000,
     )
 
     const handleVisibility = () => {
@@ -271,6 +404,7 @@ function PartyScreen() {
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
+      realtimeConnectedRef.current = false
       window.clearInterval(fallback)
       document.removeEventListener('visibilitychange', handleVisibility)
       void supabase.removeChannel(channel)
@@ -345,6 +479,84 @@ function PartyScreen() {
   const activeModule = roomIsLive
     ? 'room'
     : settings.featuredModule
+
+  const bingoPageCount = Math.max(
+    1,
+    Math.ceil(bingoPrompts.length / BINGO_PROMPTS_PER_PAGE),
+  )
+  const visibleBingoPrompts = useMemo(() => {
+    if (bingoPrompts.length <= BINGO_PROMPTS_PER_PAGE) return bingoPrompts
+    const start = (bingoPage % bingoPageCount) * BINGO_PROMPTS_PER_PAGE
+    return bingoPrompts.slice(start, start + BINGO_PROMPTS_PER_PAGE)
+  }, [bingoPage, bingoPageCount, bingoPrompts])
+
+  const icebergLevels = useMemo(
+    () => [...new Set(icebergEntries.map((entry) => entry.level))]
+      .filter((level) => icebergLevelCopy[level])
+      .sort((a, b) => a - b),
+    [icebergEntries],
+  )
+  const currentIcebergLevel = icebergLevels.length > 0
+    ? icebergLevels[icebergLevelIndex % icebergLevels.length]
+    : null
+  const visibleIcebergEntries = currentIcebergLevel === null
+    ? []
+    : icebergEntries
+      .filter((entry) => entry.level === currentIcebergLevel)
+      .slice(0, 5)
+
+  const guestPeople = useMemo<ScreenPerson[]>(() => {
+    const confirmedGuestIds = new Set(screenGuests.map((guest) => guest.id))
+    return [
+      ...screenGuests.map((guest) => ({
+        id: `guest:${guest.id}`,
+        name: guest.name,
+        avatarPath: guest.avatar_path,
+        detail: 'Invité·e',
+      })),
+      ...screenPlusOnes
+        .filter((plusOne) => confirmedGuestIds.has(plusOne.guest_id))
+        .map((plusOne) => ({
+          id: `plus-one:${plusOne.id}`,
+          name: plusOne.name,
+          avatarPath: plusOne.avatar_path,
+          detail: '+1',
+        })),
+    ]
+  }, [screenGuests, screenPlusOnes])
+  const guestPageCount = Math.max(1, Math.ceil(guestPeople.length / GUESTS_PER_PAGE))
+  const visibleGuestPeople = useMemo(() => {
+    if (guestPeople.length <= GUESTS_PER_PAGE) return guestPeople
+    const start = (guestPage % guestPageCount) * GUESTS_PER_PAGE
+    return guestPeople.slice(start, start + GUESTS_PER_PAGE)
+  }, [guestPage, guestPageCount, guestPeople])
+
+  useEffect(() => {
+    if (activeModule !== 'bingo' || bingoPageCount <= 1) return
+    const interval = window.setInterval(
+      () => setBingoPage((current) => (current + 1) % bingoPageCount),
+      TV_ROTATION_MS,
+    )
+    return () => window.clearInterval(interval)
+  }, [activeModule, bingoPageCount])
+
+  useEffect(() => {
+    if (activeModule !== 'iceberg' || icebergLevels.length <= 1) return
+    const interval = window.setInterval(
+      () => setIcebergLevelIndex((current) => (current + 1) % icebergLevels.length),
+      TV_ROTATION_MS,
+    )
+    return () => window.clearInterval(interval)
+  }, [activeModule, icebergLevels.length])
+
+  useEffect(() => {
+    if (activeModule !== 'guests' || guestPageCount <= 1) return
+    const interval = window.setInterval(
+      () => setGuestPage((current) => (current + 1) % guestPageCount),
+      TV_ROTATION_MS,
+    )
+    return () => window.clearInterval(interval)
+  }, [activeModule, guestPageCount])
 
   useEffect(() => {
     if (
@@ -685,6 +897,142 @@ function PartyScreen() {
     )
   }
 
+  if (activeModule === 'bingo') {
+    return (
+      <main className="party-screen party-screen--bingo-live">
+        <div className="party-screen__orb party-screen__orb--one" />
+        <div className="party-screen__orb party-screen__orb--two" />
+
+        <header className="party-screen__topline">
+          <div><span className="party-screen__live-dot" />Bingo · à observer ce soir</div>
+          <span>{bingoPrompts.length} situations dans le pool</span>
+        </header>
+
+        <section className="party-screen__bingo-layout">
+          <div className="party-screen__bingo-heading">
+            <p className="party-screen__eyebrow">Chaque grille est unique</p>
+            <h1>Bingo</h1>
+            <p>Coche ce que tu vois. Une ligne suffit pour gagner.</p>
+            <QrBlock label="Ouvre ta grille" compact />
+          </div>
+
+          {visibleBingoPrompts.length > 0 ? (
+            <div className="party-screen__bingo-board" key={bingoPage}>
+              {visibleBingoPrompts.map((prompt, index) => (
+                <article key={prompt.id}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong>{prompt.text}</strong>
+                </article>
+              ))}
+              <p>{bingoPageCount > 1 ? `${(bingoPage % bingoPageCount) + 1}/${bingoPageCount}` : 'En direct'}</p>
+            </div>
+          ) : (
+            <div className="party-screen__feature-empty">
+              <strong>Les cases arrivent.</strong>
+              <span>Prépare ton téléphone pour générer ta grille.</span>
+            </div>
+          )}
+        </section>
+      </main>
+    )
+  }
+
+  if (activeModule === 'iceberg') {
+    const level = currentIcebergLevel === null ? null : icebergLevelCopy[currentIcebergLevel]
+
+    return (
+      <main className="party-screen party-screen--iceberg-live">
+        <div className="party-screen__orb party-screen__orb--one" />
+        <div className="party-screen__orb party-screen__orb--two" />
+
+        <header className="party-screen__topline">
+          <div><span className="party-screen__live-dot" />Iceberg · archives ouvertes</div>
+          <span>{icebergEntries.length} dossiers publiés</span>
+        </header>
+
+        {level ? (
+          <section className="party-screen__iceberg-layout" key={currentIcebergLevel}>
+            <div className="party-screen__iceberg-heading">
+              <p className="party-screen__eyebrow">Niveau {level.number}</p>
+              <h1>{level.title}</h1>
+              <p>{level.subtitle}</p>
+              <div className="party-screen__iceberg-depth" aria-label={`Niveau ${level.number} sur 05`}>
+                {Object.keys(icebergLevelCopy).map((key) => (
+                  <i key={key} className={Number(key) <= (currentIcebergLevel ?? 0) ? 'is-reached' : ''} />
+                ))}
+              </div>
+              <QrBlock label="Explorer tout l’iceberg" compact />
+            </div>
+
+            <div className="party-screen__iceberg-cards">
+              {visibleIcebergEntries.map((entry, index) => (
+                <article key={entry.id} className={index === 0 ? 'is-featured' : ''}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong>{entry.title}</strong>
+                  {entry.description && <p>{entry.description}</p>}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="party-screen__feature-promo">
+            <div>
+              <p className="party-screen__eyebrow">Archives</p>
+              <h1>Iceberg</h1>
+              <p>Les premiers dossiers seront bientôt publiés.</p>
+            </div>
+            <QrBlock label="Explorer l’iceberg" />
+          </section>
+        )}
+      </main>
+    )
+  }
+
+  if (activeModule === 'guests') {
+    return (
+      <main className="party-screen party-screen--guests-live">
+        <div className="party-screen__orb party-screen__orb--one" />
+        <div className="party-screen__orb party-screen__orb--two" />
+
+        <header className="party-screen__topline">
+          <div><span className="party-screen__live-dot" />La bande · Anniv 2026</div>
+          <span>{guestPeople.length} personne{guestPeople.length !== 1 ? 's' : ''} confirmée{guestPeople.length !== 1 ? 's' : ''}</span>
+        </header>
+
+        <section className="party-screen__guests-layout">
+          <div className="party-screen__guests-heading">
+            <p className="party-screen__eyebrow">Ce soir</p>
+            <h1>La<br />bande.</h1>
+            <p>Des visages connus, des +1 et quelques dossiers à créer.</p>
+            <QrBlock label="Voir toute la liste" compact />
+          </div>
+
+          {visibleGuestPeople.length > 0 ? (
+            <div className="party-screen__guest-grid" key={guestPage}>
+              {visibleGuestPeople.map((person) => (
+                <article key={person.id}>
+                  <GuestAvatar
+                    name={person.name}
+                    path={person.avatarPath}
+                    size="large"
+                  />
+                  <strong>{person.name}</strong>
+                  <span>{person.detail}</span>
+                </article>
+              ))}
+              <p>{guestPageCount > 1 ? `${(guestPage % guestPageCount) + 1}/${guestPageCount}` : 'Tout le monde est là'}</p>
+            </div>
+          ) : (
+            <div className="party-screen__feature-empty">
+              <strong>La bande se prépare.</strong>
+              <span>Les personnes confirmées apparaîtront ici.</span>
+            </div>
+          )}
+        </section>
+      </main>
+    )
+  }
+
   if (activeModule && moduleCopy[activeModule]) {
     const copy = moduleCopy[activeModule]
 
@@ -745,17 +1093,15 @@ function PartyScreen() {
 function QrBlock({
   label,
   large = false,
+  compact = false,
 }: {
   label: string
   large?: boolean
+  compact?: boolean
 }) {
   return (
     <div
-      className={
-        large
-          ? 'party-screen__qr party-screen__qr--large'
-          : 'party-screen__qr'
-      }
+      className={`party-screen__qr${large ? ' party-screen__qr--large' : ''}${compact ? ' party-screen__qr--compact' : ''}`}
     >
       <div className="party-screen__qr-frame">
         <img
