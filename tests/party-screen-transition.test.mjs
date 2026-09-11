@@ -25,7 +25,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
     if (key) return '\0fixture:' + key
   },
   load(id) {
-    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages, orientationFromDimensions} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
+    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
     if (id.startsWith('\0fixture:')) return mocks[id.slice(9)]
   },
 }], build: { ssr: 'virtual:screen-transition', write: false, minify: false } })
@@ -37,7 +37,7 @@ for (const output of bundle.output) {
   await mkdir(resolve(path, '..'), { recursive: true })
   await writeFile(path, output.code)
 }
-const { Router, Screen, buildPhotoPages, orientationFromDimensions } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
+const { Router, Screen, buildPhotoPages } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
 after(() => rm(cache, { recursive: true }))
 
 const routerChannel = 'anniv-2026-party-screen-router'
@@ -134,11 +134,7 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   isPhotoWall()
 })
 
-test('Photo Hunt classifies and paginates stored portrait and landscape dimensions before rendering', () => {
-  assert.equal(orientationFromDimensions(900, 1600), 'portrait')
-  assert.equal(orientationFromDimensions(1600, 900), 'landscape')
-  assert.equal(orientationFromDimensions(1200, 1200), 'square')
-
+test('Photo Hunt gives every photo a full uncropped TV page regardless of its dimensions', () => {
   const portraits = Array.from({ length: 3 }, (_, index) => ({
     id: `portrait-${index}`,
     storage_path: `portrait-${index}.webp`,
@@ -152,9 +148,11 @@ test('Photo Hunt classifies and paginates stored portrait and landscape dimensio
     image_height: 900,
   }))
 
-  assert.deepEqual(buildPhotoPages(portraits, {}).map((page) => page.length), [3])
-  assert.deepEqual(buildPhotoPages(landscapes, {}).map((page) => page.length), [6])
-  assert.deepEqual(buildPhotoPages([...portraits, ...landscapes], {}).map((page) => page.length), [3, 6])
+  const photos = [...portraits, ...landscapes]
+  const pages = buildPhotoPages(photos)
+  assert.equal(pages.length, photos.length)
+  assert.ok(pages.every((page) => page.length === 1))
+  assert.deepEqual(pages.flat().map((photo) => photo.id), photos.map((photo) => photo.id))
 })
 test('TV polling reflects room changes when Realtime delivers no event', async () => {
   await render()

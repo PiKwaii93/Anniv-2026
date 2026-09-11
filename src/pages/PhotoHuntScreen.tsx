@@ -13,9 +13,6 @@ import {
 } from '../features/photo-hunt/photoHunt'
 import {
   buildPhotoPages,
-  orientationFromDimensions,
-  PHOTO_WALL_CAPACITY,
-  type PhotoOrientation,
 } from '../features/photo-hunt/photoWallLayout'
 import { supabase } from '../lib/supabase'
 
@@ -23,31 +20,6 @@ import './PhotoHuntScreen.css'
 import './PhotoHuntScreenPolish.css'
 
 const ROTATION_MS = 10000
-
-function measureStoredPhoto(path: string) {
-  return supabase.storage
-    .from('photo-hunt')
-    .download(path)
-    .then(({ data, error }) => new Promise<PhotoOrientation | null>((resolve) => {
-      if (error || !data) {
-        console.error('Unable to measure legacy Photo Hunt image:', error)
-        resolve(null)
-        return
-      }
-
-      const url = URL.createObjectURL(data)
-      const image = new Image()
-      image.onload = () => {
-        resolve(orientationFromDimensions(image.naturalWidth, image.naturalHeight))
-        URL.revokeObjectURL(url)
-      }
-      image.onerror = () => {
-        URL.revokeObjectURL(url)
-        resolve(null)
-      }
-      image.src = url
-    }))
-}
 
 function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   const buckets = new Map<string, PhotoHuntSubmission[]>()
@@ -82,8 +54,6 @@ function PhotoHuntScreen() {
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
-  const [orientationByPath, setOrientationByPath] = useState<Record<string, PhotoOrientation>>({})
-  const measuredPathsRef = useRef(new Set<string>())
   const realtimeConnectedRef = useRef(false)
 
   const load = useCallback(async () => {
@@ -103,7 +73,7 @@ function PhotoHuntScreen() {
 
   if (!photoResult.error) {
     const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / PHOTO_WALL_CAPACITY))
+    const nextPageCount = Math.max(1, nextPhotos.length)
     setPhotos(nextPhotos)
     setPage((current) => Math.min(current, nextPageCount - 1))
   } else {
@@ -122,35 +92,6 @@ function PhotoHuntScreen() {
   useEffect(() => {
     void load()
   }, [load])
-
-  useEffect(() => {
-    const legacyPhotos = photos.filter((photo) => (
-      !orientationFromDimensions(photo.image_width, photo.image_height)
-      && !measuredPathsRef.current.has(photo.storage_path)
-    ))
-    if (legacyPhotos.length === 0) return
-
-    let cancelled = false
-    legacyPhotos.forEach((photo) => measuredPathsRef.current.add(photo.storage_path))
-
-    void Promise.all(legacyPhotos.map(async (photo) => ({
-      path: photo.storage_path,
-      orientation: await measureStoredPhoto(photo.storage_path),
-    }))).then((measurements) => {
-      if (cancelled) return
-      setOrientationByPath((current) => {
-        const next = { ...current }
-        measurements.forEach(({ path, orientation }) => {
-          if (orientation) next[path] = orientation
-        })
-        return next
-      })
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [photos])
 
   useEffect(() => {
     const channel = supabase
@@ -197,8 +138,8 @@ function PhotoHuntScreen() {
   )
 
   const photoPages = useMemo(
-    () => buildPhotoPages(diversifiedPhotos, orientationByPath),
-    [diversifiedPhotos, orientationByPath],
+    () => buildPhotoPages(diversifiedPhotos),
+    [diversifiedPhotos],
   )
   const pageCount = Math.max(1, photoPages.length)
   const displayPage = page % pageCount
@@ -218,11 +159,17 @@ function PhotoHuntScreen() {
     return photoPages[displayPage]
   }, [displayPage, photoPages])
 
-  const rememberOrientation = useCallback((path: string, orientation: PhotoOrientation) => {
-    setOrientationByPath((current) => current[path] === orientation
-      ? current
-      : { ...current, [path]: orientation })
-  }, [])
+  useEffect(() => {
+    const photo = visiblePhotos[0]
+    if (!photo) return
+    console.info('[PhotoHunt][TV_PAGE]', {
+      page: displayPage + 1,
+      pageCount,
+      photoId: photo.id,
+      storedWidth: photo.image_width ?? null,
+      storedHeight: photo.image_height ?? null,
+    })
+  }, [displayPage, pageCount, visiblePhotos])
 
   if (loading) {
     return (
@@ -241,7 +188,7 @@ function PhotoHuntScreen() {
         <div><span /> Photo Hunt · mur live</div>
         <b>
           {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-          {pageCount > 1 ? ` · sélection ${displayPage + 1}/${pageCount}` : ''}
+          {pageCount > 1 ? ` · photo ${displayPage + 1}/${pageCount}` : ''}
         </b>
       </header>
 
@@ -267,7 +214,7 @@ function PhotoHuntScreen() {
             {pageCount > 1 && (
               <div className="photo-hunt-screen__rotation">
                 <strong>Rotation auto</strong>
-                <span>Le mur change toutes les 10 s et mélange les participants.</span>
+                <span>Une nouvelle photo apparaît toutes les 10 s.</span>
                 <i key={displayPage} />
               </div>
             )}
@@ -277,30 +224,22 @@ function PhotoHuntScreen() {
             key={displayPage}
             className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
           >
-            {visiblePhotos.length === 0 && photos.length > 0 && (
-              <p className="photo-hunt-screen__measuring">Composition du mur…</p>
-            )}
-            {visiblePhotos.map((photo, index) => {
-              const orientation = orientationFromDimensions(photo.image_width, photo.image_height)
-                ?? orientationByPath[photo.storage_path]
-              if (!orientation) return null
-              return (
+            {visiblePhotos.map((photo) => (
               <article
                 key={`${displayPage}:${photo.id}`}
-                className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1} photo-hunt-screen__photo--${orientation}`}
+                className="photo-hunt-screen__photo photo-hunt-screen__photo--single"
               >
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt-screen__image"
                   framed
-                  onOrientation={(nextOrientation) => rememberOrientation(photo.storage_path, nextOrientation)}
+                  debugLayout
                 />
                 <strong className="photo-hunt-screen__author">{photo.player_name}</strong>
                 <span className="photo-hunt-screen__caption">{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
               </article>
-              )
-            })}
+            ))}
           </div>
         </section>
       )}

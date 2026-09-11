@@ -132,22 +132,7 @@
 .photo-hunt-screen__wall {
   min-width: 0;
   height: min(78dvh, 820px);
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  grid-auto-flow: dense;
-  gap: clamp(8px, 1vw, 14px);
-}
-
-.photo-hunt-screen__measuring {
-  grid-column: 1 / -1;
-  grid-row: 1 / -1;
-  place-self: center;
-  color: #77808d;
-  font-size: clamp(0.8rem, 1vw, 1rem);
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: block;
 }
 
 .photo-hunt-screen__photo {
@@ -159,24 +144,9 @@
   border-radius: clamp(15px, 1.5vw, 22px);
 }
 
-.photo-hunt-screen__photo--portrait {
-  grid-column: span 4;
-  grid-row: span 2;
-}
-
-.photo-hunt-screen__photo--landscape,
-.photo-hunt-screen__photo--square {
-  grid-column: span 4;
-  grid-row: span 1;
-}
-
-.photo-hunt-screen__photo--portrait .photo-hunt-image__foreground {
-  object-fit: contain;
-}
-
-.photo-hunt-screen__photo--landscape .photo-hunt-image__foreground,
-.photo-hunt-screen__photo--square .photo-hunt-image__foreground {
-  object-fit: contain;
+.photo-hunt-screen__photo--single {
+  width: 100%;
+  height: 100%;
 }
 
 .photo-hunt-screen__image {
@@ -209,6 +179,7 @@
   height: 100%;
   display: block;
   object-fit: contain;
+  object-position: center;
 }
 
 .photo-hunt-screen__author,
@@ -286,7 +257,6 @@
 
   .photo-hunt-screen__wall {
     height: calc(100dvh - 120px);
-    grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 }
 

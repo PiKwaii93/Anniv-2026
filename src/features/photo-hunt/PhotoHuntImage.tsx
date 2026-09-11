@@ -11,6 +11,7 @@ type PhotoHuntImageProps = {
   className?: string
   framed?: boolean
   onOrientation?: (orientation: 'portrait' | 'landscape' | 'square') => void
+  debugLayout?: boolean
 }
 
 function PhotoHuntImageForPath({
@@ -19,6 +20,7 @@ function PhotoHuntImageForPath({
   className,
   framed = false,
   onOrientation,
+  debugLayout = false,
 }: PhotoHuntImageProps) {
   const [url, setUrl] = useState('')
   const [failed, setFailed] = useState(false)
@@ -76,9 +78,23 @@ function PhotoHuntImageForPath({
       loading="lazy"
       decoding="async"
       onLoad={(event) => {
-        const { naturalWidth, naturalHeight } = event.currentTarget
+        const element = event.currentTarget
+        const { naturalWidth, naturalHeight } = element
         const ratio = naturalWidth / naturalHeight
-        onOrientation?.(ratio < 0.86 ? 'portrait' : ratio > 1.16 ? 'landscape' : 'square')
+        const orientation = ratio < 0.86 ? 'portrait' : ratio > 1.16 ? 'landscape' : 'square'
+        onOrientation?.(orientation)
+        if (debugLayout) {
+          console.info('[PhotoHunt][TV_IMAGE_LAYOUT]', {
+            storagePath: path,
+            naturalWidth,
+            naturalHeight,
+            ratio: Number(ratio.toFixed(3)),
+            detectedOrientation: orientation,
+            renderedWidth: Math.round(element.getBoundingClientRect().width),
+            renderedHeight: Math.round(element.getBoundingClientRect().height),
+            objectFit: window.getComputedStyle(element).objectFit,
+          })
+        }
       }}
     />
   )
