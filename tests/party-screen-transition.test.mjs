@@ -172,7 +172,9 @@ test('Photo Hunt TV uses intrinsic images with contain and no cover backdrop', a
   const screenStyles = await readFile(resolve('src/pages/PhotoHuntScreen.css'), 'utf8')
 
   assert.doesNotMatch(screenSource, /\bframed\b/)
+  assert.match(screenStyles, /\.photo-hunt-screen__photo\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;/)
   assert.match(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?object-fit:\s*contain;/)
+  assert.match(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*auto;[\s\S]*?max-height:\s*none;/)
   assert.doesNotMatch(screenStyles, /\.photo-hunt-image__backdrop/)
   assert.doesNotMatch(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?object-fit:\s*cover;/)
 })
