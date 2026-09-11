@@ -16,8 +16,9 @@ import { supabase } from '../lib/supabase'
 import './PhotoHuntScreen.css'
 import './PhotoHuntScreenPolish.css'
 
-const WALL_SIZE = 6
+const WALL_CAPACITY = 6
 const ROTATION_MS = 10000
+type PhotoOrientation = 'portrait' | 'landscape' | 'square'
 
 function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   const buckets = new Map<string, PhotoHuntSubmission[]>()
@@ -47,11 +48,35 @@ function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   return diversified
 }
 
+function buildPhotoPages(
+  photos: PhotoHuntSubmission[],
+  orientationByPath: Record<string, PhotoOrientation>,
+) {
+  const pages: PhotoHuntSubmission[][] = []
+  let currentPage: PhotoHuntSubmission[] = []
+  let usedCapacity = 0
+
+  photos.forEach((photo) => {
+    const photoCapacity = orientationByPath[photo.storage_path] === 'portrait' ? 2 : 1
+    if (currentPage.length > 0 && usedCapacity + photoCapacity > WALL_CAPACITY) {
+      pages.push(currentPage)
+      currentPage = []
+      usedCapacity = 0
+    }
+    currentPage.push(photo)
+    usedCapacity += photoCapacity
+  })
+
+  if (currentPage.length > 0) pages.push(currentPage)
+  return pages
+}
+
 function PhotoHuntScreen() {
   const [photos, setPhotos] = useState<PhotoHuntSubmission[]>([])
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
+  const [orientationByPath, setOrientationByPath] = useState<Record<string, PhotoOrientation>>({})
   const realtimeConnectedRef = useRef(false)
 
   const load = useCallback(async () => {
@@ -71,7 +96,7 @@ function PhotoHuntScreen() {
 
   if (!photoResult.error) {
     const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / WALL_SIZE))
+    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / WALL_CAPACITY))
     setPhotos(nextPhotos)
     setPage((current) => Math.min(current, nextPageCount - 1))
   } else {
@@ -135,7 +160,12 @@ function PhotoHuntScreen() {
     [photos],
   )
 
-  const pageCount = Math.max(1, Math.ceil(diversifiedPhotos.length / WALL_SIZE))
+  const photoPages = useMemo(
+    () => buildPhotoPages(diversifiedPhotos, orientationByPath),
+    [diversifiedPhotos, orientationByPath],
+  )
+  const pageCount = Math.max(1, photoPages.length)
+  const displayPage = page % pageCount
 
   useEffect(() => {
     if (pageCount <= 1) return
@@ -148,14 +178,15 @@ function PhotoHuntScreen() {
   }, [pageCount])
 
   const visiblePhotos = useMemo(() => {
-    if (diversifiedPhotos.length <= WALL_SIZE) return diversifiedPhotos
+    if (photoPages.length === 0) return []
+    return photoPages[displayPage]
+  }, [displayPage, photoPages])
 
-    const start = page * WALL_SIZE
-    return Array.from(
-      { length: Math.min(WALL_SIZE, diversifiedPhotos.length) },
-      (_, index) => diversifiedPhotos[(start + index) % diversifiedPhotos.length],
-    )
-  }, [diversifiedPhotos, page])
+  const rememberOrientation = useCallback((path: string, orientation: PhotoOrientation) => {
+    setOrientationByPath((current) => current[path] === orientation
+      ? current
+      : { ...current, [path]: orientation })
+  }, [])
 
   if (loading) {
     return (
@@ -174,7 +205,7 @@ function PhotoHuntScreen() {
         <div><span /> Photo Hunt · mur live</div>
         <b>
           {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-          {pageCount > 1 ? ` · sélection ${page + 1}/${pageCount}` : ''}
+          {pageCount > 1 ? ` · sélection ${displayPage + 1}/${pageCount}` : ''}
         </b>
       </header>
 
@@ -192,7 +223,7 @@ function PhotoHuntScreen() {
         <section className="photo-hunt-screen__layout">
           <div className="photo-hunt-screen__heading">
             <p>Souvenirs en direct</p>
-            <h1>Photo <span>Hunt</span></h1>
+            <h1>Photo<br /><span>Hunt.</span></h1>
             <div>
               <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
               <span>Scanne pour participer</span>
@@ -201,26 +232,34 @@ function PhotoHuntScreen() {
               <div className="photo-hunt-screen__rotation">
                 <strong>Rotation auto</strong>
                 <span>Le mur change toutes les 10 s et mélange les participants.</span>
-                <i key={page} />
+                <i key={displayPage} />
               </div>
             )}
           </div>
 
           <div
-            key={page}
-            className={`photo-hunt-screen__wall photo-hunt-screen__wall--${Math.min(visiblePhotos.length, WALL_SIZE)}`}
+            key={displayPage}
+            className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
           >
-            {visiblePhotos.map((photo, index) => (
-              <article key={`${page}:${photo.id}`} className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1}`}>
+            {visiblePhotos.map((photo, index) => {
+              const orientation = orientationByPath[photo.storage_path] ?? 'landscape'
+              return (
+              <article
+                key={`${displayPage}:${photo.id}`}
+                className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1} photo-hunt-screen__photo--${orientation === 'portrait' ? 'tall' : 'wide'}`}
+              >
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt-screen__image"
+                  framed
+                  onOrientation={(nextOrientation) => rememberOrientation(photo.storage_path, nextOrientation)}
                 />
                 <strong className="photo-hunt-screen__author">{photo.player_name}</strong>
                 <span className="photo-hunt-screen__caption">{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
               </article>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}

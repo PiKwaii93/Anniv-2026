@@ -9,12 +9,16 @@ type PhotoHuntImageProps = {
   path: string
   alt: string
   className?: string
+  framed?: boolean
+  onOrientation?: (orientation: 'portrait' | 'landscape' | 'square') => void
 }
 
 function PhotoHuntImageForPath({
   path,
   alt,
   className,
+  framed = false,
+  onOrientation,
 }: PhotoHuntImageProps) {
   const [url, setUrl] = useState('')
   const [failed, setFailed] = useState(false)
@@ -64,14 +68,32 @@ function PhotoHuntImageForPath({
     )
   }
 
-  return (
+  const image = (
     <img
       src={url}
       alt={alt}
-      className={className}
+      className={framed ? 'photo-hunt-image__foreground' : className}
       loading="lazy"
       decoding="async"
+      onLoad={(event) => {
+        const { naturalWidth, naturalHeight } = event.currentTarget
+        const ratio = naturalWidth / naturalHeight
+        onOrientation?.(ratio < 0.86 ? 'portrait' : ratio > 1.16 ? 'landscape' : 'square')
+      }}
     />
+  )
+
+  if (!framed) return image
+
+  return (
+    <div className={className}>
+      <span
+        className="photo-hunt-image__backdrop"
+        style={{ backgroundImage: `url("${url}")` }}
+        aria-hidden="true"
+      />
+      {image}
+    </div>
   )
 }
 
