@@ -1,157 +1,68 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-
-import PhotoHuntImage from '../features/photo-hunt/PhotoHuntImage'
-import {
-  type PhotoHuntChallenge,
-  type PhotoHuntSubmission,
-} from '../features/photo-hunt/photoHunt'
-import {
-  buildPhotoPages,
-  buildPhotoRows,
-  calculatePhotoRowWidth,
-  getPhotoAspectRatio,
-} from '../features/photo-hunt/photoWallLayout'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-
-import './PhotoHuntScreen.css'
+import type { PhotoHuntChallenge, PhotoHuntSubmission } from '../features/photo-hunt/photoHunt'
+import { PhotoHuntMasonry } from '../features/photo-hunt/PhotoHuntMasonry'
+import './PartyScreen.css'
 import './PhotoHuntScreenPolish.css'
+import './PhotoHuntScreen.css'
 
-const ROTATION_MS = 6000
-
-function diversifyPhotos(photos: PhotoHuntSubmission[]) {
-  const buckets = new Map<string, PhotoHuntSubmission[]>()
-  const playerOrder: string[] = []
-
-  photos.forEach((photo) => {
-    if (!buckets.has(photo.player_key)) {
-      buckets.set(photo.player_key, [])
-      playerOrder.push(photo.player_key)
-    }
-    buckets.get(photo.player_key)?.push(photo)
-  })
-
-  const diversified: PhotoHuntSubmission[] = []
-  let remaining = photos.length
-
-  while (remaining > 0) {
-    playerOrder.forEach((playerKey) => {
-      const bucket = buckets.get(playerKey)
-      const photo = bucket?.shift()
-      if (!photo) return
-      diversified.push(photo)
-      remaining -= 1
-    })
-  }
-
-  return diversified
-}
-
-function PhotoHuntScreen() {
+export function PhotoHuntScreen() {
   const [photos, setPhotos] = useState<PhotoHuntSubmission[]>([])
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(0)
-  const wallRef = useRef<HTMLDivElement>(null)
-  const [wallSize, setWallSize] = useState<{ width: number; height: number } | null>(null)
-  const [naturalRatios, setNaturalRatios] = useState<Record<string, number>>({})
+  const latestRequestRef = useRef(0)
+  const mountedRef = useRef(true)
 
-  useEffect(() => {
-    const wall = wallRef.current
-    if (!wall) return
-
-    const measure = () => {
-      const bounds = wall.getBoundingClientRect()
-      if (bounds.width <= 0 || bounds.height <= 0) return
-      setWallSize((current) => (
-        current
-        && Math.abs(current.width - bounds.width) < 0.5
-        && Math.abs(current.height - bounds.height) < 0.5
-          ? current
-          : { width: bounds.width, height: bounds.height }
-      ))
-    }
-
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(wall)
-    return () => observer.disconnect()
-  }, [photos.length])
-  const realtimeConnectedRef = useRef(false)
+  useEffect(() => () => {
+    mountedRef.current = false
+  }, [])
 
   const load = useCallback(async () => {
-    const [photoResult, challengeResult] = await Promise.all([
+    const requestId = ++latestRequestRef.current
+    const [{ data: photoData, error: photoError }, { data: challengeData, error: challengeError }] = await Promise.all([
       supabase
         .from('photo_hunt_submissions')
-        .select('id, challenge_id, player_key, player_name, storage_path, mime_type, image_width, image_height, caption, status, created_at, moderated_at')
+        .select('id, challenge_id, player_name, storage_path, image_width, image_height, status, created_at, moderated_at')
         .eq('status', 'approved')
-        .order('moderated_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false })
-        .limit(32),
+        .order('created_at', { ascending: true })
+        .limit(1000),
       supabase
         .from('photo_hunt_challenges')
         .select('id, prompt, hint, sort_order, is_active')
-        .eq('is_active', true),
-  ])
+        .order('sort_order', { ascending: true }),
+    ])
 
-  if (!photoResult.error) {
-    const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, buildPhotoPages(nextPhotos).length)
-    setPhotos(nextPhotos)
-    setPage((current) => Math.min(current, nextPageCount - 1))
-  } else {
-      console.error('Unable to load Photo Hunt TV photos:', photoResult.error)
+    if (!mountedRef.current || requestId !== latestRequestRef.current) return
+
+    if (photoError || challengeError) {
+      console.error('[PhotoHunt][TV_LOAD_ERROR]', {
+        photos: photoError?.message,
+        challenges: challengeError?.message,
+      })
+      setLoading(false)
+      return
     }
 
-    if (!challengeResult.error) {
-      setChallenges((challengeResult.data ?? []) as PhotoHuntChallenge[])
-    } else {
-      console.error('Unable to load Photo Hunt TV challenges:', challengeResult.error)
-    }
-
+    setPhotos((photoData as PhotoHuntSubmission[] | null) ?? [])
+    setChallenges((challengeData as PhotoHuntChallenge[] | null) ?? [])
     setLoading(false)
   }, [])
 
   useEffect(() => {
     void load()
-  }, [load])
-
-  useEffect(() => {
     const channel = supabase
-      .channel('anniv-2026-photo-hunt-screen')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'photo_hunt_submissions' },
-        () => void load(),
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'photo_hunt_challenges' },
-        () => void load(),
-      )
+      .channel('photo-hunt-screen')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'photo_hunt_submissions' }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'photo_hunt_challenges' }, () => void load())
       .subscribe((status) => {
-        realtimeConnectedRef.current = status === 'SUBSCRIBED'
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[PhotoHunt][TV_REALTIME_FALLBACK]', status)
+        }
       })
 
-    const fallback = window.setInterval(() => {
-      if (!realtimeConnectedRef.current) void load()
-    }, 30000)
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') void load()
-    }
-    document.addEventListener('visibilitychange', handleVisibility)
-
+    const poll = window.setInterval(() => void load(), 5000)
     return () => {
-      realtimeConnectedRef.current = false
-      window.clearInterval(fallback)
-      document.removeEventListener('visibilitychange', handleVisibility)
+      window.clearInterval(poll)
       void supabase.removeChannel(channel)
     }
   }, [load])
@@ -161,154 +72,36 @@ function PhotoHuntScreen() {
     [challenges],
   )
 
-  const diversifiedPhotos = useMemo(
-    () => diversifyPhotos(photos),
-    [photos],
-  )
-
-  const photoPages = useMemo(
-    () => buildPhotoPages(diversifiedPhotos),
-    [diversifiedPhotos],
-  )
-  const pageCount = Math.max(1, photoPages.length)
-  const displayPage = page % pageCount
-
-  useEffect(() => {
-    if (pageCount <= 1) return
-
-    const interval = window.setInterval(() => {
-      setPage((current) => (current + 1) % pageCount)
-    }, ROTATION_MS)
-
-    return () => window.clearInterval(interval)
-  }, [pageCount])
-
-  const visiblePhotos = useMemo(() => {
-    if (photoPages.length === 0) return []
-    return photoPages[displayPage]
-  }, [displayPage, photoPages])
-
-  useEffect(() => {
-    if (visiblePhotos.length === 0) return
-    console.info('[PhotoHunt][TV_PAGE]', {
-      page: displayPage + 1,
-      pageCount,
-      photoCount: visiblePhotos.length,
-      photos: visiblePhotos.map((photo) => ({
-        photoId: photo.id,
-        storedWidth: photo.image_width ?? null,
-        storedHeight: photo.image_height ?? null,
-      })),
-    })
-  }, [displayPage, pageCount, visiblePhotos])
-
-  if (loading) {
-    return (
-      <main className="photo-hunt-screen photo-hunt-screen--loading">
-        <p>Connexion au mur photo…</p>
-      </main>
-    )
-  }
-
   return (
-    <main className="photo-hunt-screen">
-      <div className="photo-hunt-screen__glow photo-hunt-screen__glow--one" />
-      <div className="photo-hunt-screen__glow photo-hunt-screen__glow--two" />
+    <main className="party-screen photo-hunt-screen">
+      <div className="party-screen__meta">
+        <span><i aria-hidden="true" /> Photo Hunt · mur live</span>
+        <span>{photos.length} photo{photos.length > 1 ? 's' : ''} publiée{photos.length > 1 ? 's' : ''}</span>
+      </div>
 
-      <header className="photo-hunt-screen__topline">
-        <div><span /> Photo Hunt · mur live</div>
-        <b>
-          {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-        </b>
-      </header>
+      <section className="photo-hunt-screen__layout">
+        <div className="photo-hunt-screen__heading">
+          <p className="party-screen__eyebrow">Souvenirs en direct</p>
+          <h1 className="photo-hunt-screen__title">Photo <em>Hunt.</em></h1>
+          <div className="photo-hunt-screen__scan" aria-label="QR code de participation">
+            <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" className="photo-hunt-screen__qr" />
+            <span>Scanne pour<br />participer</span>
+          </div>
+          <div className="photo-hunt-screen__rotation" aria-label="Défilement automatique">
+            <strong>Défilement continu</strong>
+            <span>Les nouveaux souvenirs rejoignent le mur en direct.</span>
+            <i aria-hidden="true" />
+          </div>
+        </div>
 
-      {photos.length === 0 ? (
-        <section className="photo-hunt-screen__empty">
-          <p>Chasse photo</p>
-          <h1>À vous de<br />remplir le mur.</h1>
-          <span>Les photos envoyées apparaîtront ici en direct.</span>
-          <div className="photo-hunt-screen__qr">
-            <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
-            <strong>Scanne · ouvre Photo Hunt</strong>
-          </div>
-        </section>
-      ) : (
-        <section className="photo-hunt-screen__layout">
-          <div className="photo-hunt-screen__heading">
-            <p>Souvenirs en direct</p>
-            <h1>Photo<br /><span>Hunt.</span></h1>
-            <div>
-              <img src="/anniv-2026-qr.svg" alt="QR code Anniv 2026" />
-              <span>Scanne pour participer</span>
-            </div>
-            {pageCount > 1 && (
-              <div className="photo-hunt-screen__rotation">
-                <strong>Rotation auto</strong>
-                <span>Une seule nouvelle photo toutes les 6 s.</span>
-                <i key={displayPage} />
-              </div>
-            )}
-          </div>
-
-          <div
-            key={displayPage}
-            ref={wallRef}
-            className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
-            onLoadCapture={(event) => {
-              const image = event.target
-              if (!(image instanceof window.HTMLImageElement)) return
-              const photoId = image.closest<HTMLElement>('[data-photo-id]')?.dataset.photoId
-              const ratio = image.naturalWidth / image.naturalHeight
-              if (!photoId || !Number.isFinite(ratio) || ratio <= 0) return
-              setNaturalRatios((current) => (
-                Math.abs((current[photoId] ?? 0) - ratio) < 0.001
-                  ? current
-                  : { ...current, [photoId]: ratio }
-              ))
-            }}
-          >
-            {buildPhotoRows(visiblePhotos.map((photo) => (
-              naturalRatios[photo.id]
-                ? { ...photo, image_width: naturalRatios[photo.id] * 1000, image_height: 1000 }
-                : photo
-            ))).map((row, rowIndex, rows) => (
-              <div
-                key={`row:${rowIndex}`}
-                className="photo-hunt-screen__row"
-                style={{
-                  maxWidth: wallSize
-                    ? `${calculatePhotoRowWidth({
-                      wallWidth: wallSize.width,
-                      wallHeight: wallSize.height,
-                      rowRatio: row.ratio,
-                      photoCount: row.photos.length,
-                      rowCount: rows.length,
-                    })}px`
-                    : undefined,
-                }}
-              >
-              {row.photos.map((photo) => (
-              <article
-                    key={photo.id}
-                    className="photo-hunt-screen__photo"
-                    data-photo-id={photo.id}
-                    style={{ flexGrow: getPhotoAspectRatio(photo) }}
-              >
-                <PhotoHuntImage
-                  path={photo.storage_path}
-                  alt={`Photo de ${photo.player_name}`}
-                  className="photo-hunt-screen__image"
-                  debugLayout
-                />
-                <strong className="photo-hunt-screen__author">{photo.player_name}</strong>
-                <span className="photo-hunt-screen__caption">{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
-              </article>
-              ))}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        {loading ? (
+          <p className="photo-hunt-screen__empty">Connexion au mur photo…</p>
+        ) : photos.length === 0 ? (
+          <p className="photo-hunt-screen__empty">Les premières photos vont apparaître ici. À vous de remplir le mur.</p>
+        ) : (
+          <PhotoHuntMasonry photos={photos} challengeById={challengeById} />
+        )}
+      </section>
     </main>
   )
 }

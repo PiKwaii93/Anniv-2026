@@ -1,83 +1,127 @@
-import type { PhotoHuntSubmission } from './photoHunt'
-
-export const PHOTO_WALL_PAGE_SIZE = 4
 export const PHOTO_WALL_GAP = 8
 export const PHOTO_WALL_CAPTION_HEIGHT = 64
+export const PHOTO_WALL_MIN_COLUMN_WIDTH = 250
+export const PHOTO_WALL_MAX_COLUMNS = 4
 
-export function calculatePhotoRowWidth({
-  wallWidth,
-  wallHeight,
-  rowRatio,
-  photoCount,
-  rowCount,
-}: {
-  wallWidth: number
-  wallHeight: number
-  rowRatio: number
-  photoCount: number
-  rowCount: number
-}) {
-  const verticalGaps = Math.max(0, rowCount - 1) * PHOTO_WALL_GAP
-  const captions = rowCount * PHOTO_WALL_CAPTION_HEIGHT
-  const availableImageHeight = Math.max(0, wallHeight - verticalGaps - captions)
-  const imageHeight = availableImageHeight / Math.max(1, rowCount)
-  const horizontalGaps = Math.max(0, photoCount - 1) * PHOTO_WALL_GAP
-  return Math.max(0, Math.min(wallWidth, (rowRatio * imageHeight) + horizontalGaps))
+export type MasonryPhoto = {
+  id: string
+  aspectRatio: number
 }
 
-export function getPhotoAspectRatio(photo: PhotoHuntSubmission) {
-  const width = Number(photo.image_width)
-  const height = Number(photo.image_height)
-  return width > 0 && height > 0 ? width / height : 4 / 3
+export type MasonryItem = MasonryPhoto & {
+  column: number
+  x: number
+  y: number
+  width: number
+  imageHeight: number
+  height: number
 }
 
-export function buildPhotoRows(photos: PhotoHuntSubmission[]) {
-  if (photos.length < 2) {
-    return photos.length === 0
-      ? []
-      : [{ photos, ratio: getPhotoAspectRatio(photos[0]) }]
+export type MasonryLayout = {
+  columnCount: number
+  columnWidth: number
+  height: number
+  items: MasonryItem[]
+}
+
+export type MasonryOptions = {
+  gap?: number
+  captionHeight?: number
+  minColumnWidth?: number
+  maxColumns?: number
+}
+
+export function getPhotoAspectRatio(
+  width: number | null | undefined,
+  height: number | null | undefined,
+) {
+  if (!width || !height || width <= 0 || height <= 0) return 4 / 3
+  return width / height
+}
+
+export function getMasonryColumnCount(
+  containerWidth: number,
+  photoCount: number,
+  minColumnWidth = PHOTO_WALL_MIN_COLUMN_WIDTH,
+  maxColumns = PHOTO_WALL_MAX_COLUMNS,
+  gap = PHOTO_WALL_GAP,
+) {
+  if (photoCount <= 0 || containerWidth <= 0) return 0
+  const columnsThatFit = Math.max(1, Math.floor((containerWidth + gap) / (minColumnWidth + gap)))
+  return Math.min(photoCount, maxColumns, columnsThatFit)
+}
+
+/** Computes the complete geometry using the classic shortest-column Masonry rule. */
+export function calculateMasonryLayout(
+  photos: MasonryPhoto[],
+  containerWidth: number,
+  options: MasonryOptions = {},
+): MasonryLayout {
+  const gap = options.gap ?? PHOTO_WALL_GAP
+  const captionHeight = options.captionHeight ?? PHOTO_WALL_CAPTION_HEIGHT
+  const columnCount = getMasonryColumnCount(
+    containerWidth,
+    photos.length,
+    options.minColumnWidth,
+    options.maxColumns,
+    gap,
+  )
+
+  if (columnCount === 0) {
+    return { columnCount: 0, columnWidth: 0, height: 0, items: [] }
   }
 
-  const bestSplit = Math.ceil(photos.length / 2)
+  const columnWidth = (containerWidth - gap * (columnCount - 1)) / columnCount
+  const columnHeights = Array.from({ length: columnCount }, () => 0)
+  const items = photos.map((photo) => {
+    const column = columnHeights.indexOf(Math.min(...columnHeights))
+    const aspectRatio = Number.isFinite(photo.aspectRatio) && photo.aspectRatio > 0
+      ? photo.aspectRatio
+      : 4 / 3
+    const imageHeight = columnWidth / aspectRatio
+    const height = imageHeight + captionHeight
+    const item: MasonryItem = {
+      ...photo,
+      aspectRatio,
+      column,
+      x: column * (columnWidth + gap),
+      y: columnHeights[column],
+      width: columnWidth,
+      imageHeight,
+      height,
+    }
+    columnHeights[column] += height + gap
+    return item
+  })
 
-  const twoRows = [photos.slice(0, bestSplit), photos.slice(bestSplit)].map((rowPhotos) => ({
-    photos: rowPhotos,
-    ratio: rowPhotos.reduce((total, photo) => total + getPhotoAspectRatio(photo), 0),
-  }))
-
-  // Approximate the 16:9 TV space left after the title rail. Choose the layout
-  // that displays the largest total photo area without cropping any image.
-  const availableWidth = 1.8
-  const totalRatio = twoRows[0].ratio + twoRows[1].ratio
-  const singleHeight = Math.min(0.68, availableWidth / totalRatio)
-  const singleArea = totalRatio * singleHeight ** 2
-  const twoRowArea = twoRows.reduce((area, row) => {
-    const height = Math.min(0.32, availableWidth / row.ratio)
-    return area + row.ratio * height ** 2
-  }, 0)
-
-  return singleArea >= twoRowArea
-    ? [{ photos, ratio: totalRatio }]
-    : twoRows
-}
-
-export function buildPhotoPages(photos: PhotoHuntSubmission[]) {
-  if (photos.length === 0) return []
-  if (photos.length <= PHOTO_WALL_PAGE_SIZE) return [photos]
-
-  const slots = photos.slice(0, PHOTO_WALL_PAGE_SIZE)
-  const frames = [slots.slice()]
-  const divisor = greatestCommonDivisor(photos.length, PHOTO_WALL_PAGE_SIZE)
-  const rotationLength = (photos.length * PHOTO_WALL_PAGE_SIZE) / divisor
-
-  for (let step = 0; step < rotationLength - 1; step += 1) {
-    slots[step % PHOTO_WALL_PAGE_SIZE] = photos[(PHOTO_WALL_PAGE_SIZE + step) % photos.length]
-    frames.push(slots.slice())
+  return {
+    columnCount,
+    columnWidth,
+    height: Math.max(0, Math.max(...columnHeights) - gap),
+    items,
   }
-
-  return frames
 }
 
-function greatestCommonDivisor(left: number, right: number): number {
-  return right === 0 ? left : greatestCommonDivisor(right, left % right)
+export function getVisibleMasonryItems(
+  items: MasonryItem[],
+  scrollTop: number,
+  viewportHeight: number,
+  bufferScreens = 1.5,
+) {
+  const buffer = Math.max(0, viewportHeight * bufferScreens)
+  const start = scrollTop - buffer
+  const end = scrollTop + viewportHeight + buffer
+  return items.filter((item) => item.y + item.height >= start && item.y <= end)
+}
+
+export function advanceAutoScroll(
+  currentScrollTop: number,
+  contentHeight: number,
+  viewportHeight: number,
+  elapsedMs: number,
+  pixelsPerSecond: number,
+) {
+  const maximum = Math.max(0, contentHeight - viewportHeight)
+  const distance = Math.max(0, pixelsPerSecond) * Math.max(0, elapsedMs) / 1000
+  return Math.min(maximum, Math.max(0, currentScrollTop) + distance)
 }
