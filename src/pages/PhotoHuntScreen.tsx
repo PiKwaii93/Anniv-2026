@@ -233,7 +233,7 @@ function PhotoHuntScreen() {
               <div
                 key={`${displayPage}:row:${rowIndex}`}
                 className="photo-hunt-screen__row"
-                style={{ maxWidth: `${row.ratio * (rows.length === 1 ? 68 : 32)}vh` }}
+                style={{ maxWidth: `${row.ratio * (rows.length === 1 ? 68 : 28)}vh` }}
               >
               {row.photos.map((photo) => (
               <article
