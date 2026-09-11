@@ -13,6 +13,7 @@ import {
 } from '../features/photo-hunt/photoHunt'
 import {
   buildPhotoPages,
+  PHOTO_WALL_PAGE_SIZE,
 } from '../features/photo-hunt/photoWallLayout'
 import { supabase } from '../lib/supabase'
 
@@ -73,7 +74,7 @@ function PhotoHuntScreen() {
 
   if (!photoResult.error) {
     const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, nextPhotos.length)
+    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / PHOTO_WALL_PAGE_SIZE))
     setPhotos(nextPhotos)
     setPage((current) => Math.min(current, nextPageCount - 1))
   } else {
@@ -160,14 +161,16 @@ function PhotoHuntScreen() {
   }, [displayPage, photoPages])
 
   useEffect(() => {
-    const photo = visiblePhotos[0]
-    if (!photo) return
+    if (visiblePhotos.length === 0) return
     console.info('[PhotoHunt][TV_PAGE]', {
       page: displayPage + 1,
       pageCount,
-      photoId: photo.id,
-      storedWidth: photo.image_width ?? null,
-      storedHeight: photo.image_height ?? null,
+      photoCount: visiblePhotos.length,
+      photos: visiblePhotos.map((photo) => ({
+        photoId: photo.id,
+        storedWidth: photo.image_width ?? null,
+        storedHeight: photo.image_height ?? null,
+      })),
     })
   }, [displayPage, pageCount, visiblePhotos])
 
@@ -188,7 +191,7 @@ function PhotoHuntScreen() {
         <div><span /> Photo Hunt · mur live</div>
         <b>
           {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-          {pageCount > 1 ? ` · photo ${displayPage + 1}/${pageCount}` : ''}
+          {pageCount > 1 ? ` · mur ${displayPage + 1}/${pageCount}` : ''}
         </b>
       </header>
 
@@ -214,7 +217,7 @@ function PhotoHuntScreen() {
             {pageCount > 1 && (
               <div className="photo-hunt-screen__rotation">
                 <strong>Rotation auto</strong>
-                <span>Une nouvelle photo apparaît toutes les 10 s.</span>
+                <span>Jusqu’à 4 souvenirs différents toutes les 10 s.</span>
                 <i key={displayPage} />
               </div>
             )}
@@ -227,13 +230,12 @@ function PhotoHuntScreen() {
             {visiblePhotos.map((photo) => (
               <article
                 key={`${displayPage}:${photo.id}`}
-                className="photo-hunt-screen__photo photo-hunt-screen__photo--single"
+                className="photo-hunt-screen__photo"
               >
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt-screen__image"
-                  framed
                   debugLayout
                 />
                 <strong className="photo-hunt-screen__author">{photo.player_name}</strong>

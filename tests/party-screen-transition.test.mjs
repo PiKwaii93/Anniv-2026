@@ -2,7 +2,7 @@
 // replaced by memory fixtures; no production question, vote or photo is changed.
 import assert from 'node:assert/strict'
 import test, { after, afterEach, beforeEach } from 'node:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import React, { act } from 'react'
@@ -134,7 +134,7 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   isPhotoWall()
 })
 
-test('Photo Hunt gives every photo a full uncropped TV page regardless of its dimensions', () => {
+test('Photo Hunt paginates four uncropped photos per TV page regardless of their dimensions', () => {
   const portraits = Array.from({ length: 3 }, (_, index) => ({
     id: `portrait-${index}`,
     storage_path: `portrait-${index}.webp`,
@@ -150,9 +150,18 @@ test('Photo Hunt gives every photo a full uncropped TV page regardless of its di
 
   const photos = [...portraits, ...landscapes]
   const pages = buildPhotoPages(photos)
-  assert.equal(pages.length, photos.length)
-  assert.ok(pages.every((page) => page.length === 1))
+  assert.deepEqual(pages.map((page) => page.length), [4, 4, 1])
   assert.deepEqual(pages.flat().map((photo) => photo.id), photos.map((photo) => photo.id))
+})
+
+test('Photo Hunt TV uses intrinsic images with contain and no cover backdrop', async () => {
+  const screenSource = await readFile(resolve('src/pages/PhotoHuntScreen.tsx'), 'utf8')
+  const screenStyles = await readFile(resolve('src/pages/PhotoHuntScreen.css'), 'utf8')
+
+  assert.doesNotMatch(screenSource, /\bframed\b/)
+  assert.match(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?object-fit:\s*contain;/)
+  assert.doesNotMatch(screenStyles, /\.photo-hunt-image__backdrop/)
+  assert.doesNotMatch(screenStyles, /\.photo-hunt-screen__image\s*\{[\s\S]*?object-fit:\s*cover;/)
 })
 test('TV polling reflects room changes when Realtime delivers no event', async () => {
   await render()
