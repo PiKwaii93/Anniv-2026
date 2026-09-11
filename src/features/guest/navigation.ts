@@ -40,5 +40,5 @@ export function activeGuestTab(path: string) {
 }
 
 export function isGuestPath(path: string) {
-  return !path.startsWith('/admin') && path !== '/screen' && path !== '/qr'
+  return !path.startsWith('/admin') && path !== '/captain' && path !== '/screen' && path !== '/qr'
 }

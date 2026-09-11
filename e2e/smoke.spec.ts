@@ -320,6 +320,17 @@ test('admin login is reachable without exposing guest controls', async ({ page }
   expectCleanBrowser(guard)
 })
 
+test('captain invitation bypasses guest preparation routing', async ({ page }) => {
+  const guard = await guardBrowser(page)
+  await page.goto('/captain?token=00000000-0000-4000-8000-000000000001')
+
+  await expect(page).toHaveURL(/\/captain\?token=/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Crée ton accès capitaine' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Première connexion' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0)
+  expectCleanBrowser(guard)
+})
+
 test('Bingo toggles a grid cell in one click and keeps it checked in list view', async ({ page }) => {
   const prompts = Array.from({ length: 16 }, (_, index) => ({
     id: `prompt-${index + 1}`,

@@ -205,7 +205,7 @@ test('four navigation entries honor visibility and secondary routes',()=>{
   fixture.extras.data.settings.jukebox_visible=false
   assert.deepEqual(ui.guestTabs(fixture.party.settings,fixture.extras.data.settings).map(t=>t.label),['Accueil','Jouer'])
   for(const path of ['/bingo','/missions','/duos','/room','/beer-pong'])assert.equal(ui.activeGuestTab(path),'/play')
-  for(const path of ['/screen','/qr','/admin','/admin/photos','/admin/login'])assert.equal(ui.isGuestPath(path),false)
+  for(const path of ['/screen','/qr','/captain','/admin','/admin/photos','/admin/login'])assert.equal(ui.isGuestPath(path),false)
 })
 test('preparation exposes only the explicit organization paths',async()=>{
   fixture.party.settings.phase='preparation'
