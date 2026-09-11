@@ -134,7 +134,7 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   isPhotoWall()
 })
 
-test('Photo Hunt builds dynamic six-photo walls and balances their real aspect ratios', () => {
+test('Photo Hunt keeps four stable slots and replaces only one photo per rotation', () => {
   const portraits = Array.from({ length: 3 }, (_, index) => ({
     id: `portrait-${index}`,
     storage_path: `portrait-${index}.webp`,
@@ -150,13 +150,21 @@ test('Photo Hunt builds dynamic six-photo walls and balances their real aspect r
 
   const photos = [...portraits, ...landscapes]
   const pages = buildPhotoPages(photos)
-  assert.deepEqual(pages.map((page) => page.length), [6, 3])
-  assert.deepEqual(pages.flat().map((photo) => photo.id), photos.map((photo) => photo.id))
+  assert.equal(pages.length, 36)
+  assert.ok(pages.every((page) => page.length === 4))
+  assert.deepEqual(
+    [...new Set(pages.flat().map((photo) => photo.id))].sort(),
+    photos.map((photo) => photo.id).sort(),
+  )
+  for (let index = 1; index < pages.length; index += 1) {
+    const changedSlots = pages[index].filter((photo, slot) => photo.id !== pages[index - 1][slot].id)
+    assert.equal(changedSlots.length, 1)
+  }
 
   const rows = buildPhotoRows(pages[0])
   assert.equal(rows.length, 2)
+  assert.deepEqual(rows.map((row) => row.photos.length), [2, 2])
   assert.deepEqual(rows.flatMap((row) => row.photos.map((photo) => photo.id)), pages[0].map((photo) => photo.id))
-  assert.ok(Math.abs(rows[0].ratio - rows[1].ratio) <= 2)
   assert.equal(getPhotoAspectRatio(portraits[0]), 900 / 1600)
   assert.equal(getPhotoAspectRatio(landscapes[0]), 1600 / 900)
 

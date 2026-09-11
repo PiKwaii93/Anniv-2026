@@ -16,14 +16,13 @@ import {
   buildPhotoRows,
   calculatePhotoRowWidth,
   getPhotoAspectRatio,
-  PHOTO_WALL_PAGE_SIZE,
 } from '../features/photo-hunt/photoWallLayout'
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntScreen.css'
 import './PhotoHuntScreenPolish.css'
 
-const ROTATION_MS = 10000
+const ROTATION_MS = 6000
 
 function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   const buckets = new Map<string, PhotoHuntSubmission[]>()
@@ -103,7 +102,7 @@ function PhotoHuntScreen() {
 
   if (!photoResult.error) {
     const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / PHOTO_WALL_PAGE_SIZE))
+    const nextPageCount = Math.max(1, buildPhotoPages(nextPhotos).length)
     setPhotos(nextPhotos)
     setPage((current) => Math.min(current, nextPageCount - 1))
   } else {
@@ -220,7 +219,6 @@ function PhotoHuntScreen() {
         <div><span /> Photo Hunt · mur live</div>
         <b>
           {photos.length} photo{photos.length !== 1 ? 's' : ''} publiée{photos.length !== 1 ? 's' : ''}
-          {pageCount > 1 ? ` · mur ${displayPage + 1}/${pageCount}` : ''}
         </b>
       </header>
 
@@ -246,7 +244,7 @@ function PhotoHuntScreen() {
             {pageCount > 1 && (
               <div className="photo-hunt-screen__rotation">
                 <strong>Rotation auto</strong>
-                <span>Jusqu’à 6 souvenirs différents toutes les 10 s.</span>
+                <span>Une seule nouvelle photo toutes les 6 s.</span>
                 <i key={displayPage} />
               </div>
             )}
@@ -275,7 +273,7 @@ function PhotoHuntScreen() {
                 : photo
             ))).map((row, rowIndex, rows) => (
               <div
-                key={`${displayPage}:row:${rowIndex}`}
+                key={`row:${rowIndex}`}
                 className="photo-hunt-screen__row"
                 style={{
                   maxWidth: wallSize
@@ -291,7 +289,7 @@ function PhotoHuntScreen() {
               >
               {row.photos.map((photo) => (
               <article
-                    key={`${displayPage}:${photo.id}`}
+                    key={photo.id}
                     className="photo-hunt-screen__photo"
                     data-photo-id={photo.id}
                     style={{ flexGrow: getPhotoAspectRatio(photo) }}

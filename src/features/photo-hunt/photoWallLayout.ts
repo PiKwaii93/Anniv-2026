@@ -1,6 +1,6 @@
 import type { PhotoHuntSubmission } from './photoHunt'
 
-export const PHOTO_WALL_PAGE_SIZE = 6
+export const PHOTO_WALL_PAGE_SIZE = 4
 export const PHOTO_WALL_GAP = 8
 export const PHOTO_WALL_CAPTION_HEIGHT = 64
 
@@ -38,22 +38,7 @@ export function buildPhotoRows(photos: PhotoHuntSubmission[]) {
       : [{ photos, ratio: getPhotoAspectRatio(photos[0]) }]
   }
 
-  let bestSplit = 1
-  let smallestDifference = Number.POSITIVE_INFINITY
-
-  for (let split = 1; split < photos.length; split += 1) {
-    const firstRatio = photos
-      .slice(0, split)
-      .reduce((total, photo) => total + getPhotoAspectRatio(photo), 0)
-    const secondRatio = photos
-      .slice(split)
-      .reduce((total, photo) => total + getPhotoAspectRatio(photo), 0)
-    const difference = Math.abs(firstRatio - secondRatio)
-    if (difference < smallestDifference) {
-      bestSplit = split
-      smallestDifference = difference
-    }
-  }
+  const bestSplit = Math.ceil(photos.length / 2)
 
   const twoRows = [photos.slice(0, bestSplit), photos.slice(bestSplit)].map((rowPhotos) => ({
     photos: rowPhotos,
@@ -77,9 +62,22 @@ export function buildPhotoRows(photos: PhotoHuntSubmission[]) {
 }
 
 export function buildPhotoPages(photos: PhotoHuntSubmission[]) {
-  const pages: PhotoHuntSubmission[][] = []
-  for (let index = 0; index < photos.length; index += PHOTO_WALL_PAGE_SIZE) {
-    pages.push(photos.slice(index, index + PHOTO_WALL_PAGE_SIZE))
+  if (photos.length === 0) return []
+  if (photos.length <= PHOTO_WALL_PAGE_SIZE) return [photos]
+
+  const slots = photos.slice(0, PHOTO_WALL_PAGE_SIZE)
+  const frames = [slots.slice()]
+  const divisor = greatestCommonDivisor(photos.length, PHOTO_WALL_PAGE_SIZE)
+  const rotationLength = (photos.length * PHOTO_WALL_PAGE_SIZE) / divisor
+
+  for (let step = 0; step < rotationLength - 1; step += 1) {
+    slots[step % PHOTO_WALL_PAGE_SIZE] = photos[(PHOTO_WALL_PAGE_SIZE + step) % photos.length]
+    frames.push(slots.slice())
   }
-  return pages
+
+  return frames
+}
+
+function greatestCommonDivisor(left: number, right: number): number {
+  return right === 0 ? left : greatestCommonDivisor(right, left % right)
 }
