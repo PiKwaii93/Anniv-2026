@@ -29,6 +29,7 @@ const BEER_PONG_TREE_MAX_SCROLL_MS = 22_000
 const BEER_PONG_TREE_MIN_SCROLL_MS = 8_000
 const BEER_PONG_TREE_SCROLL_SPEED = 32
 const TV_ROTATION_MS = 12_000
+const TV_ROOM_POLL_MS = 1500
 const BINGO_PROMPTS_PER_PAGE = 6
 const GUESTS_PER_PAGE = 12
 
@@ -233,6 +234,22 @@ function PartyScreen() {
   const [loading, setLoading] = useState(true)
   const realtimeConnectedRef = useRef(false)
 
+  const loadRoomState = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('live_vote_public_state')
+      .select('state')
+      .eq('id', 'main')
+      .maybeSingle()
+
+    if (error) {
+      console.error('Unable to load TV room state:', error)
+      return
+    }
+
+    const row = data as RoomStateRow | null
+    setRoomState(row?.state ?? { phase: 'idle' })
+  }, [])
+
   const loadScreenData = useCallback(async () => {
     const [
       roomResult,
@@ -360,7 +377,7 @@ function PartyScreen() {
           schema: 'public',
           table: 'secret_mission_scoreboard',
         },
-        () => void loadScreenData(),
+        () => void loadRoomState(),
       )
       .on(
         'postgres_changes',
@@ -395,6 +412,10 @@ function PartyScreen() {
       30000,
     )
 
+    const roomPoll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadRoomState()
+    }, TV_ROOM_POLL_MS)
+
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         void loadScreenData()
@@ -406,10 +427,11 @@ function PartyScreen() {
     return () => {
       realtimeConnectedRef.current = false
       window.clearInterval(fallback)
+      window.clearInterval(roomPoll)
       document.removeEventListener('visibilitychange', handleVisibility)
       void supabase.removeChannel(channel)
     }
-  }, [loadScreenData])
+  }, [loadRoomState, loadScreenData])
 
   const now = useNow(
     roomState.phase === 'open' && Boolean(roomState.closesAt),

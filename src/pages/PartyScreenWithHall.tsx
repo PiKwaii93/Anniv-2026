@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from 'react'
 
@@ -20,11 +19,13 @@ type RoomStateRow = {
   } | null
 }
 
+const TV_ROOM_POLL_MS = 1500
+const TV_PARTY_POLL_MS = 2000
+
 function PartyScreenWithHall() {
-  const { settings, loading } = useParty()
+  const { settings, loading, refresh: refreshParty } = useParty()
   const [roomPhase, setRoomPhase] = useState<RoomPhase>('idle')
   const [roomLoading, setRoomLoading] = useState(true)
-  const realtimeConnectedRef = useRef(false)
 
   const loadRoomPhase = useCallback(async () => {
     const { data, error } = await supabase
@@ -61,13 +62,11 @@ function PartyScreenWithHall() {
         },
         () => void loadRoomPhase(),
       )
-      .subscribe((status) => {
-        realtimeConnectedRef.current = status === 'SUBSCRIBED'
-      })
+      .subscribe()
 
-    const fallback = window.setInterval(() => {
-      if (!realtimeConnectedRef.current) void loadRoomPhase()
-    }, 30000)
+    const roomPoll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadRoomPhase()
+    }, TV_ROOM_POLL_MS)
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
@@ -78,12 +77,19 @@ function PartyScreenWithHall() {
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
-      realtimeConnectedRef.current = false
-      window.clearInterval(fallback)
+      window.clearInterval(roomPoll)
       document.removeEventListener('visibilitychange', handleVisibility)
       void supabase.removeChannel(channel)
     }
   }, [loadRoomPhase])
+
+  useEffect(() => {
+    const partyPoll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refreshParty()
+    }, TV_PARTY_POLL_MS)
+
+    return () => window.clearInterval(partyPoll)
+  }, [refreshParty])
 
   if (!loading && settings.phase === 'ended') {
     return <PartyEndingScreen />

@@ -50,13 +50,14 @@ async function emit(name) { await act(async () => channels.get(name)?.emit()) }
 beforeEach(() => {
   dom = new JSDOM('<div id="root"></div>', { url: 'https://party.test/screen' })
   globalThis.window = dom.window; globalThis.document = dom.window.document
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   channels = new Map(); errors = []; timers = new Map(); nextTimer = 0
   window.setInterval = callback => { const id = ++nextTimer; timers.set(id, callback); return id }
   window.clearInterval = id => timers.delete(id)
   root = createRoot(document.getElementById('root'), { onUncaughtError: error => errors.push(error) })
   fixture = globalThis.__screenTransition = {
-    party: { loading: false, settings: { phase: 'live', featuredModule: 'photos' } },
+    party: { loading: false, settings: { phase: 'live', featuredModule: 'photos' }, refresh: async () => {} },
     room: { phase: 'open', prompt: 'Question test', mode: 'majority', closesAt: '2099-01-01T00:00:00Z' },
     photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg' }],
     photoGate: null,
@@ -131,6 +132,36 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   fixture.room = { phase: 'idle' }
   await emit(screenChannel); await emit(routerChannel)
   isPhotoWall()
+})
+test('TV polling reflects room changes when Realtime delivers no event', async () => {
+  await render()
+  fixture.room = { phase: 'open', prompt: 'Question test', mode: 'majority', voteCount: 3, closesAt: '2099-01-01T00:00:00Z' }
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+  assert.match(content(), /3votes enregistrés/)
+
+  fixture.room = { phase: 'revealed', prompt: 'Question test', result: { rows: [], totalVotes: 3 } }
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+  assert.match(content(), /résultats/)
+})
+test('TV polling refreshes the featured module when Realtime delivers no event', async () => {
+  let partyRefreshes = 0
+  fixture.party.refresh = async () => { partyRefreshes += 1 }
+  await render()
+
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+  })
+
+  assert.equal(partyRefreshes, 1)
 })
 test('slow photo reads show the loading screen instead of a blank root after skip', async () => {
   await render()
