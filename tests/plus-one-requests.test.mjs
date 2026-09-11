@@ -4,6 +4,8 @@ import test from 'node:test'
 
 const migrationPath =
   'supabase/migrations/20260911110000_add_plus_one_requests_and_auto_approve_photos.sql'
+const photoDimensionsMigrationPath =
+  'supabase/migrations/20260911234500_store_photo_hunt_dimensions.sql'
 
 test('plus-one requests stay private and every action verifies an identity or an admin', async () => {
   const sql = await readFile(migrationPath, 'utf8')
@@ -33,4 +35,17 @@ test('Photo Hunt inserts are published without an admin approval step', async ()
   assert.match(sql, /before insert on public\.photo_hunt_submissions/i)
   assert.match(sql, /'status', 'approved'/i)
   assert.match(sql, /where status = 'pending'/i)
+})
+
+test('Photo Hunt stores validated image dimensions before composing the TV wall', async () => {
+  const sql = await readFile(photoDimensionsMigrationPath, 'utf8')
+
+  assert.match(sql, /add column if not exists image_width integer/i)
+  assert.match(sql, /add column if not exists image_height integer/i)
+  assert.match(sql, /p_image_width not between 1 and 10000/i)
+  assert.match(sql, /p_image_height not between 1 and 10000/i)
+  assert.match(sql, /image_width,[\s\S]*image_height,[\s\S]*caption/i)
+  assert.match(sql, /p_image_width,[\s\S]*p_image_height,[\s\S]*nullif\(btrim\(p_caption\), ''\)/i)
+  assert.match(sql, /set search_path = ''/i)
+  assert.match(sql, /revoke all on function public\.finalize_photo_hunt_upload[\s\S]*from public/i)
 })

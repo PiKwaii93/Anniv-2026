@@ -139,6 +139,17 @@
   gap: clamp(8px, 1vw, 14px);
 }
 
+.photo-hunt-screen__measuring {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  place-self: center;
+  color: #77808d;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .photo-hunt-screen__photo {
   position: relative;
   overflow: hidden;
@@ -148,14 +159,24 @@
   border-radius: clamp(15px, 1.5vw, 22px);
 }
 
-.photo-hunt-screen__photo--tall {
+.photo-hunt-screen__photo--portrait {
   grid-column: span 4;
   grid-row: span 2;
 }
 
-.photo-hunt-screen__photo--wide {
+.photo-hunt-screen__photo--landscape,
+.photo-hunt-screen__photo--square {
   grid-column: span 4;
   grid-row: span 1;
+}
+
+.photo-hunt-screen__photo--portrait .photo-hunt-image__foreground {
+  object-fit: contain;
+}
+
+.photo-hunt-screen__photo--landscape .photo-hunt-image__foreground,
+.photo-hunt-screen__photo--square .photo-hunt-image__foreground {
+  object-fit: contain;
 }
 
 .photo-hunt-screen__image {

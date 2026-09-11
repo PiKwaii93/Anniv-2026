@@ -25,7 +25,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
     if (key) return '\0fixture:' + key
   },
   load(id) {
-    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))};`
+    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages, orientationFromDimensions} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
     if (id.startsWith('\0fixture:')) return mocks[id.slice(9)]
   },
 }], build: { ssr: 'virtual:screen-transition', write: false, minify: false } })
@@ -37,7 +37,7 @@ for (const output of bundle.output) {
   await mkdir(resolve(path, '..'), { recursive: true })
   await writeFile(path, output.code)
 }
-const { Router, Screen } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
+const { Router, Screen, buildPhotoPages, orientationFromDimensions } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
 after(() => rm(cache, { recursive: true }))
 
 const routerChannel = 'anniv-2026-party-screen-router'
@@ -59,7 +59,7 @@ beforeEach(() => {
   fixture = globalThis.__screenTransition = {
     party: { loading: false, settings: { phase: 'live', featuredModule: 'photos' }, refresh: async () => {} },
     room: { phase: 'open', prompt: 'Question test', mode: 'majority', closesAt: '2099-01-01T00:00:00Z' },
-    photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg' }],
+    photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg', image_width: 1600, image_height: 900 }],
     photoGate: null,
     db: {
       from(table) {
@@ -132,6 +132,29 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   fixture.room = { phase: 'idle' }
   await emit(screenChannel); await emit(routerChannel)
   isPhotoWall()
+})
+
+test('Photo Hunt classifies and paginates stored portrait and landscape dimensions before rendering', () => {
+  assert.equal(orientationFromDimensions(900, 1600), 'portrait')
+  assert.equal(orientationFromDimensions(1600, 900), 'landscape')
+  assert.equal(orientationFromDimensions(1200, 1200), 'square')
+
+  const portraits = Array.from({ length: 3 }, (_, index) => ({
+    id: `portrait-${index}`,
+    storage_path: `portrait-${index}.webp`,
+    image_width: 900,
+    image_height: 1600,
+  }))
+  const landscapes = Array.from({ length: 6 }, (_, index) => ({
+    id: `landscape-${index}`,
+    storage_path: `landscape-${index}.webp`,
+    image_width: 1600,
+    image_height: 900,
+  }))
+
+  assert.deepEqual(buildPhotoPages(portraits, {}).map((page) => page.length), [3])
+  assert.deepEqual(buildPhotoPages(landscapes, {}).map((page) => page.length), [6])
+  assert.deepEqual(buildPhotoPages([...portraits, ...landscapes], {}).map((page) => page.length), [3, 6])
 })
 test('TV polling reflects room changes when Realtime delivers no event', async () => {
   await render()

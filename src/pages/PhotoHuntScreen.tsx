@@ -11,14 +11,43 @@ import {
   type PhotoHuntChallenge,
   type PhotoHuntSubmission,
 } from '../features/photo-hunt/photoHunt'
+import {
+  buildPhotoPages,
+  orientationFromDimensions,
+  PHOTO_WALL_CAPACITY,
+  type PhotoOrientation,
+} from '../features/photo-hunt/photoWallLayout'
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntScreen.css'
 import './PhotoHuntScreenPolish.css'
 
-const WALL_CAPACITY = 6
 const ROTATION_MS = 10000
-type PhotoOrientation = 'portrait' | 'landscape' | 'square'
+
+function measureStoredPhoto(path: string) {
+  return supabase.storage
+    .from('photo-hunt')
+    .download(path)
+    .then(({ data, error }) => new Promise<PhotoOrientation | null>((resolve) => {
+      if (error || !data) {
+        console.error('Unable to measure legacy Photo Hunt image:', error)
+        resolve(null)
+        return
+      }
+
+      const url = URL.createObjectURL(data)
+      const image = new Image()
+      image.onload = () => {
+        resolve(orientationFromDimensions(image.naturalWidth, image.naturalHeight))
+        URL.revokeObjectURL(url)
+      }
+      image.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve(null)
+      }
+      image.src = url
+    }))
+}
 
 function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   const buckets = new Map<string, PhotoHuntSubmission[]>()
@@ -48,42 +77,20 @@ function diversifyPhotos(photos: PhotoHuntSubmission[]) {
   return diversified
 }
 
-function buildPhotoPages(
-  photos: PhotoHuntSubmission[],
-  orientationByPath: Record<string, PhotoOrientation>,
-) {
-  const pages: PhotoHuntSubmission[][] = []
-  let currentPage: PhotoHuntSubmission[] = []
-  let usedCapacity = 0
-
-  photos.forEach((photo) => {
-    const photoCapacity = orientationByPath[photo.storage_path] === 'portrait' ? 2 : 1
-    if (currentPage.length > 0 && usedCapacity + photoCapacity > WALL_CAPACITY) {
-      pages.push(currentPage)
-      currentPage = []
-      usedCapacity = 0
-    }
-    currentPage.push(photo)
-    usedCapacity += photoCapacity
-  })
-
-  if (currentPage.length > 0) pages.push(currentPage)
-  return pages
-}
-
 function PhotoHuntScreen() {
   const [photos, setPhotos] = useState<PhotoHuntSubmission[]>([])
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [orientationByPath, setOrientationByPath] = useState<Record<string, PhotoOrientation>>({})
+  const measuredPathsRef = useRef(new Set<string>())
   const realtimeConnectedRef = useRef(false)
 
   const load = useCallback(async () => {
     const [photoResult, challengeResult] = await Promise.all([
       supabase
         .from('photo_hunt_submissions')
-        .select('id, challenge_id, player_key, player_name, storage_path, mime_type, caption, status, created_at, moderated_at')
+        .select('id, challenge_id, player_key, player_name, storage_path, mime_type, image_width, image_height, caption, status, created_at, moderated_at')
         .eq('status', 'approved')
         .order('moderated_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
@@ -96,7 +103,7 @@ function PhotoHuntScreen() {
 
   if (!photoResult.error) {
     const nextPhotos = (photoResult.data ?? []) as PhotoHuntSubmission[]
-    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / WALL_CAPACITY))
+    const nextPageCount = Math.max(1, Math.ceil(nextPhotos.length / PHOTO_WALL_CAPACITY))
     setPhotos(nextPhotos)
     setPage((current) => Math.min(current, nextPageCount - 1))
   } else {
@@ -115,6 +122,35 @@ function PhotoHuntScreen() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    const legacyPhotos = photos.filter((photo) => (
+      !orientationFromDimensions(photo.image_width, photo.image_height)
+      && !measuredPathsRef.current.has(photo.storage_path)
+    ))
+    if (legacyPhotos.length === 0) return
+
+    let cancelled = false
+    legacyPhotos.forEach((photo) => measuredPathsRef.current.add(photo.storage_path))
+
+    void Promise.all(legacyPhotos.map(async (photo) => ({
+      path: photo.storage_path,
+      orientation: await measureStoredPhoto(photo.storage_path),
+    }))).then((measurements) => {
+      if (cancelled) return
+      setOrientationByPath((current) => {
+        const next = { ...current }
+        measurements.forEach(({ path, orientation }) => {
+          if (orientation) next[path] = orientation
+        })
+        return next
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [photos])
 
   useEffect(() => {
     const channel = supabase
@@ -241,12 +277,17 @@ function PhotoHuntScreen() {
             key={displayPage}
             className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
           >
+            {visiblePhotos.length === 0 && photos.length > 0 && (
+              <p className="photo-hunt-screen__measuring">Composition du mur…</p>
+            )}
             {visiblePhotos.map((photo, index) => {
-              const orientation = orientationByPath[photo.storage_path] ?? 'landscape'
+              const orientation = orientationFromDimensions(photo.image_width, photo.image_height)
+                ?? orientationByPath[photo.storage_path]
+              if (!orientation) return null
               return (
               <article
                 key={`${displayPage}:${photo.id}`}
-                className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1} photo-hunt-screen__photo--${orientation === 'portrait' ? 'tall' : 'wide'}`}
+                className={`photo-hunt-screen__photo photo-hunt-screen__photo--${index + 1} photo-hunt-screen__photo--${orientation}`}
               >
                 <PhotoHuntImage
                   path={photo.storage_path}

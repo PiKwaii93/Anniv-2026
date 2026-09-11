@@ -278,6 +278,8 @@ function PhotoHunt() {
           p_slot_id: slot.slotId,
           p_player_key: identity.playerKey,
           p_session_token: identity.sessionToken,
+          p_image_width: preparedPhoto.width,
+          p_image_height: preparedPhoto.height,
           p_caption: caption.trim() || null,
         },
       )
