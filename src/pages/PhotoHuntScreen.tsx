@@ -13,6 +13,8 @@ import {
 } from '../features/photo-hunt/photoHunt'
 import {
   buildPhotoPages,
+  buildPhotoRows,
+  getPhotoAspectRatio,
   PHOTO_WALL_PAGE_SIZE,
 } from '../features/photo-hunt/photoWallLayout'
 import { supabase } from '../lib/supabase'
@@ -217,7 +219,7 @@ function PhotoHuntScreen() {
             {pageCount > 1 && (
               <div className="photo-hunt-screen__rotation">
                 <strong>Rotation auto</strong>
-                <span>Jusqu’à 4 souvenirs différents toutes les 10 s.</span>
+                <span>Jusqu’à 6 souvenirs différents toutes les 10 s.</span>
                 <i key={displayPage} />
               </div>
             )}
@@ -227,10 +229,17 @@ function PhotoHuntScreen() {
             key={displayPage}
             className={`photo-hunt-screen__wall photo-hunt-screen__wall--${visiblePhotos.length}`}
           >
-            {visiblePhotos.map((photo) => (
+            {buildPhotoRows(visiblePhotos).map((row, rowIndex, rows) => (
+              <div
+                key={`${displayPage}:row:${rowIndex}`}
+                className="photo-hunt-screen__row"
+                style={{ maxWidth: `${row.ratio * (rows.length === 1 ? 68 : 32)}vh` }}
+              >
+              {row.photos.map((photo) => (
               <article
                 key={`${displayPage}:${photo.id}`}
                 className="photo-hunt-screen__photo"
+                style={{ flexGrow: getPhotoAspectRatio(photo) }}
               >
                 <PhotoHuntImage
                   path={photo.storage_path}
@@ -241,6 +250,8 @@ function PhotoHuntScreen() {
                 <strong className="photo-hunt-screen__author">{photo.player_name}</strong>
                 <span className="photo-hunt-screen__caption">{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</span>
               </article>
+              ))}
+              </div>
             ))}
           </div>
         </section>

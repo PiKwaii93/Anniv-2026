@@ -25,7 +25,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
     if (key) return '\0fixture:' + key
   },
   load(id) {
-    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
+    if (id === '\0screen-transition') return `export {default as Router} from ${JSON.stringify(resolve('src/pages/PartyScreenWithHall.tsx'))}; export {default as Screen} from ${JSON.stringify(resolve('src/pages/PartyScreen.tsx'))}; export {buildPhotoPages, buildPhotoRows, getPhotoAspectRatio} from ${JSON.stringify(resolve('src/features/photo-hunt/photoWallLayout.ts'))};`
     if (id.startsWith('\0fixture:')) return mocks[id.slice(9)]
   },
 }], build: { ssr: 'virtual:screen-transition', write: false, minify: false } })
@@ -37,7 +37,7 @@ for (const output of bundle.output) {
   await mkdir(resolve(path, '..'), { recursive: true })
   await writeFile(path, output.code)
 }
-const { Router, Screen, buildPhotoPages } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
+const { Router, Screen, buildPhotoPages, buildPhotoRows, getPhotoAspectRatio } = await import(pathToFileURL(join(cache, bundle.output.find(item => item.isEntry).fileName)).href)
 after(() => rm(cache, { recursive: true }))
 
 const routerChannel = 'anniv-2026-party-screen-router'
@@ -134,7 +134,7 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   isPhotoWall()
 })
 
-test('Photo Hunt paginates four uncropped photos per TV page regardless of their dimensions', () => {
+test('Photo Hunt builds dynamic six-photo walls and balances their real aspect ratios', () => {
   const portraits = Array.from({ length: 3 }, (_, index) => ({
     id: `portrait-${index}`,
     storage_path: `portrait-${index}.webp`,
@@ -150,8 +150,21 @@ test('Photo Hunt paginates four uncropped photos per TV page regardless of their
 
   const photos = [...portraits, ...landscapes]
   const pages = buildPhotoPages(photos)
-  assert.deepEqual(pages.map((page) => page.length), [4, 4, 1])
+  assert.deepEqual(pages.map((page) => page.length), [6, 3])
   assert.deepEqual(pages.flat().map((photo) => photo.id), photos.map((photo) => photo.id))
+
+  const rows = buildPhotoRows(pages[0])
+  assert.equal(rows.length, 2)
+  assert.deepEqual(rows.flatMap((row) => row.photos.map((photo) => photo.id)), pages[0].map((photo) => photo.id))
+  assert.ok(Math.abs(rows[0].ratio - rows[1].ratio) <= 2)
+  assert.equal(getPhotoAspectRatio(portraits[0]), 900 / 1600)
+  assert.equal(getPhotoAspectRatio(landscapes[0]), 1600 / 900)
+
+  const portraitWall = buildPhotoRows(Array.from({ length: 6 }, (_, index) => ({
+    ...portraits[index % portraits.length],
+    id: `portrait-wall-${index}`,
+  })))
+  assert.equal(portraitWall.length, 1, 'portraits should share one wide row instead of leaving two narrow columns')
 })
 
 test('Photo Hunt TV uses intrinsic images with contain and no cover backdrop', async () => {
