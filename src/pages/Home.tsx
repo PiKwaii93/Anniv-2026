@@ -4,6 +4,7 @@ import { useAuth } from '../features/auth/AuthContext'
 import HomeIdentityOnboarding from '../features/identity/HomeIdentityOnboarding'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { isPartyModuleVisible, useParty } from '../features/party/PartyContext'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { usePartyExtras } from '../features/party-extras/usePartyExtras'
 import { useGuestOverview } from '../features/guest/GuestContext'
 import { activities } from '../features/guest/navigation'
@@ -54,7 +55,7 @@ export default function Home() {
   const phase = settings.phase
   const currentPersonal = personal?.scope === scope ? personal : null
   const liveQuestion = phase === 'live' && settings.roomVisible && room?.phase === 'open'
-  const featured = [...activities, { key: 'photos' as const, path: '/photos', title: 'Photos', detail: 'Un défi à capturer ensemble.', icon: '▧' }, { key: 'iceberg' as const, path: '/iceberg', title: 'Iceberg', detail: 'Les histoires de la soirée.', icon: '△' }, { key: 'guests' as const, path: '/guests', title: 'Les invités', detail: 'Retrouve les participants.', icon: '○' }]
+  const featured = [...activities, { key: 'photos' as const, path: '/photos', title: 'Photos', detail: 'Un défi à capturer ensemble.', icon: partyModuleIcons.photos }, { key: 'iceberg' as const, path: '/iceberg', title: 'Iceberg', detail: 'Les histoires de la soirée.', icon: partyModuleIcons.iceberg }, { key: 'guests' as const, path: '/guests', title: 'Les invités', detail: 'Retrouve les participants.', icon: partyModuleIcons.guests }]
     .find(item => item.key === String(settings.featuredModule) && isPartyModuleVisible(settings, item.key))
   const now = phase === 'ended'
     ? { title: 'C’était nous.', detail: 'Les gagnants et les souvenirs de cette soirée.', path: '/hall-of-fame', action: 'Voir le palmarès' }
@@ -70,7 +71,7 @@ export default function Home() {
     ...(own?.settings.duos_visible && phase !== 'ended' && own.duo?.status === 'active' ? [{ path: '/duos', title: `Ton duo avec ${own.duo.partner}`, detail: own.duo.confirmed ? 'Tu as confirmé · en attente de ton partenaire' : 'Votre défi est prêt.', icon: '↔' }] : []),
     ...(own?.settings.duos_visible && phase !== 'ended' && own.waiting ? [{ path: '/duos', title: 'Recherche de ton partenaire', detail: 'Tu es dans la file des duos.', icon: '↔' }] : []),
     ...(currentPersonal?.mission && settings.missionsVisible && phase !== 'ended' ? [{ path: '/missions', title: 'Reprendre tes missions', detail: 'Retrouve ta mission discrètement.', icon: '◇' }] : []),
-    ...(currentPersonal?.pending && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.pending} photo${currentPersonal.pending > 1 ? 's' : ''} en validation`, detail: 'Tes envois sont bien reçus.', icon: '▧' }] : []),
+    ...(currentPersonal?.pending && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.pending} photo${currentPersonal.pending > 1 ? 's' : ''} en publication`, detail: 'Tes envois sont bien reçus.', icon: '▧' }] : []),
     ...(currentPersonal?.retry && settings.photosVisible ? [{ path: '/photos?view=mine', title: `${currentPersonal.retry} photo${currentPersonal.retry > 1 ? 's' : ''} à refaire`, detail: 'Tu peux retenter ces défis.', icon: '▧' }] : []),
   ]
 
@@ -89,8 +90,8 @@ export default function Home() {
       </div></section>
       {phase !== 'preparation' && <section className="guest-section"><h2>Souvenirs & rencontres</h2><div className="guest-discover">
         {extras?.settings.capsule_visible && <Link to="/capsule"><span aria-hidden="true">✉</span><strong>La capsule</strong><small>Quelques mots pour plus tard</small></Link>}
-        {settings.icebergVisible && <Link to="/iceberg"><span aria-hidden="true">△</span><strong>L’Iceberg</strong><small>Les histoires entre nous</small></Link>}
-        {settings.guestsVisible && <Link to="/guests"><span aria-hidden="true">○</span><strong>Les invités</strong><small>Qui est de la partie ?</small></Link>}
+        {settings.icebergVisible && <Link to="/iceberg"><span aria-hidden="true">{partyModuleIcons.iceberg}</span><strong>L’Iceberg</strong><small>Les histoires entre nous</small></Link>}
+        {settings.guestsVisible && <Link to="/guests"><span aria-hidden="true">{partyModuleIcons.guests}</span><strong>Les invités</strong><small>Qui est de la partie ?</small></Link>}
         {phase === 'ended' && settings.photosVisible && <Link to="/photos?view=gallery"><span aria-hidden="true">▧</span><strong>La galerie</strong><small>Revivre la soirée</small></Link>}
       </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>}
       <footer className="guest-home-footer">

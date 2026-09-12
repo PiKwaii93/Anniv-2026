@@ -148,6 +148,68 @@
   font-size: 0.8rem;
 }
 
+.bingo-progress {
+  height: 4px;
+  margin-top: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .07);
+  border-radius: 999px;
+}
+
+.bingo-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f1a83b, #ff6f79);
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+@media (max-width: 600px) {
+  .bingo-header__navigation {
+    margin-bottom: 20px;
+  }
+
+  .bingo-header__title-row {
+    align-items: end;
+  }
+
+  .bingo-header__title-row > div:first-child > p {
+    margin-top: 12px;
+  }
+
+  .bingo-score {
+    padding-bottom: 0;
+  }
+
+  .bingo-score strong {
+    font-size: 2rem;
+  }
+
+  .bingo-page .bingo-view-switcher {
+    margin-bottom: 8px;
+  }
+
+  .bingo-board-shell {
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .guest-app .bingo-grid .bingo-cell {
+    min-height: 108px;
+    padding: 23px 5px 17px;
+  }
+
+  .bingo-footer-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bingo-footer-panel button {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+
 .bingo-message {
   margin-bottom: 14px;
   padding: 12px 14px;

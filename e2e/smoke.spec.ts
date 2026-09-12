@@ -220,6 +220,66 @@ function expectCleanBrowser(guard: BrowserGuard) {
   expect(guard.reactWarnings).toEqual([])
 }
 
+test('Beer Pong tree keeps vertical page scrolling over its horizontal canvas', async ({ page, browserName }) => {
+  const players = Array.from({ length: 42 }, (_, index) => ({
+    id: `player-${index + 1}`,
+    name: `Joueur ${index + 1}`,
+  }))
+  const teams = Array.from({ length: 21 }, (_, index) => ({
+    id: `team-${index + 1}`,
+    playerIds: [`player-${index * 2 + 1}`, `player-${index * 2 + 2}`],
+  }))
+  const firstRound = Array.from({ length: 16 }, (_, index) => {
+    const competitive = index < 5
+    const teamAIndex = competitive ? index * 2 : index + 5
+    return {
+      id: `match-${index + 1}`,
+      teamAId: teams[teamAIndex].id,
+      teamBId: competitive ? teams[index * 2 + 1].id : null,
+      winnerTeamId: teams[teamAIndex].id,
+    }
+  })
+  const duplicatedLegacyRound = Array.from({ length: 8 }, (_, index) => ({
+    id: 'duplicated-legacy-id',
+    teamAId: firstRound[index * 2].winnerTeamId,
+    teamBId: firstRound[index * 2 + 1].winnerTeamId,
+    winnerTeamId: null,
+  }))
+  const guard = await guardBrowser(page, {
+    tables: {
+      party_state: { ...partyState, phase: 'live' },
+      beer_pong_state: {
+        id: 'main',
+        state: {
+          draftValidated: true,
+          playerSnapshots: players,
+          teams,
+          rounds: [firstRound, duplicatedLegacyRound],
+        },
+      },
+    },
+  })
+
+  await page.goto('/beer-pong/bracket')
+  const tree = page.locator('.tournament-tree')
+  await expect(tree).toBeVisible({ timeout: 20_000 })
+  const matchLabels = await tree.locator('.tournament-tree__match-number').allTextContents()
+  expect(matchLabels).toHaveLength(31)
+  expect(new Set(matchLabels).size).toBe(31)
+  if (browserName === 'webkit') {
+    // Playwright does not expose a touch swipe and mobile WebKit rejects mouse.wheel.
+    // Scrolling the viewport still catches the overflow/body-lock regression here;
+    // Chromium keeps the pointer-over-canvas interaction coverage below.
+    await page.evaluate(() => window.scrollBy(0, 700))
+  } else {
+    await tree.hover()
+    await page.mouse.wheel(0, 700)
+  }
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300)
+  expectCleanBrowser(guard)
+})
+
 test('practical information loads without a production dependency', async ({ page }) => {
   const guard = await guardBrowser(page)
   await page.goto('/info')
@@ -227,6 +287,11 @@ test('practical information loads without a production dependency', async ({ pag
   await expect(page.getByRole('heading', { level: 1, name: 'Infos pratiques' })).toBeVisible()
   await expect(page.getByText('samedi 24 octobre 2026 à 21:30')).toBeVisible()
   await expect(page.getByText('19 Rue Louison Bobet, Neuilly-Plaisance 93360')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Ouvrir dans Google Maps' })).toHaveAttribute(
+    'href',
+    /google\.com\/maps\/search\/\?api=1&query=/,
+  )
+  await expect(page.getByText('Lieu', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Tenue libre')).toBeVisible()
   await expect(page.getByText('Stationnement')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -251,6 +316,17 @@ test('admin login is reachable without exposing guest controls', async ({ page }
   await expect(page.getByLabel('Email')).toBeVisible()
   await expect(page.getByLabel('Mot de passe')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Se connecter' })).toBeEnabled()
+  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0)
+  expectCleanBrowser(guard)
+})
+
+test('captain invitation bypasses guest preparation routing', async ({ page }) => {
+  const guard = await guardBrowser(page)
+  await page.goto('/captain?token=00000000-0000-4000-8000-000000000001')
+
+  await expect(page).toHaveURL(/\/captain\?token=/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Crée ton accès capitaine' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Première connexion' })).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0)
   expectCleanBrowser(guard)
 })

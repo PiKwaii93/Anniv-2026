@@ -137,7 +137,6 @@
 .live-room__person {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
   min-height: 48px;
   padding: 9px 12px;
@@ -145,12 +144,18 @@
   text-align: left;
 }
 
-.live-room__person strong {
+.live-room__person-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.live-room__person-copy strong {
   color: #e6e9ef;
   font-size: 0.78rem;
 }
 
-.live-room__person span {
+.live-room__person-copy > span {
   color: #686e78;
   font-size: 0.62rem;
 }
@@ -261,6 +266,16 @@
   text-align: left;
 }
 
+.live-room__nomination .live-room__choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-room__choice-copy {
+  min-width: 0;
+}
+
 .live-room__choice strong {
   display: block;
   color: #eef1f5;
@@ -269,7 +284,8 @@
   line-height: 1.15;
 }
 
-.live-room__choice span {
+.live-room__choice > span:not(.live-room__choice-copy),
+.live-room__choice-copy > span {
   display: block;
   margin-top: 8px;
   color: #98afff;
@@ -418,7 +434,7 @@
 
 .live-room__score-row {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 24px auto 1fr auto;
   gap: 8px;
   align-items: center;
   min-height: 38px;
@@ -479,7 +495,7 @@
   }
 
   .live-room__waiting {
-    min-height: 360px;
+    min-height: 280px;
   }
 
   .live-room__choices,
@@ -496,6 +512,55 @@
   .live-room__leaderboard {
     margin-top: 16px;
     padding: 14px 12px;
+  }
+
+  .live-room__header {
+    gap: 10px;
+  }
+
+  .live-room__identity {
+    max-width: 62%;
+  }
+
+  .live-room__identity span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .live-room__round-meta {
+    margin-bottom: 14px;
+  }
+
+  .live-room__round > h1,
+  .live-room__reveal > h1,
+  .live-room__waiting > h1 {
+    font-size: clamp(1.8rem, 9vw, 2.8rem);
+    line-height: 1.03;
+  }
+
+  .live-room__choices,
+  .live-room__people-grid {
+    margin-top: 20px;
+  }
+
+  .live-room__people-list {
+    max-height: min(390px, 42dvh);
+  }
+
+  .live-room__vote-status {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .live-room__choices,
+  .live-room__people-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-room__choice {
+    min-height: 70px;
   }
 }
 

@@ -1,0 +1,38 @@
+.screen-director {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #05070b;
+}
+
+.screen-director__ambient,
+.screen-director__interruption {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.screen-director__ambient { transition: opacity 280ms ease; }
+.screen-director__ambient--hidden {
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.screen-director__interruption {
+  z-index: 20;
+  animation: screen-director-interruption-in 280ms ease-out both;
+}
+
+@keyframes screen-director-interruption-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-director__ambient,
+  .screen-director__interruption {
+    transition: none;
+    animation: none;
+  }
+}

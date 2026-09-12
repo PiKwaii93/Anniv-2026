@@ -127,6 +127,12 @@ beforeEach(async()=>{
       },
       channel:()=>{const c={on(){return c},subscribe(){return c}};return c},
       removeChannel:async()=>{},
+      storage:{
+        from(bucket){
+          assert.equal(bucket,'guest-avatars')
+          return {getPublicUrl:path=>({data:{publicUrl:`https://party.test/storage/${path}`}})}
+        },
+      },
     }
   }
 })
@@ -199,7 +205,7 @@ test('four navigation entries honor visibility and secondary routes',()=>{
   fixture.extras.data.settings.jukebox_visible=false
   assert.deepEqual(ui.guestTabs(fixture.party.settings,fixture.extras.data.settings).map(t=>t.label),['Accueil','Jouer'])
   for(const path of ['/bingo','/missions','/duos','/room','/beer-pong'])assert.equal(ui.activeGuestTab(path),'/play')
-  for(const path of ['/screen','/qr','/admin','/admin/photos','/admin/login'])assert.equal(ui.isGuestPath(path),false)
+  for(const path of ['/screen','/qr','/captain','/admin','/admin/photos','/admin/login'])assert.equal(ui.isGuestPath(path),false)
 })
 test('preparation exposes only the explicit organization paths',async()=>{
   fixture.party.settings.phase='preparation'
@@ -246,7 +252,7 @@ test('Home prioritizes the live question over featured Photos without assigning 
   await render(ui.Home)
   assert.match(q('.guest-now').textContent,/À toi de voter/)
   assert.equal(q('.guest-now a').getAttribute('href'),'/room')
-  assert.match(text(),/1 photo en validation/)
+  assert.match(text(),/1 photo en publication/)
   assert.equal(document.querySelectorAll('.module-card').length,0)
   assert.equal(q('a[href="/admin"]'),null)
   assert.ok(!reads.includes('get_secret_mission_state'))
@@ -517,7 +523,7 @@ test('profile release still requires confirmation and a successful response',asy
   assert.deepEqual(actions,['releaseIdentity','releaseIdentity'])
 })
 
-const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine})
+const chatMessage=(id,mine=false,body='On se retrouve près du gâteau !')=>({id,name:mine?'Camille':'Léa',body,created_at:'2026-09-03T20:00:00Z',mine,avatarPath:mine?'guests/camille/avatar.jpg':'guests/lea/avatar.jpg'})
 const chatWrites=()=>actions.filter(a=>a.name==='party_chat_action')
 async function editChat(value) {
   const input=q('#chat-message')
@@ -552,15 +558,22 @@ test('chat never queries messages without a guest identity',async()=>{
   assert.deepEqual(chatWrites(),[])
   assert.ok(button('Envoyer').disabled)
 })
-test('chat renders messages as plain text, timestamps and own-message delete only',async()=>{
+test('chat renders compact plain-text messages and keeps details in an options sheet',async()=>{
   fixture.chat.messages=[chatMessage('1',false,'<script>alert(1)</script>'),chatMessage('2',true)]
   fixture.chat.latest='2'
   await render(ui.Chat,'/chat')
   assert.equal(document.querySelectorAll('.chat-message').length,2)
+  assert.equal(document.querySelectorAll('.chat-message__avatar').length,1)
   assert.match(text(),/<script>alert\(1\)<\/script>/)
   assert.equal(q('.chat-message script'),null)
-  assert.equal(document.querySelectorAll('.chat-message-actions button').length,1)
+  assert.equal(document.querySelectorAll('.chat-message__options').length,2)
+  assert.equal(q('time'),null)
+  await click(document.querySelectorAll('.chat-message__options')[0])
   assert.equal(q('time').getAttribute('datetime'),'2026-09-03T20:00:00Z')
+  assert.equal(button('Supprimer le message'),undefined)
+  await click(q('button[aria-label="Fermer les options"]'))
+  await click(document.querySelectorAll('.chat-message__options')[1])
+  assert.ok(button('Supprimer le message'))
   assert.equal(chatWrites()[0].args.p_action,'read')
   assert.equal(chatWrites()[0].args.p_payload.id,'2')
 })
@@ -604,11 +617,13 @@ test('length check counts Unicode characters and rejects more than 300',async()=
 test('deletion is explicit and cancels without a mutation',async()=>{
   fixture.chat.messages=[chatMessage('1',true)]
   await render(ui.Chat,'/chat')
-  await click(button('Supprimer'))
+  await click(q('.chat-message__options'))
+  assert.deepEqual(chatWrites(),[])
+  await click(button('Supprimer le message'))
   assert.deepEqual(chatWrites(),[])
   await click(button('Annuler'))
   assert.deepEqual(chatWrites(),[])
-  await click(button('Supprimer'));await click(button('Confirmer'))
+  await click(button('Supprimer le message'));await click(button('Supprimer'))
   assert.equal(chatWrites()[0].args.p_action,'delete')
   assert.equal(chatWrites()[0].args.p_payload.id,'1')
 })
@@ -623,7 +638,8 @@ test('moderation uses admin reads and offers pause and deletion but no guest com
   await click(button('Mettre les envois en pause'))
   assert.equal(chatWrites()[0].args.p_action,'admin_pause')
   assert.equal(chatWrites()[0].args.p_payload.paused,true)
-  await click(button('Supprimer'));await click(button('Confirmer'))
+  await click(q('.chat-message__options'))
+  await click(button('Supprimer le message'));await click(button('Supprimer'))
   assert.equal(chatWrites()[1].args.p_action,'admin_delete')
 })
 test('paused discussion keeps history readable and preserves unsent text',async()=>{

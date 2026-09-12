@@ -32,8 +32,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright browser
-        run: npx playwright install chromium
+      - name: Install Playwright browsers
+        run: npx playwright install chromium webkit
 
       - name: Browser smoke tests
         run: npm run test:e2e

@@ -79,7 +79,7 @@ test('one launcher replaces the pile, and every command belongs to its tools pan
     assert.ok(query('#admin-regie-tools').querySelector(selector), selector)
   }
   assert.equal(query('a[href="/screen"]').target, '_blank')
-  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos à valider'), true)
+  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos publiées'), true)
   assert.deepEqual(writes, [])
 })
 test('scenes and announcements expand in normal DOM order, one at a time', async () => {
@@ -115,6 +115,27 @@ test('navigation to content closes the tools and retains the admin launcher', as
   assert.ok(query('.admin-regie__launcher'))
   await click('.admin-regie__launcher')
   assert.equal(query('.director-scenes-dock'), null)
+})
+
+test('mobile admin navigation exposes the primary admin destinations', async () => {
+  await render('/admin/guests')
+  const navigation = query('[aria-label="Navigation administration"]')
+  assert.ok(navigation)
+  assert.equal(navigation.querySelector('a[href="/admin"]')?.textContent.includes('Accueil'), true)
+  assert.equal(navigation.querySelector('a[href="/admin/live"]')?.textContent.includes('Directeur'), true)
+  assert.equal(navigation.querySelector('a[href="/admin/guests"]')?.getAttribute('aria-current'), 'page')
+  assert.deepEqual(writes, [])
+})
+test('only the owner receives captain management in the admin dock', async () => {
+  fixture.auth.adminRole = 'owner'
+  await render(); await openTools()
+  assert.ok(query('a[href="/admin/captains"]'))
+
+  await act(async () => root.unmount())
+  root = createRoot(query('#root'))
+  fixture.auth.adminRole = 'captain'
+  await render(); await openTools()
+  assert.equal(query('a[href="/admin/captains"]'), null)
 })
 test('Mode soirée opens its existing settings separately, without changing data', async () => {
   await render(); await openTools(); await click('.party-dock')

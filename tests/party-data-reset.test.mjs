@@ -20,7 +20,7 @@ const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   },
   load(id) {
     if (id === '\0auth') return 'export const useAuth=()=>globalThis.__reset.auth'
-    if (id === '\0db') return `export const supabase={rpc:(...args)=>{const p=globalThis.__reset.rpc(...args);p.abortSignal=()=>p;return p},storage:{from:bucket=>({remove:paths=>globalThis.__reset.remove(bucket,paths)})}}`
+    if (id === '\0db') return `export const supabase={rpc:(...args)=>{const p=globalThis.__reset.rpc(...args);p.abortSignal=()=>p;return p},channel:()=>({on(){return this},subscribe(){return this}}),removeChannel:async()=>{},storage:{from:bucket=>({remove:paths=>globalThis.__reset.remove(bucket,paths)})}}`
     if (id === '\0reset') return `export * from ${JSON.stringify(resolve('src/features/identity/partyDataReset.ts'))};export {default as Admin} from ${JSON.stringify(resolve('src/features/identity/AdminPartyDataReset.tsx'))};export {default as Boundary} from ${JSON.stringify(resolve('src/features/identity/PartyDataBoundary.tsx'))};`
   },
 }], build: { ssr: 'virtual:reset', write: false, minify: false } })
@@ -67,6 +67,7 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.window.close(); delete globalThis.window; delete globalThis.document; delete globalThis.localStorage; delete globalThis.__reset })
 const mutations = () => calls.filter(c => c.name === 'admin_reset_party_data')
 test('non-admin cannot see reset or even read cleanup targets', async () => { f.auth.isAdmin = false; await render(); assert.equal(document.querySelector('button'), null); assert.equal(calls.length, 0) })
+test('the sensitive reset zone is folded by default and opens from its heading', async () => { await render(); const details = document.querySelector('#reset-data'); assert.equal(details.open, false); await click(details.querySelector('summary')); assert.equal(details.open, true); assert.ok(button('Effacer les données')) })
 test('opening and cancelling do not delete anything', async () => { await render(); await click(button('Effacer les données')); assert.equal(button('Effacer définitivement').disabled, true); await click(button('Annuler')); assert.equal(mutations().length, 0); assert.equal(calls.filter(c => c.bucket).length, 0) })
 test('exact EFFACER confirmation is required', async () => {
   await render(); await click(button('Effacer les données')); await type('effacer'); assert.equal(button('Effacer définitivement').disabled, true)

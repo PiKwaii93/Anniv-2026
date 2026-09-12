@@ -144,6 +144,7 @@ export function AnnouncementProvider({
   }, [refresh])
 
   useEffect(() => {
+    let realtimeReady = false
     const channel = supabase
       .channel('anniv-2026-party-announcements')
       .on(
@@ -156,11 +157,17 @@ export function AnnouncementProvider({
         },
         () => void refresh(),
       )
-      .subscribe()
+      .subscribe((status) => {
+        realtimeReady = status === 'SUBSCRIBED'
+      })
 
     const fallback = window.setInterval(
-      () => void refresh(),
-      15000,
+      () => {
+        if (!realtimeReady && document.visibilityState === 'visible') {
+          void refresh()
+        }
+      },
+      60000,
     )
 
     const handleVisibility = () => {

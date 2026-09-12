@@ -389,7 +389,7 @@ function PartyIdentityProvider({
       if (event.key === PARTY_IDENTITY_STORAGE_KEY || event.key === null) void check()
     }
     void check()
-    const timer = window.setInterval(() => void check(), 10_000)
+    const timer = window.setInterval(() => void check(), 30_000)
     window.addEventListener('focus', check)
     window.addEventListener('online', check)
     window.addEventListener('storage', onStorage)

@@ -13,6 +13,8 @@
 }
 .admin-regie > * { pointer-events: auto; }
 .admin-regie, .admin-regie * { box-sizing: border-box; }
+.admin-regie__bar { display: contents; }
+.admin-regie__mobile-nav { display: none; }
 .admin-regie__launcher {
   align-self: flex-end;
   display: flex;
@@ -80,3 +82,92 @@
 .admin-regie .director-scene > b { position: static; grid-column: 2; justify-self: end; }
 .admin-regie .director-scene__copy em { font-size: .7rem; }
 .admin-regie :is(button, a, select, textarea):focus-visible { outline: 2px solid #dfc98a; outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  body:has(.admin-regie) main {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .admin-regie {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    gap: 8px;
+    padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    background: rgba(9, 10, 15, 0.94);
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 -12px 38px rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(18px);
+  }
+
+  .admin-regie__bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+
+  .admin-regie__mobile-nav {
+    display: grid;
+    grid-column: span 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .admin-regie__mobile-link,
+  .admin-regie__launcher {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 58px;
+    padding: 7px 4px;
+    color: #858d9d;
+    text-align: center;
+    text-decoration: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .admin-regie__mobile-link > span,
+  .admin-regie__launcher > span:first-child {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .admin-regie__mobile-link strong,
+  .admin-regie__launcher strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.66rem;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+  }
+
+  .admin-regie__mobile-link--active,
+  .admin-regie__launcher--active {
+    color: #f4e8bd;
+    background: rgba(223, 201, 138, 0.1);
+    border-color: rgba(223, 201, 138, 0.18);
+  }
+
+  .admin-regie__launcher {
+    width: 100%;
+  }
+
+  .admin-regie__launcher small,
+  .admin-regie__launcher > span:last-child {
+    display: none;
+  }
+
+  .admin-regie__panel {
+    width: auto;
+    max-height: calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin: 0 0 2px;
+  }
+}

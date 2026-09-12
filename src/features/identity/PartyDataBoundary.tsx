@@ -14,6 +14,7 @@ export default function PartyDataBoundary({ children }: { children: ReactNode })
   useEffect(() => {
     let active = true
     let running = false
+    let realtimeReady = false
     let request: AbortController | null = null
     async function check() {
       if (running || document.visibilityState === 'hidden') return
@@ -36,7 +37,24 @@ export default function PartyDataBoundary({ children }: { children: ReactNode })
       }
     }
     void check()
-    const interval = window.setInterval(() => void check(), 10000)
+    const channel = supabase
+      .channel('anniv-2026-data-epoch')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'party_state',
+          filter: 'id=eq.main',
+        },
+        () => void check(),
+      )
+      .subscribe((status) => {
+        realtimeReady = status === 'SUBSCRIBED'
+      })
+    const interval = window.setInterval(() => {
+      if (!realtimeReady) void check()
+    }, 60000)
     const wake = () => void check()
     window.addEventListener('focus', wake)
     window.addEventListener('online', wake)
@@ -50,6 +68,7 @@ export default function PartyDataBoundary({ children }: { children: ReactNode })
       window.removeEventListener('online', wake)
       window.removeEventListener('storage', wake)
       document.removeEventListener('visibilitychange', wake)
+      void supabase.removeChannel(channel)
     }
   }, [retry])
   // Do not interrupt the admin's Storage cleanup when the epoch changes.

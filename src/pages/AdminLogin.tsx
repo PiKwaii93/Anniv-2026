@@ -154,7 +154,11 @@ function AdminLogin() {
         <h1>Administration</h1>
 
         <p className="admin-login__description">
-          Connecte-toi pour gérer la soirée.
+          Propriétaire ou capitaine : connecte-toi avec l’e-mail et le mot de passe de ton accès administration.
+        </p>
+
+        <p className="admin-login__captain-help">
+          Première connexion capitaine ? Ouvre d’abord le lien personnel envoyé par l’organisateur.
         </p>
 
         <form

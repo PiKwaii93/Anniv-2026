@@ -19,7 +19,6 @@ import {
 import { supabase } from '../lib/supabase'
 
 import './PhotoHuntAdmin.css'
-import '../features/party/MobileRegie.css'
 
 type ChallengeDraft = {
   prompt: string
@@ -46,8 +45,7 @@ function PhotoHuntAdmin() {
   const [draft, setDraft] = useState<ChallengeDraft>(emptyDraft)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<ChallengeDraft>(emptyDraft)
-  const [filter, setFilter] = useState<'all' | PhotoHuntSubmissionStatus>('pending')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  const [filter, setFilter] = useState<'all' | PhotoHuntSubmissionStatus>('approved')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
@@ -81,14 +79,6 @@ function PhotoHuntAdmin() {
     } else {
       const nextSubmissions = (submissionResult.data ?? []) as PhotoHuntSubmission[]
       setSubmissions(nextSubmissions)
-      const pendingIds = new Set(
-        nextSubmissions
-          .filter((submission) => submission.status === 'pending')
-          .map((submission) => submission.id),
-      )
-      setSelectedIds((current) => new Set(
-        [...current].filter((id) => pendingIds.has(id)),
-      ))
     }
 
     setError(failed ? 'Certaines données Photo Hunt n’ont pas pu être chargées.' : '')
@@ -161,70 +151,6 @@ function PhotoHuntAdmin() {
       return new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
     })
   }, [filter, submissions])
-
-  const visiblePendingIds = useMemo(
-    () => visibleSubmissions
-      .filter((submission) => submission.status === 'pending')
-      .map((submission) => submission.id),
-    [visibleSubmissions],
-  )
-
-  const selectedCount = selectedIds.size
-  const allVisiblePendingSelected =
-    visiblePendingIds.length > 0 &&
-    visiblePendingIds.every((id) => selectedIds.has(id))
-
-  const toggleSelected = (id: string) => {
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const toggleVisiblePending = () => {
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      if (allVisiblePendingSelected) {
-        visiblePendingIds.forEach((id) => next.delete(id))
-      } else {
-        visiblePendingIds.forEach((id) => next.add(id))
-      }
-      return next
-    })
-  }
-
-  const batchModerate = async (status: 'approved' | 'rejected') => {
-    const ids = [...selectedIds]
-    if (ids.length === 0 || busy) return
-
-    const action = status === 'approved' ? 'publier' : 'refuser'
-    if (!window.confirm(`${action === 'publier' ? 'Publier' : 'Refuser'} ${ids.length} photo${ids.length !== 1 ? 's' : ''} ?`)) return
-
-    setBusy(`batch:${status}`)
-    setError('')
-
-    const { error: updateError } = await supabase
-      .from('photo_hunt_submissions')
-      .update({
-        status,
-        moderated_at: new Date().toISOString(),
-      })
-      .in('id', ids)
-      .eq('status', 'pending')
-
-    setBusy('')
-
-    if (updateError) {
-      console.error('Unable to batch moderate Photo Hunt submissions:', updateError)
-      setError('La modération en lot n’a pas pu être enregistrée.')
-      return
-    }
-
-    setSelectedIds(new Set())
-    await loadData()
-  }
 
   const createChallenge = async () => {
     const prompt = draft.prompt.trim()
@@ -362,11 +288,6 @@ function PhotoHuntAdmin() {
       return
     }
 
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      next.delete(submission.id)
-      return next
-    })
     await loadData()
   }
 
@@ -399,11 +320,6 @@ function PhotoHuntAdmin() {
       return
     }
 
-    setSelectedIds((current) => {
-      const next = new Set(current)
-      next.delete(submission.id)
-      return next
-    })
     await loadData()
   }
 
@@ -458,11 +374,11 @@ function PhotoHuntAdmin() {
         </div>
       </header>
 
-      <div className="photo-admin-tabs" aria-label="Mode régie photo"><button type="button" aria-pressed={view === 'review'} onClick={() => setView('review')}>Modérer ({pendingCount})</button><button type="button" aria-pressed={view === 'prepare'} onClick={() => setView('prepare')}>Préparation</button></div>
+      <div className="photo-admin-tabs" aria-label="Mode régie photo"><button type="button" aria-pressed={view === 'review'} onClick={() => setView('review')}>Photos ({submissions.length})</button><button type="button" aria-pressed={view === 'prepare'} onClick={() => setView('prepare')}>Préparation</button></div>
       <section className="photo-hunt-admin__metrics" hidden={view !== 'prepare'}>
-        <div><strong>{pendingCount}</strong><span>à valider</span></div>
+        <div><strong>{submissions.length}</strong><span>reçues</span></div>
         <div><strong>{approvedCount}</strong><span>publiées</span></div>
-        <div><strong>{rejectedCount}</strong><span>refusées</span></div>
+        <div><strong>{rejectedCount}</strong><span>retirées</span></div>
         <div><strong>{activeCount}</strong><span>défis actifs</span></div>
       </section>
 
@@ -486,7 +402,7 @@ function PhotoHuntAdmin() {
                   <span>
                     {contributor.total} envoi{contributor.total !== 1 ? 's' : ''}
                     {' · '}{contributor.approved} publié{contributor.approved !== 1 ? 's' : ''}
-                    {contributor.pending > 0 ? ` · ${contributor.pending} à valider` : ''}
+                    {contributor.pending > 0 ? ` · ${contributor.pending} en publication` : ''}
                   </span>
                 </div>
               </div>
@@ -498,10 +414,10 @@ function PhotoHuntAdmin() {
       {error && <div className="photo-hunt-admin__error">{error}</div>}
 
       {view === 'review' && (() => {
-        const photo = submissions.find(item => item.status === 'pending')
-        return photo ? <section className="photo-review" aria-label="Photo suivante à valider"><PhotoHuntImage path={photo.storage_path} alt={`Photo envoyée par ${photo.player_name}`} /><h2>{photo.player_name}</h2><p>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi photo'}</p>{photo.caption && <p>{photo.caption}</p>}<div className="photo-review__actions"><button disabled={!!busy} onClick={() => void moderate(photo, 'approved')}>Publier ✓</button><button disabled={!!busy} onClick={() => void moderate(photo, 'rejected')}>Refuser</button></div><p>{pendingCount} photo{pendingCount > 1 ? 's' : ''} à valider · la suivante apparaîtra ici.</p></section> : <p className="photo-hunt-admin__empty">Tout est à jour. Les prochaines photos arriveront ici automatiquement.</p>
+        const photo = submissions.find(item => item.status === 'approved')
+        return photo ? <section className="photo-review" aria-label="Dernière photo publiée"><PhotoHuntImage path={photo.storage_path} alt={`Photo envoyée par ${photo.player_name}`} /><p className="page-eyebrow">Dernière publication</p><h2>{photo.player_name}</h2><p>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi photo'}</p>{photo.caption && <p>{photo.caption}</p>}<div className="photo-review__actions"><button className="photo-hunt-admin__remove" disabled={!!busy} onClick={() => void moderate(photo, 'rejected')}>Retirer du mur</button></div><p>Les nouveaux envois sont publiés automatiquement. Tu peux retirer une photo si nécessaire.</p></section> : <p className="photo-hunt-admin__empty">Aucune photo reçue. Les prochains envois apparaîtront ici automatiquement.</p>
       })()}
-      <details className="photo-hunt-admin__panel" hidden={view !== 'review'}><summary>Toutes les photos et actions groupées</summary>
+      <details className="photo-hunt-admin__panel" hidden={view !== 'review'} open><summary>Toutes les photos</summary>
         <div className="photo-hunt-admin__panel-heading">
           <div>
             <p>01 · Régie photo</p>
@@ -515,41 +431,11 @@ function PhotoHuntAdmin() {
                 className={filter === value ? 'photo-hunt-admin__filter photo-hunt-admin__filter--active' : 'photo-hunt-admin__filter'}
                 onClick={() => setFilter(value)}
               >
-                {value === 'pending' ? `À valider (${pendingCount})` : value === 'approved' ? 'Publiées' : value === 'rejected' ? 'Refusées' : 'Toutes'}
+                {value === 'pending' ? `En cours (${pendingCount})` : value === 'approved' ? 'Publiées' : value === 'rejected' ? 'Retirées' : 'Toutes'}
               </button>
             ))}
           </div>
         </div>
-
-        {visiblePendingIds.length > 0 && (
-          <div className="photo-hunt-admin__batch-bar">
-            <button
-              type="button"
-              disabled={Boolean(busy)}
-              onClick={toggleVisiblePending}
-            >
-              {allVisiblePendingSelected ? 'Tout désélectionner' : `Sélectionner les ${visiblePendingIds.length} à valider`}
-            </button>
-            <span>{selectedCount} sélectionnée{selectedCount !== 1 ? 's' : ''}</span>
-            <div>
-              <button
-                type="button"
-                className="photo-hunt-admin__batch-approve"
-                disabled={selectedCount === 0 || Boolean(busy)}
-                onClick={() => void batchModerate('approved')}
-              >
-                ✓ Publier la sélection
-              </button>
-              <button
-                type="button"
-                disabled={selectedCount === 0 || Boolean(busy)}
-                onClick={() => void batchModerate('rejected')}
-              >
-                Refuser la sélection
-              </button>
-            </div>
-          </div>
-        )}
 
         {visibleSubmissions.length === 0 ? (
           <div className="photo-hunt-admin__empty">
@@ -559,24 +445,11 @@ function PhotoHuntAdmin() {
         ) : (
           <div className="photo-hunt-admin__moderation-grid">
             {visibleSubmissions.map((submission) => {
-              const selected = selectedIds.has(submission.id)
               return (
                 <article
                   key={submission.id}
-                  className={`photo-hunt-admin__submission photo-hunt-admin__submission--${submission.status}${selected ? ' photo-hunt-admin__submission--selected' : ''}`}
+                  className={`photo-hunt-admin__submission photo-hunt-admin__submission--${submission.status}`}
                 >
-                  {submission.status === 'pending' && (
-                    <button
-                      type="button"
-                      className="photo-hunt-admin__select"
-                      aria-pressed={selected}
-                      aria-label={selected ? 'Désélectionner cette photo' : 'Sélectionner cette photo'}
-                      disabled={Boolean(busy)}
-                      onClick={() => toggleSelected(submission.id)}
-                    >
-                      {selected ? '✓' : '○'}
-                    </button>
-                  )}
                   <PhotoHuntImage
                     path={submission.storage_path}
                     alt={`Photo envoyée par ${submission.player_name}`}
@@ -585,7 +458,7 @@ function PhotoHuntAdmin() {
                   <div className="photo-hunt-admin__submission-copy">
                     <div className="photo-hunt-admin__submission-meta">
                       <span>{submission.player_name}</span>
-                      <b>{submission.status === 'pending' ? 'À valider' : submission.status === 'approved' ? 'Publiée' : 'Refusée'}</b>
+                      <b>{submission.status === 'pending' ? 'En cours' : submission.status === 'approved' ? 'Publiée' : 'Retirée'}</b>
                     </div>
                     <strong>{challengeById.get(submission.challenge_id)?.prompt ?? 'Défi supprimé'}</strong>
                     {submission.caption && <p>{submission.caption}</p>}
@@ -593,23 +466,24 @@ function PhotoHuntAdmin() {
                   </div>
 
                   <div className="photo-hunt-admin__submission-actions">
-                    {submission.status !== 'approved' && (
+                    {submission.status === 'rejected' && (
                       <button
                         type="button"
                         className="photo-hunt-admin__approve"
                         disabled={Boolean(busy)}
                         onClick={() => void moderate(submission, 'approved')}
                       >
-                        ✓ Publier
+                        Remettre sur le mur
                       </button>
                     )}
-                    {submission.status !== 'rejected' && (
+                    {submission.status === 'approved' && (
                       <button
                         type="button"
+                        className="photo-hunt-admin__remove"
                         disabled={Boolean(busy)}
                         onClick={() => void moderate(submission, 'rejected')}
                       >
-                        Refuser
+                        Retirer du mur
                       </button>
                     )}
                     <button
