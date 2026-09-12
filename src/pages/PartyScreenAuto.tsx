@@ -1,521 +1,302 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useParty } from '../features/party/PartyContext'
-import GuestAvatar from '../features/guests/GuestAvatar'
-import { useGuests } from '../features/guests/GuestsContext'
-import { supabase } from '../lib/supabase'
-import PhotoHuntScreen from './PhotoHuntScreen'
 import {
   getActiveRoundIndex,
-  getChampionTeamId,
   normalizeTournamentRounds,
 } from '../features/beer-pong/tournament'
+import { supabase } from '../lib/supabase'
+import PartyScreen from './PartyScreen'
+import PhotoHuntScreen from './PhotoHuntScreen'
 
 import './PartyScreen.css'
 import './PartyScreenAuto.css'
 
-type PlayerSnapshot = {
-  id: string
-  name: string
-  avatarPath?: string | null
-}
-
-type Team = {
-  id: string
-  playerIds: [string, string]
-}
-
+type PlayerSnapshot = { id: string; name: string }
+type Team = { id: string; playerIds: [string, string] }
 type Match = {
   id: string
   teamAId: string | null
   teamBId: string | null
   winnerTeamId: string | null
 }
-
 type BeerPongState = {
-  selectedPlayerIds?: string[]
   playerSnapshots?: PlayerSnapshot[]
   teams?: Team[]
-  draftValidated?: boolean
   rounds?: Match[][]
-  championTeamId?: string | null
 }
-
-type BeerPongRow = {
-  state: BeerPongState | null
+type MissionScoreRow = { player_id: string; completed_count: number }
+type IcebergEntryRow = {
+  id: string
+  level: number
+  title: string
+  description: string
+  sort_order: number
 }
+type AmbientInsert =
+  | { kind: 'missions'; completed: number; agents: number }
+  | { kind: 'beer-pong'; match: Match }
+  | { kind: 'iceberg'; level: number; entries: IcebergEntryRow[] }
 
-type MissionScoreRow = {
-  player_id: string
-  completed_count: number
-}
+const PHOTO_MINIMUM_DWELL_MS = 90_000
+const MISSION_INSERT_MS = 11_000
+const PONG_INSERT_MS = 12_000
+const ICEBERG_INSERT_MS = 17_000
+const ICEBERG_COOLDOWN_MS = 9 * 60_000
+const AMBIENT_POLL_MS = 10_000
+const DIRECTOR_TICK_MS = 5_000
 
-type AutoSlide =
-  | 'welcome'
-  | 'pulse'
-  | 'missions'
-  | 'beer-pong'
-  | 'photos'
-
-const AUTO_SLIDE_DURATION = 12000
-
-function PartyScreenAuto() {
+function PartyScreenAuto({ paused = false }: { paused?: boolean }) {
   const { settings } = useParty()
-  const { guests } = useGuests()
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
   const [missionScores, setMissionScores] = useState<MissionScoreRow[]>([])
-  const [photoCount, setPhotoCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [slideIndex, setSlideIndex] = useState(0)
-  const realtimeConnectedRef = useRef(false)
+  const [icebergEntries, setIcebergEntries] = useState<IcebergEntryRow[]>([])
+  const [insert, setInsert] = useState<AmbientInsert | null>(null)
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false)
+  const baselineReadyRef = useRef(false)
+  const wasPausedRef = useRef(paused)
+  const lastMissionTotalRef = useRef(0)
+  const lastMatchIdRef = useRef<string | null>(null)
+  const photoDwellStartedAtRef = useRef(Date.now())
+  const lastIcebergAtRef = useRef(0)
+  const icebergLevelRef = useRef(0)
 
   const load = useCallback(async () => {
-    const [beerPongResult, missionResult, photoResult] = await Promise.all([
+    const [beerPongResult, missionResult, icebergResult] = await Promise.all([
+      supabase.from('beer_pong_state').select('state').eq('id', 'main').maybeSingle(),
+      supabase.from('secret_mission_scoreboard').select('player_id, completed_count'),
       supabase
-        .from('beer_pong_state')
-        .select('state')
-        .eq('id', 'main')
-        .maybeSingle(),
-      supabase
-        .from('secret_mission_scoreboard')
-        .select('player_id, completed_count'),
-      supabase
-        .from('photo_hunt_submissions')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'approved'),
+        .from('iceberg_entries')
+        .select('id, level, title, description, sort_order')
+        .eq('is_published', true)
+        .order('level', { ascending: true })
+        .order('sort_order', { ascending: true }),
     ])
 
     if (!beerPongResult.error) {
-      const row = beerPongResult.data as BeerPongRow | null
+      const row = beerPongResult.data as { state: BeerPongState | null } | null
       setBeerPongState(row?.state ?? {})
     } else {
-      console.error('Unable to load automatic TV Beer Pong state:', beerPongResult.error)
+      console.error('[ScreenDirector][AMBIENT_PONG_LOAD_ERROR]', beerPongResult.error)
     }
 
     if (!missionResult.error) {
       setMissionScores((missionResult.data ?? []) as MissionScoreRow[])
     } else {
-      console.error('Unable to load automatic TV mission stats:', missionResult.error)
+      console.error('[ScreenDirector][AMBIENT_MISSIONS_LOAD_ERROR]', missionResult.error)
     }
 
-    if (!photoResult.error) {
-      setPhotoCount(photoResult.count ?? 0)
+    if (!icebergResult.error) {
+      setIcebergEntries((icebergResult.data ?? []) as IcebergEntryRow[])
     } else {
-      console.error('Unable to load automatic TV Photo Hunt count:', photoResult.error)
+      console.error('[ScreenDirector][AMBIENT_ICEBERG_LOAD_ERROR]', icebergResult.error)
     }
 
-    setLoading(false)
+    setInitialDataLoaded(true)
   }, [])
 
   useEffect(() => {
     void load()
-  }, [load])
-
-  useEffect(() => {
     const channel = supabase
-      .channel('anniv-2026-party-screen-auto')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'beer_pong_state',
-          filter: 'id=eq.main',
-        },
-        () => void load(),
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'secret_mission_scoreboard',
-        },
-        () => void load(),
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'photo_hunt_submissions',
-        },
-        () => void load(),
-      )
-      .subscribe((status) => {
-        realtimeConnectedRef.current = status === 'SUBSCRIBED'
-      })
-
-    const fallback = window.setInterval(() => {
-      if (!realtimeConnectedRef.current) void load()
-    }, 30000)
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        setSlideIndex(0)
-        void load()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibility)
+      .channel('anniv-2026-party-screen-ambient')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'beer_pong_state', filter: 'id=eq.main',
+      }, () => void load())
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'secret_mission_scoreboard',
+      }, () => void load())
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'iceberg_entries',
+      }, () => void load())
+      .subscribe()
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load()
+    }, AMBIENT_POLL_MS)
 
     return () => {
-      realtimeConnectedRef.current = false
-      window.clearInterval(fallback)
-      document.removeEventListener('visibilitychange', handleVisibility)
+      window.clearInterval(poll)
       void supabase.removeChannel(channel)
     }
   }, [load])
 
   const missionCompleted = useMemo(
-    () => missionScores.reduce(
-      (total, player) => total + player.completed_count,
-      0,
-    ),
+    () => missionScores.reduce((total, player) => total + player.completed_count, 0),
     [missionScores],
   )
-
-  const playerById = useMemo(
-    () => {
-      const players = new Map(
-        (beerPongState.playerSnapshots ?? []).map(
-          (player) => [player.id, player],
-        ),
-      )
-
-      guests.forEach((guest) => {
-        players.set(`guest:${guest.id}`, {
-          id: `guest:${guest.id}`,
-          name: guest.name,
-          avatarPath: guest.avatarPath,
-        })
-        guest.plusOnes.forEach((plusOne) => {
-          players.set(`plus-one:${plusOne.id}`, {
-            id: `plus-one:${plusOne.id}`,
-            name: plusOne.name,
-            avatarPath: plusOne.avatarPath,
-          })
-        })
-      })
-
-      return players
-    },
-    [beerPongState.playerSnapshots, guests],
+  const rounds = useMemo(
+    () => normalizeTournamentRounds(beerPongState.rounds),
+    [beerPongState.rounds],
   )
-
-  const teamById = useMemo(
-    () => new Map(
-      (beerPongState.teams ?? []).map((team) => [team.id, team]),
-    ),
-    [beerPongState.teams],
-  )
-
-  const teamName = useCallback(
-    (teamId: string | null | undefined) => {
-      if (!teamId) return '—'
-      const team = teamById.get(teamId)
-      if (!team) return 'Équipe'
-
-      return team.playerIds
-        .map((playerId) => playerById.get(playerId)?.name ?? 'Joueur')
-        .join(' & ')
-    },
-    [playerById, teamById],
-  )
-
-  const rounds = normalizeTournamentRounds(beerPongState.rounds)
-  const beerPongChampionTeamId = getChampionTeamId(rounds)
-  const currentRound = rounds[getActiveRoundIndex(rounds)] ?? []
-  const nextMatch = currentRound.find(
+  const activeRoundIndex = getActiveRoundIndex(rounds)
+  const nextMatch = (rounds[activeRoundIndex] ?? []).find(
     (match) => match.teamAId && match.teamBId && !match.winnerTeamId,
-  )
-  const teamCount = beerPongState.teams?.length ?? 0
-  const selectedPlayerCount = beerPongState.selectedPlayerIds?.length ?? 0
-  const hasBeerPongActivity = Boolean(
-    beerPongChampionTeamId
-    || beerPongState.draftValidated
-    || teamCount > 0
-    || selectedPlayerCount > 0,
-  )
-
-  const slides = useMemo<AutoSlide[]>(() => {
-    const next: AutoSlide[] = ['welcome', 'pulse']
-
-    if (settings.missionsVisible && missionScores.length > 0) {
-      next.push('missions')
-    }
-
-    if (settings.beerPongVisible && hasBeerPongActivity) {
-      next.push('beer-pong')
-    }
-
-    if (settings.photosVisible && photoCount > 0) {
-      next.push('photos')
-    }
-
-    return next
-  }, [
-    hasBeerPongActivity,
-    missionScores.length,
-    photoCount,
-    settings.beerPongVisible,
-    settings.missionsVisible,
-    settings.photosVisible,
-  ])
+  ) ?? null
 
   useEffect(() => {
-    if (slides.length <= 1) return
+    if (!initialDataLoaded || baselineReadyRef.current) return
+    lastMissionTotalRef.current = missionCompleted
+    lastMatchIdRef.current = nextMatch?.id ?? null
+    baselineReadyRef.current = true
+  }, [initialDataLoaded, missionCompleted, nextMatch?.id])
 
-    const interval = window.setInterval(() => {
-      setSlideIndex((current) => (current + 1) % slides.length)
-    }, AUTO_SLIDE_DURATION)
+  useEffect(() => {
+    if (paused) {
+      lastMissionTotalRef.current = missionCompleted
+      lastMatchIdRef.current = nextMatch?.id ?? null
+    } else if (wasPausedRef.current) {
+      photoDwellStartedAtRef.current = Date.now()
+    }
+    wasPausedRef.current = paused
+  }, [missionCompleted, nextMatch?.id, paused])
 
+  useEffect(() => {
+    if (paused || !insert) return
+    const duration = insert.kind === 'iceberg'
+      ? ICEBERG_INSERT_MS
+      : insert.kind === 'beer-pong'
+        ? PONG_INSERT_MS
+        : MISSION_INSERT_MS
+    const timeout = window.setTimeout(() => {
+      setInsert(null)
+      photoDwellStartedAtRef.current = Date.now()
+    }, duration)
+    return () => window.clearTimeout(timeout)
+  }, [insert, paused])
+
+  useEffect(() => {
+    if (paused) return
+    const tick = () => {
+      if (
+        insert
+        || !baselineReadyRef.current
+        || Date.now() - photoDwellStartedAtRef.current < PHOTO_MINIMUM_DWELL_MS
+      ) return
+
+      if (
+        settings.missionsVisible
+        && missionCompleted > lastMissionTotalRef.current
+      ) {
+        lastMissionTotalRef.current = missionCompleted
+        setInsert({ kind: 'missions', completed: missionCompleted, agents: missionScores.length })
+        return
+      }
+
+      if (
+        settings.beerPongVisible
+        && nextMatch
+        && nextMatch.id !== lastMatchIdRef.current
+      ) {
+        lastMatchIdRef.current = nextMatch.id
+        setInsert({ kind: 'beer-pong', match: nextMatch })
+        return
+      }
+
+      if (
+        settings.icebergVisible
+        && icebergEntries.length > 0
+        && Date.now() - lastIcebergAtRef.current >= ICEBERG_COOLDOWN_MS
+      ) {
+        const levels = [...new Set(icebergEntries.map((entry) => entry.level))]
+          .sort((a, b) => a - b)
+        const level = levels[icebergLevelRef.current % levels.length]
+        const entries = icebergEntries.filter((entry) => entry.level === level).slice(0, 3)
+        icebergLevelRef.current += 1
+        lastIcebergAtRef.current = Date.now()
+        setInsert({ kind: 'iceberg', level, entries })
+      }
+    }
+
+    const interval = window.setInterval(tick, DIRECTOR_TICK_MS)
     return () => window.clearInterval(interval)
-  }, [slides.length])
+  }, [
+    icebergEntries,
+    insert,
+    missionCompleted,
+    missionScores.length,
+    nextMatch,
+    paused,
+    settings.beerPongVisible,
+    settings.icebergVisible,
+    settings.missionsVisible,
+  ])
 
-  const activeSlideIndex = slideIndex % slides.length
-  const activeSlide = slides[activeSlideIndex] ?? 'welcome'
-
-  if (loading) {
-    return (
-      <main className="party-screen party-screen--loading">
-        <div className="party-screen__orb party-screen__orb--one" />
-        <p>Préparation de l’écran live…</p>
-      </main>
-    )
-  }
-
-  const indicator = (
-    <AutoIndicator
-      key={`${activeSlide}-${slideIndex}`}
-      current={activeSlideIndex + 1}
-      total={slides.length}
-    />
+  const playerById = useMemo(
+    () => new Map((beerPongState.playerSnapshots ?? []).map((player) => [player.id, player])),
+    [beerPongState.playerSnapshots],
   )
-
-  if (activeSlide === 'photos') {
-    return (
-      <div className="party-screen-auto__photo-slide">
-        <PhotoHuntScreen />
-        {indicator}
-      </div>
-    )
-  }
-
-  if (activeSlide === 'missions') {
-    return (
-      <main className="party-screen party-screen--auto party-screen--auto-missions">
-        <div className="party-screen__orb party-screen__orb--one" />
-        <div className="party-screen__orb party-screen__orb--two" />
-        <AutoTopline label="Missions secrètes" />
-
-        <section className="party-screen-auto__split">
-          <div>
-            <p className="party-screen__eyebrow">Infiltration en cours</p>
-            <h1>Quelqu’un<br />ici bluffe.</h1>
-            <p className="party-screen-auto__lead">
-              Les missions sont privées. Regarde autour de toi : quelqu’un est probablement en train d’essayer la sienne.
-            </p>
-          </div>
-
-          <div className="party-screen-auto__big-stats">
-            <div>
-              <strong>{missionScores.length}</strong>
-              <span>agents actifs</span>
-            </div>
-            <div>
-              <strong>{missionCompleted}</strong>
-              <span>missions réussies</span>
-            </div>
-          </div>
-        </section>
-        {indicator}
-      </main>
-    )
-  }
-
-  if (activeSlide === 'beer-pong') {
-    const champion = teamName(beerPongChampionTeamId)
-    const highlightedTeamIds = beerPongChampionTeamId
-      ? [beerPongChampionTeamId]
-      : nextMatch
-        ? [nextMatch.teamAId, nextMatch.teamBId].filter(
-            (teamId): teamId is string => Boolean(teamId),
-          )
-        : []
-    const highlightedPlayers = highlightedTeamIds
-      .flatMap((teamId) => teamById.get(teamId)?.playerIds ?? [])
-      .map((playerId) => playerById.get(playerId))
-      .filter((player): player is PlayerSnapshot => Boolean(player))
-
-    return (
-      <main className="party-screen party-screen--auto party-screen--auto-pong">
-        <div className="party-screen__orb party-screen__orb--one" />
-        <div className="party-screen__orb party-screen__orb--two" />
-        <AutoTopline label="Beer Pong" />
-
-        <section className="party-screen-auto__split">
-          <div>
-            <p className="party-screen__eyebrow">
-              {beerPongChampionTeamId ? '🏆 Tournoi terminé' : 'Tournoi'}
-            </p>
-            <h1>
-              {beerPongChampionTeamId
-                ? 'Les champions.'
-                : 'Ça chauffe.'}
-            </h1>
-            <p className="party-screen-auto__lead">
-              {beerPongChampionTeamId
-                ? champion
-                : nextMatch
-                  ? `${teamName(nextMatch.teamAId)} vs ${teamName(nextMatch.teamBId)}`
-                  : beerPongState.draftValidated
-                    ? 'Le tableau avance. Le prochain duel arrive.'
-                    : `${selectedPlayerCount} joueur${selectedPlayerCount !== 1 ? 's' : ''} prêt${selectedPlayerCount !== 1 ? 's' : ''} pour le tournoi.`}
-            </p>
-            {highlightedPlayers.length > 0 && (
-              <div className="party-screen-auto__player-faces">
-                {highlightedPlayers.map((player) => (
-                  <div key={player.id}>
-                    <GuestAvatar
-                      name={player.name}
-                      path={player.avatarPath}
-                      size="large"
-                    />
-                    <span>{player.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="party-screen-auto__big-stats">
-            <div>
-              <strong>{teamCount}</strong>
-              <span>équipes</span>
-            </div>
-            <div>
-              <strong>{rounds.length}</strong>
-              <span>tours créés</span>
-            </div>
-          </div>
-        </section>
-        {indicator}
-      </main>
-    )
-  }
-
-  if (activeSlide === 'pulse') {
-    const vibe = photoCount > 0
-      ? 'Le mur se remplit. Continuez à capturer les bons moments.'
-      : missionScores.length > 0
-        ? 'Les agents sont dans la salle. Faites attention aux comportements suspects.'
-        : hasBeerPongActivity
-          ? 'Le tournoi se prépare. Gardez un œil sur le prochain duel.'
-          : 'Scanne le QR et choisis ton prénom pour rejoindre la soirée.'
-
-    return (
-      <main className="party-screen party-screen--auto party-screen--auto-pulse">
-        <div className="party-screen__orb party-screen__orb--one" />
-        <div className="party-screen__orb party-screen__orb--two" />
-        <AutoTopline label="La soirée en direct" />
-
-        <section className="party-screen-auto__pulse">
-          <div>
-            <p className="party-screen__eyebrow">Anniv 2026 · maintenant</p>
-            <h1>Ça vit.</h1>
-            <p className="party-screen-auto__lead">{vibe}</p>
-          </div>
-
-          <div className="party-screen-auto__metric-grid">
-            <article>
-              <span>Agents</span>
-              <strong>{missionScores.length}</strong>
-              <small>{missionCompleted} missions réussies</small>
-            </article>
-            <article>
-              <span>Beer Pong</span>
-              <strong>{teamCount}</strong>
-              <small>équipes dans le tableau</small>
-            </article>
-            <article>
-              <span>Photo Hunt</span>
-              <strong>{photoCount}</strong>
-              <small>photos publiées</small>
-            </article>
-          </div>
-        </section>
-        {indicator}
-      </main>
-    )
-  }
+  const teamById = useMemo(
+    () => new Map((beerPongState.teams ?? []).map((team) => [team.id, team])),
+    [beerPongState.teams],
+  )
+  const teamName = useCallback((teamId: string | null) => {
+    const team = teamId ? teamById.get(teamId) : null
+    if (!team) return 'Équipe'
+    return team.playerIds.map((id) => playerById.get(id)?.name ?? 'Joueur').join(' & ')
+  }, [playerById, teamById])
 
   return (
-    <main className="party-screen party-screen--auto party-screen--auto-welcome">
-      <div className="party-screen__orb party-screen__orb--one" />
-      <div className="party-screen__orb party-screen__orb--two" />
-      <AutoTopline label="Soirée en cours" />
+    <div className="party-screen-auto-smart">
+      {settings.photosVisible
+        ? <PhotoHuntScreen paused={paused || Boolean(insert)} />
+        : <PartyScreen />}
 
-      <section className="party-screen-auto__welcome">
-        <div>
-          <p className="party-screen__eyebrow">Anniv 2026 · Live</p>
-          <h1>Rejoins<br />la soirée.</h1>
-          <p className="party-screen-auto__lead">
-            Scanne, choisis ton prénom et accède aux jeux, aux votes et aux défis de la soirée.
-          </p>
-        </div>
+      {insert?.kind === 'missions' && (
+        <main className="party-screen party-screen--auto party-screen--auto-missions party-screen-auto-smart__insert">
+          <header className="party-screen__topline">
+            <div><span className="party-screen__live-dot" />Missions secrètes</div>
+            <span>Progression détectée</span>
+          </header>
+          <section className="party-screen-auto__split">
+            <div>
+              <p className="party-screen__eyebrow">Infiltration en cours</p>
+              <h1>Ça<br />avance.</h1>
+              <p className="party-screen-auto__lead">Une nouvelle mission vient d’être validée.</p>
+            </div>
+            <div className="party-screen-auto__big-stats">
+              <div><strong>{insert.agents}</strong><span>agents actifs</span></div>
+              <div><strong>{insert.completed}</strong><span>missions réussies</span></div>
+            </div>
+          </section>
+        </main>
+      )}
 
-        <div className="party-screen-auto__qr">
-          <div>
-            <img
-              src="/anniv-2026-qr.svg"
-              alt="QR code pour rejoindre Anniv 2026"
-            />
-          </div>
-          <strong>Scanne avec ton téléphone</strong>
-          <span>anniv-2026-pi.vercel.app</span>
-        </div>
-      </section>
-      {indicator}
-    </main>
-  )
-}
+      {insert?.kind === 'beer-pong' && (
+        <main className="party-screen party-screen--auto party-screen--auto-pong party-screen-auto-smart__insert">
+          <header className="party-screen__topline">
+            <div><span className="party-screen__live-dot" />Beer Pong</div>
+            <span>Prochain duel</span>
+          </header>
+          <section className="party-screen-auto-smart__match">
+            <p className="party-screen__eyebrow">À vos gobelets</p>
+            <strong>{teamName(insert.match.teamAId)}</strong>
+            <b>VS</b>
+            <strong>{teamName(insert.match.teamBId)}</strong>
+          </section>
+        </main>
+      )}
 
-function AutoTopline({ label }: { label: string }) {
-  return (
-    <header className="party-screen__topline">
-      <div>
-        <span className="party-screen__live-dot" />
-        {label}
-      </div>
-      <span>Anniv 2026 · Auto</span>
-    </header>
-  )
-}
-
-function AutoIndicator({
-  current,
-  total,
-}: {
-  current: number
-  total: number
-}) {
-  return (
-    <div className="party-screen-auto__indicator" aria-label={`Écran automatique ${current} sur ${total}`}>
-      <div>
-        <span className="party-screen-auto__indicator-dot" />
-        <strong>AUTO</strong>
-        <small>{current}/{total}</small>
-      </div>
-      <i>
-        <span />
-      </i>
+      {insert?.kind === 'iceberg' && (
+        <main className="party-screen party-screen--iceberg-live party-screen-auto-smart__insert">
+          <header className="party-screen__topline">
+            <div><span className="party-screen__live-dot" />Iceberg · archives ouvertes</div>
+            <span>Niveau {String(insert.level).padStart(2, '0')}</span>
+          </header>
+          <section className="party-screen-auto-smart__iceberg">
+            <div>
+              <p className="party-screen__eyebrow">Une plongée rapide</p>
+              <h1>Sous la<br />surface.</h1>
+            </div>
+            <div>
+              {insert.entries.map((entry) => (
+                <article key={entry.id}>
+                  <strong>{entry.title}</strong>
+                  {entry.description && <p>{entry.description}</p>}
+                </article>
+              ))}
+            </div>
+          </section>
+        </main>
+      )}
     </div>
   )
 }

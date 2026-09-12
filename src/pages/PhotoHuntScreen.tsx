@@ -6,7 +6,7 @@ import './PartyScreen.css'
 import './PhotoHuntScreenPolish.css'
 import './PhotoHuntScreen.css'
 
-export function PhotoHuntScreen() {
+export function PhotoHuntScreen({ paused = false }: { paused?: boolean }) {
   const [photos, setPhotos] = useState<PhotoHuntSubmission[]>([])
   const [challenges, setChallenges] = useState<PhotoHuntChallenge[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,7 +99,7 @@ export function PhotoHuntScreen() {
         ) : photos.length === 0 ? (
           <p className="photo-hunt-screen__empty">Les premières photos vont apparaître ici. À vous de remplir le mur.</p>
         ) : (
-          <PhotoHuntMasonry photos={photos} challengeById={challengeById} />
+          <PhotoHuntMasonry photos={photos} challengeById={challengeById} paused={paused} />
         )}
       </section>
     </main>

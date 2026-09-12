@@ -754,11 +754,11 @@ function DirectorMode() {
       <details className="director-featured"><summary>Choisir le module à mettre en avant</summary>
         <div className="director-section-heading">
           <div>
-            <p className="director-eyebrow">À la une</p>
+            <p className="director-eyebrow">Diffusion TV</p>
             <h2>
               {currentFeatured
                 ? currentFeatured.label
-                : 'Aucun module mis en avant'}
+                : 'Mode automatique'}
             </h2>
           </div>
           {settings.featuredModule && (
@@ -770,7 +770,7 @@ function DirectorMode() {
                 void updateSettings({ featuredModule: null })
               }
             >
-              Retirer
+              Repasser en automatique
             </button>
           )}
         </div>

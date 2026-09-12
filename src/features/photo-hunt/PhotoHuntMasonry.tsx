@@ -18,11 +18,12 @@ const LOOP_FADE_MS = 260
 type PhotoHuntMasonryProps = {
   photos: PhotoHuntSubmission[]
   challengeById: Map<string, PhotoHuntChallenge>
+  paused?: boolean
 }
 
 type PendingAnchor = { id: string; offset: number }
 
-export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProps) {
+export function PhotoHuntMasonry({ photos, challengeById, paused = false }: PhotoHuntMasonryProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const layoutRef = useRef<ReturnType<typeof calculateMasonryLayout>>({
     columnCount: 0,
@@ -42,6 +43,8 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
   const [isLoopResetting, setIsLoopResetting] = useState(false)
 
   useEffect(() => {
+    if (paused) return
+
     const viewport = viewportRef.current
     if (!viewport) return undefined
 
@@ -69,7 +72,7 @@ export function PhotoHuntMasonry({ photos, challengeById }: PhotoHuntMasonryProp
     const observer = new ResizeObserver(measure)
     observer.observe(viewport)
     return () => observer.disconnect()
-  }, [])
+  }, [paused])
 
   const masonryPhotos = useMemo(
     () => photos.map((photo) => ({

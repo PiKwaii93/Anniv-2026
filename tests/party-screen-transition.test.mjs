@@ -16,6 +16,7 @@ const mocks = {
   '/photo-hunt/PhotoHuntImage': 'import React from "react"; export default function Photo({ alt }) { return React.createElement("img", { alt }) }',
   './PartyEndingScreen': 'export default function Ending() { return "Générique" }',
   './PartyScreenAuto': 'export default function Auto() { return "Rotation automatique" }',
+  '/screen/ScreenEventOverlay': 'export default function ScreenEvent() { return "Événement TV" }',
 }
 const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   name: 'screen-transition-fixtures', enforce: 'pre',
@@ -62,6 +63,7 @@ beforeEach(() => {
     photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg', image_width: 1600, image_height: 900 }],
     photoGate: null,
     db: {
+      rpc: async () => ({ data: null, error: null }),
       from(table) {
         const rows = {
           live_vote_public_state: { state: structuredClone(fixture.room) },
@@ -125,7 +127,8 @@ for (const first of [screenChannel, routerChannel]) {
 test('normal reveal and active-room priority remain unchanged, then clearing shows Photos', async () => {
   await render()
   assert.match(content(), /vote ouvert/)
-  assert.equal(document.querySelector('.photo-hunt-screen'), null)
+  assert.ok(document.querySelector('.photo-hunt-screen'), 'The photo wall stays mounted under La Salle')
+  assert.ok(document.querySelector('.screen-director__ambient--hidden'), 'The photo wall is hidden while La Salle has priority')
   fixture.room = { phase: 'revealed', prompt: 'Question test', result: { rows: [], totalVotes: 0 } }
   await emit(screenChannel); await emit(routerChannel)
   assert.match(content(), /résultats/)
@@ -164,14 +167,11 @@ test('TV polling refreshes the featured module when Realtime delivers no event',
 
   assert.equal(partyRefreshes, 1)
 })
-test('slow photo reads show the loading screen instead of a blank root after skip', async () => {
+test('the photo wall stays mounted under La Salle and is ready immediately after skip', async () => {
   await render()
-  let release
-  fixture.photoGate = new Promise(resolve => { release = resolve })
+  isPhotoWall()
   fixture.room = { phase: 'idle' }
-  await emit(screenChannel)
-  assert.match(content(), /Connexion au mur photo/)
-  await act(async () => release())
+  await emit(screenChannel); await emit(routerChannel)
   isPhotoWall()
   assert.match(content(), /Invité test/)
 })
@@ -201,7 +201,7 @@ test('skip without a featured module resumes automatic rotation', async () => {
   await render()
   fixture.room = { phase: 'idle' }
   await emit(screenChannel)
-  assert.match(content(), /Rejoins/)
+  assert.match(content(), /Rotation automatique/)
   await emit(routerChannel)
   assert.match(content(), /Rotation automatique/)
 })

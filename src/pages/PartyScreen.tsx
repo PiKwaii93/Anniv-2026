@@ -377,7 +377,7 @@ function PartyScreen() {
           schema: 'public',
           table: 'secret_mission_scoreboard',
         },
-        () => void loadRoomState(),
+        () => void loadScreenData(),
       )
       .on(
         'postgres_changes',
