@@ -367,11 +367,22 @@
   text-align: center;
 }
 
-.party-screen-auto-smart__match > strong {
+.party-screen-auto-smart__team > strong {
   max-width: 82vw;
   color: #fff;
   font-size: clamp(2.7rem, 6vw, 7rem);
   line-height: 0.98;
+}
+
+.party-screen-auto-smart__team {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.8rem, 1.6vh, 1.4rem);
+}
+
+.party-screen-auto-smart__team .party-screen-auto__player-faces {
+  justify-content: center;
+  margin-top: 0;
 }
 
 .party-screen-auto-smart__match > b {

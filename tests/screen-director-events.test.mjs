@@ -30,7 +30,7 @@ test('Bingo completion is idempotent for one grid', async () => {
 
   const source = await readFile('src/pages/Bingo.tsx', 'utf8')
   assert.match(source, /!wasFullHouse && becomesFullHouse/)
-  assert.match(source, /fullHouseAnnouncement: 'pending'/)
+  assert.match(source, /fullHouseAnnouncement:[\s\S]{0,100}\? 'pending'/)
   assert.match(source, /complete_bingo_grid/)
 })
 

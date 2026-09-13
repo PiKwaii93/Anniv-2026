@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useParty } from '../features/party/PartyContext'
+import GuestAvatar from '../features/guests/GuestAvatar'
 import {
   getActiveRoundIndex,
   normalizeTournamentRounds,
@@ -12,7 +13,7 @@ import PhotoHuntScreen from './PhotoHuntScreen'
 import './PartyScreen.css'
 import './PartyScreenAuto.css'
 
-type PlayerSnapshot = { id: string; name: string }
+type PlayerSnapshot = { id: string; name: string; avatarPath?: string | null }
 type Team = { id: string; playerIds: [string, string] }
 type Match = {
   id: string
@@ -228,11 +229,18 @@ function PartyScreenAuto({ paused = false }: { paused?: boolean }) {
     () => new Map((beerPongState.teams ?? []).map((team) => [team.id, team])),
     [beerPongState.teams],
   )
-  const teamName = useCallback((teamId: string | null) => {
+  const teamPlayers = useCallback((teamId: string | null) => {
     const team = teamId ? teamById.get(teamId) : null
-    if (!team) return 'Équipe'
-    return team.playerIds.map((id) => playerById.get(id)?.name ?? 'Joueur').join(' & ')
+    if (!team) return []
+    return team.playerIds.flatMap((id) => {
+      const player = playerById.get(id)
+      return player ? [player] : []
+    })
   }, [playerById, teamById])
+  const teamName = useCallback((teamId: string | null) => {
+    const players = teamPlayers(teamId)
+    return players.length > 0 ? players.map((player) => player.name).join(' & ') : 'Équipe'
+  }, [teamPlayers])
 
   return (
     <div className="party-screen-auto-smart">
@@ -268,9 +276,23 @@ function PartyScreenAuto({ paused = false }: { paused?: boolean }) {
           </header>
           <section className="party-screen-auto-smart__match">
             <p className="party-screen__eyebrow">À vos gobelets</p>
-            <strong>{teamName(insert.match.teamAId)}</strong>
+            <div className="party-screen-auto-smart__team">
+              <strong>{teamName(insert.match.teamAId)}</strong>
+              <div className="party-screen-auto__player-faces">
+                {teamPlayers(insert.match.teamAId).map((player) => (
+                  <GuestAvatar key={player.id} name={player.name} path={player.avatarPath} />
+                ))}
+              </div>
+            </div>
             <b>VS</b>
-            <strong>{teamName(insert.match.teamBId)}</strong>
+            <div className="party-screen-auto-smart__team">
+              <strong>{teamName(insert.match.teamBId)}</strong>
+              <div className="party-screen-auto__player-faces">
+                {teamPlayers(insert.match.teamBId).map((player) => (
+                  <GuestAvatar key={player.id} name={player.name} path={player.avatarPath} />
+                ))}
+              </div>
+            </div>
           </section>
         </main>
       )}

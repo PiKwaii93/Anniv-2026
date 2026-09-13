@@ -148,10 +148,14 @@ function PartyScreenWithHall() {
   if (!loading && settings.phase === 'ended') return <PartyEndingScreen />
 
   const roomIsLive = roomPhase === 'open' || roomPhase === 'revealed'
-  const interruptionVisible = !loading && !roomLoading && (roomIsLive || Boolean(currentEvent))
-  const ambient = !loading && String(settings.featuredModule) === 'photos'
+  const photosPinned = !loading && String(settings.featuredModule) === 'photos'
+  const automaticMode = !loading && settings.phase === 'live' && !settings.featuredModule
+  const usesLegacyScreen = !photosPinned && !automaticMode
+  const roomNeedsOverlay = !roomLoading && roomIsLive && !usesLegacyScreen
+  const interruptionVisible = !loading && !roomLoading && (roomNeedsOverlay || Boolean(currentEvent))
+  const ambient = photosPinned
     ? <PhotoHuntScreen paused={interruptionVisible} />
-    : !loading && !roomLoading && settings.phase === 'live' && !settings.featuredModule
+    : automaticMode
       ? <PartyScreenAuto paused={interruptionVisible} />
       : <PartyScreen />
 
@@ -164,7 +168,7 @@ function PartyScreenWithHall() {
         {ambient}
       </div>
 
-      {!loading && !roomLoading && roomIsLive && (
+      {!loading && roomNeedsOverlay && (
         <div className="screen-director__interruption"><PartyScreen /></div>
       )}
 
