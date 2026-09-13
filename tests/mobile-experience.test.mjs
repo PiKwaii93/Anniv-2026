@@ -159,7 +159,8 @@ test('Home takes an authenticated admin directly to the full administration dash
   await render(()=>React.createElement(AdminAccessProbe,{Component:ui.Home}))
   const link=q('.guest-home-footer a')
   assert.equal(link.getAttribute('href'),'/admin')
-  assert.equal(link.textContent,'Administration →')
+  assert.match(link.textContent,/Administration/)
+  assert.match(link.textContent,/Gérer les modules/)
   await click(link)
   assert.deepEqual(JSON.parse(q('[data-testid=admin-location]').textContent),{path:'/admin',from:'/admin'})
   assert.deepEqual(actions,[])
@@ -240,7 +241,17 @@ test('guest shell keeps four reachable tabs and reports the active game',async()
   assert.equal(document.querySelectorAll('.guest-nav a').length,4)
   assert.equal(q('.guest-nav [aria-current]').getAttribute('href'),'/play')
   assert.ok(q('.guest-live-link'))
+  assert.equal(q('.guest-admin-shortcut').getAttribute('href'),'/admin/login')
+  assert.match(q('.guest-admin-shortcut').textContent,/Bingo/)
   assert.deepEqual(actions,[])
+})
+
+test('each guest module resolves to its contextual administration page',()=>{
+  assert.deepEqual(ui.adminDestinationForGuestPath('/photos'),{path:'/admin/photos',label:'Photo Hunt'})
+  assert.deepEqual(ui.adminDestinationForGuestPath('/bingo'),{path:'/admin/bingo',label:'Bingo'})
+  assert.deepEqual(ui.adminDestinationForGuestPath('/beer-pong/bracket'),{path:'/admin/beer-pong',label:'Beer Pong'})
+  assert.deepEqual(ui.adminDestinationForGuestPath('/capsule'),{path:'/admin/party-extras',label:'Capsule'})
+  assert.deepEqual(ui.adminDestinationForGuestPath('/'),{path:'/admin',label:'Tableau de bord'})
 })
 test('onboarding prevents navigation behind its identity dialog',async()=>{
   fixture.identity.identity=null

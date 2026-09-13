@@ -96,7 +96,9 @@ export default function Home() {
       </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>}
       <footer className="guest-home-footer">
         <Link className="guest-admin-link" to={isAdmin ? '/admin' : '/admin/login'} state={{ from: '/admin' }}>
-          Administration <span aria-hidden="true">→</span>
+          <span className="guest-admin-link__icon" aria-hidden="true">⌘</span>
+          <span className="guest-admin-link__copy"><strong>Administration</strong><small>Gérer les modules et piloter la soirée</small></span>
+          <span className="guest-admin-link__arrow" aria-hidden="true">↗</span>
         </Link>
       </footer>
     </main>

@@ -9,6 +9,7 @@ import { activeGuestTab, guestTabs } from './navigation'
 import { useLiveRoom } from './useLiveRoom'
 import { GuestContext } from './GuestContext'
 import ConnectionNotice from './ConnectionNotice'
+import AdminShortcut from './AdminShortcut'
 import './guest.css'
 
 export default function GuestShell({ children }: { children: ReactNode }) {
@@ -29,8 +30,12 @@ export default function GuestShell({ children }: { children: ReactNode }) {
     <div className={`guest-app${immersive ? ' guest-app--immersive' : ''}`}>
       {!immersive && <header className="guest-topbar" inert={onboarding}>
           <Link className="guest-brand" to="/" aria-label="Anniv 2026 · accueil">ANNIV <span>2026</span></Link>
-          <PartyIdentityBadge key={pathname} inline />
+          <div className="guest-topbar__actions">
+            {pathname !== '/' && <AdminShortcut />}
+            <PartyIdentityBadge key={pathname} inline />
+          </div>
         </header>}
+      {immersive && <AdminShortcut immersive />}
       <ConnectionNotice />
       {!immersive && settings.phase === 'live' && settings.roomVisible && room?.phase === 'open' && pathname !== '/room' && pathname !== '/' && <Link className="guest-live-link" to="/room"><span className="guest-live-dot" />Un vote est ouvert <strong>Participer →</strong></Link>}
       {children}

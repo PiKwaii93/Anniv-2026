@@ -39,6 +39,38 @@ export function activeGuestTab(path: string) {
   return '/'
 }
 
+type GuestAdminDestination = {
+  path: string
+  label: string
+}
+
+export function adminDestinationForGuestPath(path: string): GuestAdminDestination {
+  const pathname = path.length > 1 ? path.replace(/\/+$/, '') : path
+
+  if (pathname.startsWith('/beer-pong')) return { path: '/admin/beer-pong', label: 'Beer Pong' }
+  if (pathname === '/bingo') return { path: '/admin/bingo', label: 'Bingo' }
+  if (pathname === '/missions') return { path: '/admin/missions', label: 'Missions' }
+  if (pathname === '/room') return { path: '/admin/room', label: 'La Salle' }
+  if (pathname === '/photos') return { path: '/admin/photos', label: 'Photo Hunt' }
+  if (pathname === '/iceberg') return { path: '/admin/iceberg', label: 'Iceberg' }
+  if (pathname === '/guests') return { path: '/admin/guests', label: 'Invités' }
+  if (pathname === '/info') return { path: '/admin/info', label: 'Infos pratiques' }
+  if (pathname === '/chat') return { path: '/admin/chat', label: 'Discussion' }
+  if (['/capsule', '/jukebox', '/duos'].includes(pathname)) {
+    const labels: Record<string, string> = {
+      '/capsule': 'Capsule',
+      '/jukebox': 'Jukebox',
+      '/duos': 'Duos',
+    }
+    return { path: '/admin/party-extras', label: labels[pathname] }
+  }
+  if (pathname === '/play' || pathname === '/hall-of-fame') {
+    return { path: '/admin/content', label: 'Contenus' }
+  }
+
+  return { path: '/admin', label: 'Tableau de bord' }
+}
+
 export function isGuestPath(path: string) {
   return !path.startsWith('/admin') && path !== '/captain' && path !== '/screen' && path !== '/qr'
 }

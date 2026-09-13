@@ -16,6 +16,7 @@
 .guest-app .bingo-footer-note { font-size: 13px; color: #b9bac7; }
 .guest-topbar { max-width: 1000px; margin: auto; padding: 12px 24px; min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 50; }
 .guest-topbar:has(.party-identity-popover) { z-index: 90; }
+.guest-topbar__actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
 .guest-brand { color: #f4f2ef; text-decoration: none; font-size: 14px; letter-spacing: .12em; font-weight: 800; min-height: 44px; display: flex; align-items: center; gap: 6px; }
 .guest-brand span { color: #b9b2a2; font-weight: 500; }
 .guest-app .party-identity-badge-wrap--inline { position: relative; inset: auto; z-index: 60; min-width: 0; max-width: 60%; }
@@ -79,10 +80,23 @@
 .guest-discover a > span { color: #ded0a0; font-size: 24px; }
 .guest-discover small { font-size: 14px; line-height: 1.4; color: #b9bac7; }
 .guest-empty { color: #b9bac7; line-height: 1.6; }
-.guest-home-footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #30313b; }
-.guest-admin-link { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 4px 8px; color: #b9bac7; font-size: 14px; text-underline-offset: 4px; border-radius: 6px; }
-.guest-admin-link:hover { color: #f5f1e8; }
+.guest-home-footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid #30313b; }
+.guest-admin-link { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 14px 16px; color: #f4f2ec; background: linear-gradient(135deg, rgba(222, 208, 160, 0.12), rgba(112, 126, 208, 0.1)); border: 1px solid #4a4850; border-radius: 18px; text-decoration: none; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18); }
+.guest-admin-link__icon, .guest-admin-shortcut__icon { display: grid; place-items: center; width: 40px; height: 40px; color: #171511; background: #ded0a0; border-radius: 12px; font-size: 19px; font-weight: 900; }
+.guest-admin-link__copy { display: grid; gap: 3px; min-width: 0; }
+.guest-admin-link__copy strong { font-size: 16px; }
+.guest-admin-link__copy small { color: #aaaab6; font-size: 13px; line-height: 1.35; }
+.guest-admin-link__arrow { color: #ded0a0; font-size: 22px; }
+.guest-admin-link:hover { color: #fff; border-color: #77705c; transform: translateY(-1px); }
 .guest-admin-link:focus-visible { outline: 2px solid #ded0a0; outline-offset: 3px; }
+.guest-admin-shortcut { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 5px 10px 5px 6px; color: #eceaf1; background: linear-gradient(135deg, rgba(222, 208, 160, 0.12), rgba(112, 126, 208, 0.12)), #15161d; border: 1px solid #42434f; border-radius: 14px; text-decoration: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.guest-admin-shortcut:hover { border-color: #77705c; background-color: #1b1c23; }
+.guest-admin-shortcut__icon { width: 32px; height: 32px; border-radius: 9px; font-size: 15px; }
+.guest-admin-shortcut__copy { display: grid; gap: 1px; min-width: 0; text-align: left; }
+.guest-admin-shortcut__copy small { color: #999aa7; font-size: 9px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }
+.guest-admin-shortcut__copy strong { max-width: 130px; overflow: hidden; font-size: 12px; line-height: 1.25; white-space: nowrap; text-overflow: ellipsis; }
+.guest-admin-shortcut__arrow { color: #ded0a0; font-size: 14px; }
+.guest-admin-shortcut--immersive { position: fixed; z-index: 100; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); background-color: rgba(12, 13, 18, 0.9); backdrop-filter: blur(12px); }
 .guest-live-link { display: flex; gap: 10px; align-items: center; padding: 12px 16px; margin: 0 auto 12px; width: min(calc(100% - 32px), 912px); min-height: 44px; border-radius: 12px; background: #222b44; color: #e7ecff; font-size: 14px; text-decoration: none; }
 .guest-live-link strong { margin-left: auto; }
 .guest-live-dot { width: 8px; height: 8px; background: #95e1b9; border-radius: 50%; flex-shrink: 0; }
@@ -137,6 +151,11 @@
 }
 @media (max-width: 600px) {
   .guest-topbar { padding: 10px 16px; }
+  .guest-topbar__actions { gap: 7px; }
+  .guest-admin-shortcut { gap: 6px; padding-right: 7px; }
+  .guest-admin-shortcut__copy strong, .guest-admin-shortcut__arrow { display: none; }
+  .guest-admin-shortcut__copy small { color: #eceaf1; font-size: 10px; letter-spacing: .04em; }
+  .guest-admin-shortcut__icon { width: 30px; height: 30px; }
   .guest-page { padding: 12px 16px 32px; }
   .guest-now { padding: 22px; border-radius: 20px; }
   .guest-heading { margin-bottom: 20px; }

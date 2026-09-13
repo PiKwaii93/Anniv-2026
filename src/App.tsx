@@ -475,6 +475,15 @@ function AppRoutes() {
           />
 
           <Route
+            path="/admin/beer-pong"
+            element={
+              <AdminRoute>
+                <Navigate to="/beer-pong" replace />
+              </AdminRoute>
+            }
+          />
+
+          <Route
             path="/admin/missions"
             element={
               <AdminRoute>
