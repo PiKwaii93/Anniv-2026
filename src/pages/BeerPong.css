@@ -1281,6 +1281,48 @@
   margin: 14px 0 0;
 }
 
+.beer-current-team__copy > p {
+  margin: 0;
+  color: #c8c7d0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 760px) {
+  .beer-current-team {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "eyebrow eyebrow"
+      "members copy";
+    align-items: center;
+    column-gap: 24px;
+    row-gap: 10px;
+    padding: 20px 24px;
+    border-radius: 18px;
+  }
+
+  .beer-current-team > .guest-eyebrow {
+    grid-area: eyebrow;
+    margin: 0;
+  }
+
+  .beer-current-team > .beer-team__members--current {
+    grid-area: members;
+    margin: 0;
+  }
+
+  .beer-current-team__copy {
+    grid-area: copy;
+    min-width: 0;
+  }
+
+  .beer-current-team .beer-current-team__copy h2 {
+    margin: 0 0 4px;
+    font-size: clamp(1.4rem, 2.2vw, 2rem);
+  }
+}
+
 .beer-team__members--champion {
   justify-content: center;
   width: min(100%, 360px);

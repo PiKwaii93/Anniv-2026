@@ -1250,7 +1250,7 @@ function BeerPong() {
         const match = state.rounds[activeRoundIndex]?.find(item => !item.winnerTeamId && item.teamAId && item.teamBId && (item.teamAId === team.id || item.teamBId === team.id))
         const opponentId = match && (match.teamAId === team.id ? match.teamBId : match.teamAId)
         const opponent = opponentId ? teamById.get(opponentId) : null
-        return <section className="guest-now"><p className="guest-eyebrow">Ton équipe</p>{renderTeamMembers(team, 'beer-team__members--current')}<h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></section>
+        return <section className="guest-now beer-current-team"><p className="guest-eyebrow">Ton équipe</p>{renderTeamMembers(team, 'beer-team__members--current')}<div className="beer-current-team__copy"><h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></div></section>
       })()}
       {synchronizationError && (
         <div className="beer-sync-error">

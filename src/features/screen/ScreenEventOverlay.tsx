@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { supabase } from '../../lib/supabase'
+import GuestAvatar from '../guests/GuestAvatar'
 
 import './ScreenEventOverlay.css'
 
@@ -15,6 +16,7 @@ export type ScreenEvent = {
 type PlayerSnapshot = {
   id: string
   name: string
+  avatarPath?: string | null
 }
 
 type Team = {
@@ -40,6 +42,7 @@ function ScreenEventOverlay({
   onComplete: () => void
 }) {
   const [beerPongState, setBeerPongState] = useState<BeerPongState>({})
+  const [bingoAvatarPath, setBingoAvatarPath] = useState<string | null>(null)
   const [beerPongPhase, setBeerPongPhase] = useState<'result' | 'next'>('result')
   const hasNextMatch = Boolean(
     payloadText(event.payload, 'nextTeamAId')
@@ -64,10 +67,39 @@ function ScreenEventOverlay({
     setBeerPongState(row?.state ?? {})
   }, [event.event_type])
 
+  const loadBingoWinner = useCallback(async () => {
+    if (event.event_type !== 'bingo_full_house') return
+
+    const playerKey = payloadText(event.payload, 'playerKey')
+    const separatorIndex = playerKey?.indexOf(':') ?? -1
+    const playerType = separatorIndex > 0 ? playerKey?.slice(0, separatorIndex) : null
+    const playerId = separatorIndex > 0 ? playerKey?.slice(separatorIndex + 1) : null
+
+    if (!playerId || (playerType !== 'guest' && playerType !== 'plus')) {
+      setBingoAvatarPath(null)
+      return
+    }
+
+    const query = playerType === 'guest'
+      ? supabase.from('guests').select('avatar_path').eq('id', playerId).maybeSingle()
+      : supabase.from('plus_ones').select('avatar_path').eq('id', playerId).maybeSingle()
+    const { data, error } = await query
+
+    if (error) {
+      console.error('[ScreenDirector][BINGO_AVATAR_LOAD_ERROR]', error)
+      setBingoAvatarPath(null)
+      return
+    }
+
+    setBingoAvatarPath((data as { avatar_path: string | null } | null)?.avatar_path ?? null)
+  }, [event.event_type, event.payload])
+
   useEffect(() => {
     setBeerPongPhase('result')
+    setBingoAvatarPath(null)
     void loadBeerPong()
-  }, [event.id, loadBeerPong])
+    void loadBingoWinner()
+  }, [event.id, loadBeerPong, loadBingoWinner])
 
   useEffect(() => {
     if (event.event_type === 'bingo_full_house') {
@@ -105,6 +137,28 @@ function ScreenEventOverlay({
       .map((playerId) => playerById.get(playerId)?.name ?? 'Joueur')
       .join(' & ')
   }, [playerById, teamById])
+  const teamPlayers = useCallback((teamId: string | null) => {
+    if (!teamId) return []
+    const team = teamById.get(teamId)
+    if (!team) return []
+    return team.playerIds.flatMap((playerId) => {
+      const player = playerById.get(playerId)
+      return player ? [player] : []
+    })
+  }, [playerById, teamById])
+
+  const renderTeamAvatars = (teamId: string | null) => (
+    <div className="screen-event__avatars" aria-hidden="true">
+      {teamPlayers(teamId).map((player) => (
+        <GuestAvatar
+          key={player.id}
+          name={player.name}
+          path={player.avatarPath}
+          size="large"
+        />
+      ))}
+    </div>
+  )
 
   if (event.event_type === 'bingo_full_house') {
     const playerName = payloadText(event.payload, 'playerName') ?? 'Quelqu’un'
@@ -112,7 +166,10 @@ function ScreenEventOverlay({
       <main className="screen-event screen-event--bingo" role="status" aria-live="assertive">
         <div className="screen-event__burst" aria-hidden="true">✦</div>
         <p className="screen-event__eyebrow">Carton plein · 16/16</p>
-        <h1>🎉 BINGO !</h1>
+        <div className="screen-event__bingo-winner">
+          <GuestAvatar name={playerName} path={bingoAvatarPath} size="large" />
+          <h1>🎉 BINGO !</h1>
+        </div>
         <p><strong>{playerName}</strong> vient de compléter toute sa grille.</p>
         <span className="screen-event__timer" />
       </main>
@@ -122,6 +179,9 @@ function ScreenEventOverlay({
   const winner = teamName(payloadText(event.payload, 'winnerTeamId'))
   const nextA = teamName(payloadText(event.payload, 'nextTeamAId'))
   const nextB = teamName(payloadText(event.payload, 'nextTeamBId'))
+  const winnerTeamId = payloadText(event.payload, 'winnerTeamId')
+  const nextTeamAId = payloadText(event.payload, 'nextTeamAId')
+  const nextTeamBId = payloadText(event.payload, 'nextTeamBId')
   const isChampion = event.payload.isChampion === true
 
   if (beerPongPhase === 'next') {
@@ -129,9 +189,15 @@ function ScreenEventOverlay({
       <main className="screen-event screen-event--pong screen-event--pong-next" role="status" aria-live="assertive">
         <p className="screen-event__eyebrow">Beer Pong · prochain match</p>
         <div className="screen-event__versus">
-          <strong>{nextA}</strong>
+          <div className="screen-event__team">
+            {renderTeamAvatars(nextTeamAId)}
+            <strong>{nextA}</strong>
+          </div>
           <b>VS</b>
-          <strong>{nextB}</strong>
+          <div className="screen-event__team">
+            {renderTeamAvatars(nextTeamBId)}
+            <strong>{nextB}</strong>
+          </div>
         </div>
         <p>Préparez les gobelets.</p>
         <span className="screen-event__timer" />
@@ -149,7 +215,10 @@ function ScreenEventOverlay({
         {isChampion ? '🏆 Tournoi terminé' : 'Beer Pong · résultat'}
       </p>
       <h1>{isChampion ? 'Champions.' : 'Victoire.'}</h1>
-      <p className="screen-event__winner">{winner}</p>
+      <div className="screen-event__winner-team">
+        {renderTeamAvatars(winnerTeamId)}
+        <p className="screen-event__winner">{winner}</p>
+      </div>
       <span className="screen-event__timer" />
     </main>
   )

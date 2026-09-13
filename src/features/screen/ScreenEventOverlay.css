@@ -49,6 +49,45 @@
   line-height: 1.2;
 }
 
+.screen-event__winner-team,
+.screen-event__team {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.6rem, 1.5vh, 1.2rem);
+  min-width: 0;
+}
+
+.screen-event__avatars {
+  display: flex;
+  justify-content: center;
+  padding-left: clamp(0.65rem, 1.2vw, 1.2rem);
+}
+
+.screen-event__avatars .guest-profile-avatar.guest-profile-avatar {
+  width: clamp(4.75rem, 8.5vw, 8.5rem);
+  height: clamp(4.75rem, 8.5vw, 8.5rem);
+  margin-left: clamp(-1.15rem, -1.4vw, -0.65rem);
+  border: clamp(3px, 0.28vw, 5px) solid #11131b;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  font-size: clamp(1.4rem, 2.3vw, 2.4rem);
+}
+
+.screen-event__bingo-winner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.2rem, 2.8vw, 3.5rem);
+}
+
+.screen-event__bingo-winner .guest-profile-avatar.guest-profile-avatar {
+  width: clamp(6rem, 11vw, 12rem);
+  height: clamp(6rem, 11vw, 12rem);
+  border: clamp(4px, 0.35vw, 7px) solid rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 70px rgba(240, 170, 61, 0.32);
+  font-size: clamp(2rem, 3.2vw, 3.5rem);
+}
+
 .screen-event__winner {
   color: #fff;
   font-size: clamp(2.2rem, 5vw, 5.5rem);
@@ -68,6 +107,11 @@
 .screen-event__versus b {
   color: #ff5b72;
   font-size: 0.58em;
+}
+
+.screen-event__team > strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .screen-event__burst {
@@ -129,5 +173,26 @@
   .screen-event__burst,
   .screen-event__timer::after {
     animation: none;
+  }
+}
+
+@media (max-height: 620px) {
+  .screen-event {
+    gap: clamp(0.55rem, 1.5vh, 1rem);
+    padding-block: 3vh;
+  }
+
+  .screen-event h1 {
+    font-size: clamp(3.7rem, 9vw, 8rem);
+  }
+
+  .screen-event__avatars .guest-profile-avatar.guest-profile-avatar {
+    width: clamp(3.8rem, 14vh, 6rem);
+    height: clamp(3.8rem, 14vh, 6rem);
+  }
+
+  .screen-event__bingo-winner .guest-profile-avatar.guest-profile-avatar {
+    width: clamp(4.8rem, 20vh, 7.5rem);
+    height: clamp(4.8rem, 20vh, 7.5rem);
   }
 }
