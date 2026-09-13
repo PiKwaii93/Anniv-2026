@@ -343,7 +343,7 @@ function Iceberg() {
   const { isAdmin, loading: authLoading } = useAuth()
 
   const [entries, setEntries] = useState<IcebergEntry[]>([])
-  const [view, setView] = useState<'list' | 'scene'>('list')
+  const [view, setView] = useState<'list' | 'scene'>('scene')
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     null,
   )
@@ -540,17 +540,17 @@ function Iceberg() {
         <div className="guest-tabs" aria-label="Lecture de l’Iceberg">
           <button
             type="button"
-            aria-pressed={view === 'list'}
-            onClick={() => setView('list')}
-          >
-            Par niveaux
-          </button>
-          <button
-            type="button"
             aria-pressed={view === 'scene'}
             onClick={() => setView('scene')}
           >
             Vue illustrée
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'list'}
+            onClick={() => setView('list')}
+          >
+            Par niveaux
           </button>
         </div>
         {!loading && (

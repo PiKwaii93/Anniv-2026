@@ -14,7 +14,7 @@
 }
 
 .event-info-back {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   min-height: 44px;
   color: #aaa5a0;

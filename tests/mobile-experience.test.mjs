@@ -246,12 +246,25 @@ test('guest shell keeps four reachable tabs and reports the active game',async()
   assert.deepEqual(actions,[])
 })
 
+test('the identity badge keeps a readable width beside the admin shortcut',async()=>{
+  const guestCss=await readFile('src/features/guest/guest.css','utf8')
+  assert.match(guestCss,/party-identity-badge-wrap--inline[^}]*min-width: 128px/)
+  assert.match(guestCss,/party-identity-badge strong \{[^}]*white-space: nowrap[^}]*text-overflow: ellipsis/)
+})
+
 test('each guest module resolves to its contextual administration page',()=>{
   assert.deepEqual(ui.adminDestinationForGuestPath('/photos'),{path:'/admin/photos',label:'Photo Hunt'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/bingo'),{path:'/admin/bingo',label:'Bingo'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/beer-pong/bracket'),{path:'/admin/beer-pong',label:'Beer Pong'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/capsule'),{path:'/admin/party-extras',label:'Capsule'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/'),{path:'/admin',label:'Tableau de bord'})
+})
+
+test('Iceberg opens on the illustrated view and keeps the level switch',async()=>{
+  const source=await readFile('src/pages/Iceberg.tsx','utf8')
+  assert.match(source,/useState<'list' \| 'scene'>\('scene'\)/)
+  assert.ok(source.indexOf('Vue illustrée') < source.indexOf('Par niveaux'))
+  assert.match(source,/onClick=\{\(\) => setView\('list'\)\}/)
 })
 test('onboarding prevents navigation behind its identity dialog',async()=>{
   fixture.identity.identity=null
