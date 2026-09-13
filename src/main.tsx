@@ -12,6 +12,7 @@ import PartyIdentityProvider from './features/identity/PartyIdentityContext'
 import { PartyProvider } from './features/party/PartyContext'
 import PartyDataBoundary from './features/identity/PartyDataBoundary'
 import AppErrorBoundary from './features/errors/AppErrorBoundary'
+import { PwaProvider } from './features/pwa/PwaContext'
 
 import './index.css'
 import './MobilePolish.css'
@@ -28,19 +29,21 @@ createRoot(
   <StrictMode>
     <AppErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <PartyDataBoundary>
-            <PartyProvider>
-              <AnnouncementProvider>
-                <GuestsProvider>
-                  <PartyIdentityProvider>
-                    <App />
-                  </PartyIdentityProvider>
-                </GuestsProvider>
-              </AnnouncementProvider>
-            </PartyProvider>
-          </PartyDataBoundary>
-        </AuthProvider>
+        <PwaProvider>
+          <AuthProvider>
+            <PartyDataBoundary>
+              <PartyProvider>
+                <AnnouncementProvider>
+                  <GuestsProvider>
+                    <PartyIdentityProvider>
+                      <App />
+                    </PartyIdentityProvider>
+                  </GuestsProvider>
+                </AnnouncementProvider>
+              </PartyProvider>
+            </PartyDataBoundary>
+          </AuthProvider>
+        </PwaProvider>
       </BrowserRouter>
     </AppErrorBoundary>
   </StrictMode>,

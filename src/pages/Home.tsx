@@ -11,6 +11,7 @@ import { activities } from '../features/guest/navigation'
 import { supabase } from '../lib/supabase'
 import { hasMissionToResume } from '../features/guest/activityMemory'
 import ChatHomeLink from '../features/chat/ChatHomeLink'
+import PwaInstallCard from '../features/pwa/PwaInstallCard'
 
 type PersonalState = { scope: string; pending: number; retry: number; mission: boolean; validations: number }
 
@@ -95,6 +96,7 @@ export default function Home() {
         {phase === 'ended' && settings.photosVisible && <Link to="/photos?view=gallery"><span aria-hidden="true">▧</span><strong>La galerie</strong><small>Revivre la soirée</small></Link>}
       </div>{!extras?.settings.capsule_visible && !settings.icebergVisible && !settings.guestsVisible && !(phase === 'ended' && settings.photosVisible) && <p className="guest-empty">Les souvenirs apparaîtront ici dès leur ouverture.</p>}</section>}
       <footer className="guest-home-footer">
+        <PwaInstallCard placement="settings" hasIdentity={Boolean(identity)} />
         <Link className="guest-admin-link" to={isAdmin ? '/admin' : '/admin/login'} state={{ from: '/admin' }}>
           <span className="guest-admin-link__icon" aria-hidden="true">⌘</span>
           <span className="guest-admin-link__copy"><strong>Administration</strong><small>Gérer les modules et piloter la soirée</small></span>

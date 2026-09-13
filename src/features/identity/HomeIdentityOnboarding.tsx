@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 import GuestAvatar from '../guests/GuestAvatar'
+import PwaInstallCard from '../pwa/PwaInstallCard'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './HomeIdentityOnboarding.css'
@@ -96,6 +97,8 @@ function HomeIdentityOnboarding() {
           <span>ANNIV 2026</span>
           <b>01</b>
         </div>
+
+        <PwaInstallCard placement="onboarding" />
 
         <p className="home-onboarding__eyebrow">Première étape</p>
         <h1 id="home-onboarding-title">
