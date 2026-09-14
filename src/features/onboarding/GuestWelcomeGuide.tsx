@@ -55,6 +55,8 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
     return (
       <div className="guest-guide-demo guest-guide-demo--home">
         <p className="guest-guide-demo__brand">ANNIV <span>2026</span></p>
+        <span className="guest-guide-demo__home-status">Avant la soirée</span>
+        <h3 className="guest-guide-demo__home-greeting">Bienvenue.</h3>
         <article className="guest-guide-demo__hero">
           <small>Maintenant</small>
           <strong>La soirée est à toi.</strong>
@@ -63,10 +65,10 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
         </article>
         <p className="guest-guide-demo__group-title guest-guide-demo__group-title--organization">Organisation de la soirée</p>
         <div className="guest-guide-demo__shortcuts">
-          <div><i>i</i><b>Infos pratiques</b><span>→</span></div>
-          <div><i>⌑</i><b>Ce qu’on ramène</b><span>→</span></div>
-          <div><i>●</i><b>Discussion entre invités</b><span>→</span></div>
-          <div><i>○</i><b>Liste des invités</b><span>→</span></div>
+          <div><i>i</i><b>Infos pratiques</b><small>Date, lieu, accès et détails utiles.</small><span>→</span></div>
+          <div><i>⌑</i><b>Ce qu’on ramène</b><small>Consulte la liste et indique ce que tu apportes.</small><span>→</span></div>
+          <div><i>●</i><b>Discussion entre invités</b><small>Écris un message à tous les invités.</small><span>→</span></div>
+          <div><i>○</i><b>Liste des invités</b><small>Découvre qui sera présent à la soirée.</small><span>→</span></div>
         </div>
         <p className="guest-guide-demo__group-title guest-guide-demo__group-title--memories">Souvenirs &amp; rencontres</p>
         <div className="guest-guide-demo__memories">
