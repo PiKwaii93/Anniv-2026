@@ -9,6 +9,7 @@ import GuestAvatar from '../guests/GuestAvatar'
 import { useRequiresIosInstallation } from '../pwa/PwaState'
 import IosInstallIdentityGate from './IosInstallIdentityGate'
 import { usePartyIdentity } from './PartyIdentityContext'
+import { requestGuestGuideReplay } from '../onboarding/guestGuideState'
 
 import './PartyIdentity.css'
 
@@ -242,6 +243,16 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
                   Cette identité est utilisée automatiquement dans les jeux compatibles.
                 </p>
               </div>
+              <button
+                type="button"
+                className="party-identity-popover__guide"
+                onClick={() => {
+                  setOpen(false)
+                  requestGuestGuideReplay()
+                }}
+              >
+                Revoir le guide
+              </button>
               <button
                 type="button"
                 disabled={busy}

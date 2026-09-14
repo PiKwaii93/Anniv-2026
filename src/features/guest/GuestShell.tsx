@@ -13,6 +13,7 @@ import ConnectionNotice from './ConnectionNotice'
 import AdminShortcut from './AdminShortcut'
 import PwaUpdateNotice from '../pwa/PwaUpdateNotice'
 import { useRequiresIosInstallation } from '../pwa/PwaState'
+import GuestWelcomeGuide from '../onboarding/GuestWelcomeGuide'
 import './guest.css'
 
 export default function GuestShell({ children }: { children: ReactNode }) {
@@ -45,6 +46,7 @@ export default function GuestShell({ children }: { children: ReactNode }) {
       {immersive && <AdminShortcut immersive />}
       <ConnectionNotice />
       <PwaUpdateNotice />
+      <GuestWelcomeGuide enabled={!isAdmin && Boolean(identity) && !requiresIosInstallation} />
       {!immersive && settings.phase === 'live' && settings.roomVisible && room?.phase === 'open' && pathname !== '/room' && pathname !== '/' && <Link className="guest-live-link" to="/room"><span className="guest-live-dot" />Un vote est ouvert <strong>Participer →</strong></Link>}
       {requiresIosInstallation && !isAdmin ? <IosInstallIdentityGate /> : children}
       {!immersive && <nav className="guest-nav" aria-label="Navigation principale" inert={onboarding}>

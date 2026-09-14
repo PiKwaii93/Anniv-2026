@@ -328,6 +328,12 @@
   cursor: pointer;
 }
 
+.party-identity-popover__current > .party-identity-popover__guide {
+  color: #f0deb0;
+  background: rgba(222, 208, 160, 0.08);
+  border-color: rgba(222, 208, 160, 0.22);
+}
+
 .party-identity-picker--compact .party-identity-picker__people {
   max-height: 270px;
 }
