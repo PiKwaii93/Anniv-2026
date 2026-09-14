@@ -23,3 +23,9 @@ entrypoint = "./functions/push-test/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/push-test/*.html" ]
+
+[functions.beer-pong-next-push]
+enabled = true
+verify_jwt = true
+import_map = "./functions/beer-pong-next-push/deno.json"
+entrypoint = "./functions/beer-pong-next-push/index.ts"

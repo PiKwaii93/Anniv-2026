@@ -1,9 +1,15 @@
+import {
+  deliverPushNotifications,
+  type StoredPushSubscription,
+} from '../_shared/pushDelivery.ts'
+
+export { deliverPushNotifications } from '../_shared/pushDelivery.ts'
+
 export const TEST_NOTIFICATION = Object.freeze({
   title: '🎉 Anniv 2026', body: 'Les notifications fonctionnent !', route: '/', tag: 'anniv-2026-push-test',
 })
 type Target = { playerKey: string; playerName: string; deviceCount: number }
-export type StoredSubscription = { endpoint: string; p256dh: string; auth: string }
-type DeliveryError = { statusCode?: unknown }
+export type StoredSubscription = StoredPushSubscription
 type RequestBody = { action?: unknown; playerKey?: unknown }
 type Dependencies = {
   isAdmin: () => Promise<boolean>
@@ -11,34 +17,6 @@ type Dependencies = {
   sendTest: (playerKey: string, notification: typeof TEST_NOTIFICATION) => Promise<{ sent: number; expired: number; failed: number }>
 }
 function errorResponse(error: string, status: number) { return Response.json({ ok: false, error }, { status }) }
-
-export async function deliverPushNotifications(
-  subscriptions: StoredSubscription[],
-  send: (subscription: StoredSubscription) => Promise<void>,
-  removeExpired: (endpoint: string) => Promise<void>,
-) {
-  let sent = 0
-  let expired = 0
-  let failed = 0
-  for (const subscription of subscriptions) {
-    try {
-      await send(subscription)
-      sent += 1
-    } catch (error) {
-      const statusCode = typeof error === 'object' && error && 'statusCode' in error
-        ? Number((error as DeliveryError).statusCode)
-        : 0
-      if (statusCode === 404 || statusCode === 410) {
-        await removeExpired(subscription.endpoint)
-        expired += 1
-      } else {
-        failed += 1
-        console.error('[PushTest] delivery failed', { statusCode })
-      }
-    }
-  }
-  return { sent, expired, failed }
-}
 
 export function createPushTestHandler(dependencies: Dependencies) {
   return async (request: Request) => {

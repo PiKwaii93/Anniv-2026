@@ -18,7 +18,6 @@ import {
   getActiveRoundIndex,
   getChampionTeamId,
   getRoundName,
-  updateTournamentWinner,
 } from '../features/beer-pong/tournament'
 
 import './BeerPong.css'
@@ -363,6 +362,7 @@ function BeerPong() {
   const [error, setError] = useState('')
   const [synchronizationError, setSynchronizationError] = useState('')
   const [swapMessage, setSwapMessage] = useState('')
+  const [winnerSaving, setWinnerSaving] = useState(false)
 
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const pendingWritesRef = useRef(0)
@@ -1036,7 +1036,7 @@ function BeerPong() {
   }
 
   const resetTournament = () => {
-    if (!canManage) {
+    if (!canManage || winnerSaving) {
       return
     }
 
@@ -1055,12 +1055,12 @@ function BeerPong() {
     })
   }
 
-  const selectWinner = (
+  const selectWinner = async (
     roundIndex: number,
     matchId: string,
     teamId: string,
   ) => {
-    if (!canManage) {
+    if (!canManage || winnerSaving) {
       return
     }
 
@@ -1102,17 +1102,42 @@ function BeerPong() {
       }
     }
 
-    const nextRounds = updateTournamentWinner(state.rounds, matchId, teamId)
-    const nextChampionTeamId = getChampionTeamId(nextRounds)
-
     setError('')
     setSwapMessage('')
+    setSynchronizationError('')
+    setWinnerSaving(true)
 
-    saveState({
-      ...state,
-      rounds: nextRounds,
-      championTeamId: nextChampionTeamId,
-    })
+    try {
+      const { data, error: winnerError } = await supabase.functions.invoke(
+        'beer-pong-next-push',
+        {
+          body: {
+            matchId,
+            winnerTeamId: teamId,
+          },
+        },
+      )
+
+      if (winnerError || !data?.ok || !data.state) {
+        throw winnerError ?? new Error(data?.error ?? 'INVALID_RESULT')
+      }
+
+      setState(normalizeState(data.state))
+
+      if (data.delivery?.failed > 0) {
+        setSynchronizationError(
+          'Résultat enregistré, mais une notification n’a pas pu être envoyée.',
+        )
+      }
+    } catch (winnerError) {
+      console.error('Unable to record Beer Pong winner:', winnerError)
+      setSynchronizationError(
+        'Impossible d’enregistrer ce résultat pour le moment.',
+      )
+      void loadTournament()
+    } finally {
+      setWinnerSaving(false)
+    }
   }
 
   const getTeamName = (
@@ -1814,7 +1839,7 @@ function BeerPong() {
                           !match.teamAId || !match.teamBId
 
                         const canEditResult =
-                          canManage && !isAutomaticBye
+                          canManage && !winnerSaving && !isAutomaticBye
 
                         const correctionTitle =
                           canEditResult && Boolean(match.winnerTeamId)
