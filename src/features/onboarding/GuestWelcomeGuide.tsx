@@ -19,34 +19,30 @@ type GuestWelcomeGuideProps = {
 const slides = [
   {
     eyebrow: 'Bienvenue',
-    title: 'Ta soirée, au même endroit.',
-    body: "Retrouve ce qui se passe maintenant, les infos utiles et tous les raccourcis depuis l'accueil.",
+    title: 'Toute la soirée, ici.',
+    body: "Jeux, photos, musique et infos utiles : tout est accessible depuis l'accueil.",
     image: '/onboarding/accueil.svg',
-    alt: "Aperçu de l'accueil d'Anniv 2026",
     position: 'top',
   },
   {
     eyebrow: 'Jouer',
     title: 'Participe à ton rythme.',
-    body: 'Vote, relève une mission, complète ton bingo ou retrouve ton prochain match de Beer Pong.',
+    body: 'Vote, missions, bingo ou Beer Pong : choisis ce qui te tente.',
     image: '/onboarding/jouer.svg',
-    alt: 'Aperçu des jeux disponibles',
     position: 'top',
   },
   {
     eyebrow: 'Photos',
     title: 'Capture la soirée.',
-    body: 'Choisis un défi, prends ta photo et retrouve ensuite les souvenirs publiés par tout le monde.',
+    body: 'Relève un défi, publie ta photo et retrouve les souvenirs de la soirée.',
     image: '/onboarding/photos.svg',
-    alt: 'Aperçu des défis photo',
     position: 'top',
   },
   {
     eyebrow: 'Musique',
     title: 'Ajoute ton morceau.',
-    body: 'Recherche un titre, propose-le à la soirée et retrouve la sélection choisie par les invités.',
+    body: 'Recherche un titre, ajoute-le à la soirée et découvre la sélection des invités.',
     image: '/onboarding/musique.svg',
-    alt: 'Aperçu de la sélection musicale',
     position: 'top',
   },
 ] as const
@@ -187,16 +183,16 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
         <div className="guest-guide__content">
           <div className="guest-guide__topline">
             <span className="guest-guide__counter">{step + 1} / {slides.length}</span>
-            <button type="button" className="guest-guide__skip" onClick={finish}>
-              Passer
-            </button>
+            {!isLast ? (
+              <button type="button" className="guest-guide__skip" onClick={finish}>
+                Passer
+              </button>
+            ) : <span aria-hidden="true" />}
           </div>
 
           <p className="guest-guide__eyebrow">{slide.eyebrow}</p>
           <h2 id="guest-guide-title">{slide.title}</h2>
           <p id="guest-guide-description">{slide.body}</p>
-          <span className="sr-only">{slide.alt}</span>
-
           <div className="guest-guide__dots" aria-label={`Étape ${step + 1} sur ${slides.length}`}>
             {slides.map((item, index) => (
               <button
