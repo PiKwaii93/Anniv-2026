@@ -191,7 +191,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
     const focusable = () =>
       Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [])
 
-    const focusFrame = window.requestAnimationFrame(() => focusable().at(-1)?.focus())
+    const focusFrame = window.requestAnimationFrame(() => dialogRef.current?.focus())
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -264,6 +264,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
       <section
         ref={dialogRef}
         className="guest-guide__dialog"
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="guest-guide-title"
