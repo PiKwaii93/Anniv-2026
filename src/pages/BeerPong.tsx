@@ -18,6 +18,7 @@ import {
   getActiveRoundIndex,
   getChampionTeamId,
   getRoundName,
+  updateTournamentWinner,
 } from '../features/beer-pong/tournament'
 
 import './BeerPong.css'
@@ -1106,6 +1107,16 @@ function BeerPong() {
     setSwapMessage('')
     setSynchronizationError('')
     setWinnerSaving(true)
+    const optimisticRounds = updateTournamentWinner(
+      state.rounds,
+      matchId,
+      teamId,
+    )
+    setState({
+      ...state,
+      rounds: optimisticRounds,
+      championTeamId: getChampionTeamId(optimisticRounds),
+    })
 
     try {
       const { data, error: winnerError } = await supabase.functions.invoke(

@@ -205,5 +205,20 @@ test('the database transition owns next-match detection, deduplication, and play
   assert.match(page, /functions\.invoke\([\s\S]*'beer-pong-next-push'/)
   assert.match(bracketPage, /functions\.invoke\([\s\S]*'beer-pong-next-push'/)
   assert.doesNotMatch(bracketPage, /\.from\('beer_pong_state'\)[\s\S]{0,200}\.upsert\(/)
-  assert.doesNotMatch(page, /updateTournamentWinner\(/)
+})
+
+test('both Beer Pong result views paint the winner before awaiting the Push function', async () => {
+  const page = await readFile(new URL('../src/pages/BeerPong.tsx', import.meta.url), 'utf8')
+  const bracketPage = await readFile(
+    new URL('../src/pages/BeerPongBracket.tsx', import.meta.url),
+    'utf8',
+  )
+
+  for (const source of [page, bracketPage]) {
+    const optimisticUpdate = source.indexOf('setState({', source.indexOf('optimisticRounds'))
+    const pushRequest = source.indexOf("'beer-pong-next-push'", optimisticUpdate)
+
+    assert.ok(optimisticUpdate >= 0)
+    assert.ok(pushRequest > optimisticUpdate)
+  }
 })

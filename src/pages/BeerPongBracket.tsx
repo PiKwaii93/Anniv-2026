@@ -6,6 +6,7 @@ import {
   getActiveRoundIndex,
   getChampionTeamId,
   normalizeTournamentRounds,
+  updateTournamentWinnerAt,
   type TournamentMatch,
   type TournamentTeam,
 } from '../features/beer-pong/tournament'
@@ -149,7 +150,7 @@ export default function BeerPongBracketPage() {
 
   const pickWinner = async (
     roundIndex: number,
-    _matchIndex: number,
+    matchIndex: number,
     match: TournamentMatch,
     teamId: string,
   ) => {
@@ -160,9 +161,21 @@ export default function BeerPongBracketPage() {
 
     setBusy(true)
     setError('')
+    const optimisticRounds = updateTournamentWinnerAt(
+      rounds,
+      roundIndex,
+      matchIndex,
+      teamId,
+    )
+    setState({
+      ...state,
+      rounds: optimisticRounds,
+      championTeamId: getChampionTeamId(optimisticRounds),
+    })
     loadRequestRef.current += 1
     pendingWriteRef.current = true
     let shouldReload = false
+    let outcomeError = ''
 
     try {
       const { data, error: saveError } = await supabase.functions.invoke(
@@ -182,7 +195,7 @@ export default function BeerPongBracketPage() {
       setState(parseState(data.state))
 
       if (data.delivery?.failed > 0) {
-        setError('Résultat enregistré, mais une notification n’a pas pu être envoyée.')
+        outcomeError = 'Résultat enregistré, mais une notification n’a pas pu être envoyée.'
       }
     } catch (saveError) {
       shouldReload = true
@@ -192,13 +205,14 @@ export default function BeerPongBracketPage() {
         expectedWinnerTeamId: teamId,
         error: saveError instanceof Error ? saveError.message : 'Unknown error',
       })
-      setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
+      outcomeError = 'Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.'
     } finally {
       pendingWriteRef.current = false
       if (deferredRefreshRef.current || shouldReload) {
         deferredRefreshRef.current = false
         await load()
       }
+      if (outcomeError) setError(outcomeError)
       setBusy(false)
     }
   }
