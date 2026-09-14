@@ -1,5 +1,16 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
 
+test.beforeEach(async ({ page, browserName }) => {
+  if (browserName !== 'webkit') return
+
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'standalone', {
+      configurable: true,
+      value: true,
+    })
+  })
+})
+
 const partyState = {
   id: 'main',
   environment: 'live',

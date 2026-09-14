@@ -6,6 +6,8 @@ import {
 import { Link, useLocation } from 'react-router-dom'
 
 import GuestAvatar from '../guests/GuestAvatar'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
+import IosInstallIdentityGate from './IosInstallIdentityGate'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './PartyIdentity.css'
@@ -120,6 +122,7 @@ export function PartyIdentityGate({
 }: {
   children: ReactNode
 }) {
+  const requiresIosInstallation = useRequiresIosInstallation()
   const {
     identity,
     loading,
@@ -133,6 +136,8 @@ export function PartyIdentityGate({
       </main>
     )
   }
+
+  if (requiresIosInstallation) return <IosInstallIdentityGate />
 
   if (identity) return children
 
@@ -157,6 +162,7 @@ export function PartyIdentityGate({
 
 export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
   const location = useLocation()
+  const requiresIosInstallation = useRequiresIosInstallation()
   const {
     identity,
     availablePlayers,
@@ -174,7 +180,7 @@ export function PartyIdentityBadge({ inline = false }: { inline?: boolean }) {
     location.pathname === '/screen' ||
     location.pathname === '/qr'
 
-  if (hidden || loading) return null
+  if (hidden || loading || requiresIosInstallation) return null
 
   const currentPlayer = identity
     ? availablePlayers.find((player) => player.key === identity.playerKey)

@@ -24,6 +24,8 @@
 
 .pwa-install__copy strong { display: block; font-size: .78rem; }
 .pwa-install__copy p { margin: 5px 0 0; color: #8d99ad; font-size: .68rem; line-height: 1.5; }
+.pwa-install__ios-instructions ol { display: grid; gap: 7px; margin: 10px 0 0; padding-left: 20px; color: #a8b3c7; font-size: .72rem; line-height: 1.45; }
+.pwa-install__ios-instructions li::marker { color: #9aafff; font-weight: 900; }
 .pwa-install__actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 8px; }
 .pwa-install__actions button,
 .pwa-settings__body button,

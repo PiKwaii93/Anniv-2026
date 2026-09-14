@@ -7,19 +7,26 @@ type Props = {
 }
 
 function IosInstructions({ browser }: { browser: ReturnType<typeof usePwa>['iosBrowser'] }) {
-  if (browser === 'safari') {
-    return <p>Dans Safari : touche <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong> et <strong>Ajouter</strong>.</p>
-  }
+  const needsSafari = browser !== 'safari'
 
-  const name = browser === 'chrome' ? 'Chrome' : browser === 'firefox' ? 'Firefox' : browser === 'edge' ? 'Edge' : 'ce navigateur'
-  return <p>Dans {name}, ouvre le menu de partage puis choisis <strong>Sur l’écran d’accueil</strong>. Si l’option manque, ouvre cette page dans Safari.</p>
+  return (
+    <div className="pwa-install__ios-instructions">
+      {needsSafari && <p>Ouvre d’abord cette page dans <strong>Safari</strong>.</p>}
+      <ol>
+        <li>Appuie sur <strong>Partager</strong></li>
+        <li>Choisis <strong>Sur l’écran d’accueil</strong></li>
+        <li>Ouvre <strong>Anniv 2026</strong> depuis l’icône</li>
+      </ol>
+    </div>
+  )
 }
 
 export default function PwaInstallCard({ placement, hasIdentity = false }: Props) {
   const pwa = usePwa()
 
   if (placement === 'onboarding') {
-    if (pwa.installed || pwa.dismissed) return null
+    if (pwa.installed) return null
+    if (pwa.platform !== 'ios' && pwa.dismissed) return null
     if (pwa.platform === 'android' && !pwa.canInstall) return null
     if (pwa.platform !== 'android' && pwa.platform !== 'ios') return null
 
@@ -27,17 +34,19 @@ export default function PwaInstallCard({ placement, hasIdentity = false }: Props
       <aside className="pwa-install pwa-install--onboarding" aria-label="Installer l’application">
         <div className="pwa-install__mark" aria-hidden="true">↗</div>
         <div className="pwa-install__copy">
-          <strong>{pwa.platform === 'ios' ? 'Ajoute Anniv 2026 à ton écran d’accueil' : 'Installer Anniv 2026'}</strong>
+          <strong>{pwa.platform === 'ios' ? 'Installation sur iPhone ou iPad' : 'Installer Anniv 2026'}</strong>
           {pwa.platform === 'ios'
             ? <IosInstructions browser={pwa.iosBrowser} />
             : <p>Accède plus vite aux jeux pendant la soirée.</p>}
         </div>
-        <div className="pwa-install__actions">
-          <button type="button" className="pwa-install__later" onClick={pwa.dismissInstall}>Plus tard</button>
-          {pwa.platform === 'android' && pwa.canInstall && (
+        {pwa.platform === 'android' && (
+          <div className="pwa-install__actions">
+            <button type="button" className="pwa-install__later" onClick={pwa.dismissInstall}>Plus tard</button>
+            {pwa.canInstall && (
             <button type="button" className="pwa-install__primary" onClick={() => void pwa.install()}>Installer</button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </aside>
     )
   }

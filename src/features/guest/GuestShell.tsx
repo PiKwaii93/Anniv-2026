@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, useLocation, useNavigationType } from 'react-router-dom'
 import { PartyIdentityBadge } from '../identity/PartyIdentityUI'
+import IosInstallIdentityGate from '../identity/IosInstallIdentityGate'
 import { useParty } from '../party/PartyContext'
 import { usePartyExtras } from '../party-extras/usePartyExtras'
 import { usePartyIdentity } from '../identity/PartyIdentityContext'
@@ -11,6 +12,7 @@ import { GuestContext } from './GuestContext'
 import ConnectionNotice from './ConnectionNotice'
 import AdminShortcut from './AdminShortcut'
 import PwaUpdateNotice from '../pwa/PwaUpdateNotice'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
 import './guest.css'
 
 export default function GuestShell({ children }: { children: ReactNode }) {
@@ -20,7 +22,11 @@ export default function GuestShell({ children }: { children: ReactNode }) {
   const { data: extras } = usePartyExtras()
   const room = useLiveRoom()
   const { pathname } = useLocation()
-  const onboarding = pathname === '/' && !isAdmin && (identityLoading || !identity)
+  const requiresIosInstallation = useRequiresIosInstallation()
+  const onboarding = !isAdmin && (
+    requiresIosInstallation ||
+    (pathname === '/' && (identityLoading || !identity))
+  )
   const immersive = pathname === '/beer-pong/bracket'
   const navigationType = useNavigationType()
   const tabs = guestTabs(settings, extras?.settings)
@@ -40,7 +46,7 @@ export default function GuestShell({ children }: { children: ReactNode }) {
       <ConnectionNotice />
       <PwaUpdateNotice />
       {!immersive && settings.phase === 'live' && settings.roomVisible && room?.phase === 'open' && pathname !== '/room' && pathname !== '/' && <Link className="guest-live-link" to="/room"><span className="guest-live-dot" />Un vote est ouvert <strong>Participer →</strong></Link>}
-      {children}
+      {requiresIosInstallation && !isAdmin ? <IosInstallIdentityGate /> : children}
       {!immersive && <nav className="guest-nav" aria-label="Navigation principale" inert={onboarding}>
         {(loading ? tabs.filter(tab => tab.path === '/') : tabs).map(tab => <Link key={tab.path} to={tab.path} aria-current={activeGuestTab(pathname) === tab.path ? 'page' : undefined}><span aria-hidden="true">{tab.icon}</span><strong>{tab.label}</strong></Link>)}
       </nav>}

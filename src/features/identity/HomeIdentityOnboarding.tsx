@@ -9,12 +9,15 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import GuestAvatar from '../guests/GuestAvatar'
 import PwaInstallCard from '../pwa/PwaInstallCard'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
+import IosInstallIdentityGate from './IosInstallIdentityGate'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './HomeIdentityOnboarding.css'
 
 function HomeIdentityOnboarding() {
   const { isAdmin } = useAuth()
+  const requiresIosInstallation = useRequiresIosInstallation()
   const {
     identity,
     availablePlayers,
@@ -61,6 +64,8 @@ function HomeIdentityOnboarding() {
       </div>
     )
   }
+
+  if (requiresIosInstallation) return <IosInstallIdentityGate />
 
   if (identity && !welcoming) return null
 

@@ -32,3 +32,8 @@ export const PwaContext = createContext<PwaContextValue>(defaultValue)
 export function usePwa() {
   return useContext(PwaContext)
 }
+
+export function useRequiresIosInstallation() {
+  const { installed, platform } = usePwa()
+  return platform === 'ios' && !installed
+}

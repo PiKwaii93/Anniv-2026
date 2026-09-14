@@ -61,16 +61,21 @@ test('service worker keeps sensitive and live traffic network-only', async () =>
   assert.match(worker, /event\.data\?\.type === 'SKIP_WAITING'/)
 })
 
-test('installation stays optional and precedes identity selection', async () => {
+test('Android installation stays optional while iOS browser identity is blocked', async () => {
   const onboarding = await read('src/features/identity/HomeIdentityOnboarding.tsx')
   const installCard = await read('src/features/pwa/PwaInstallCard.tsx')
   const context = await read('src/features/pwa/PwaContext.tsx')
+  const identityContext = await read('src/features/identity/PartyIdentityContext.tsx')
+  const iosGate = await read('src/features/identity/IosInstallIdentityGate.tsx')
 
-  assert.ok(onboarding.indexOf('<PwaInstallCard placement="onboarding" />') < onboarding.indexOf('Première étape'))
+  assert.match(onboarding, /if \(requiresIosInstallation\) return <IosInstallIdentityGate \/>/)
   assert.match(installCard, /Plus tard/)
   assert.match(installCard, /pwa\.install\(\)/)
-  assert.match(installCard, /hasIdentity/)
-  assert.match(installCard, /choisir ton prénom une nouvelle fois/)
+  assert.match(installCard, /pwa\.platform === 'android' && \(/)
+  assert.match(installCard, /Sur l’écran d’accueil/)
+  assert.match(identityContext, /if \(requiresIosInstallation\)[\s\S]*return false/)
+  assert.match(iosGate, /Se déconnecter de Safari/)
+  assert.match(iosGate, /releaseIdentity\(\)/)
   assert.match(context, /catch \(error\)[\s\S]*service worker n’a pas pu être enregistré/)
   assert.match(context, /if \(reloadRequested\.current\) window\.location\.reload\(\)/)
   assert.match(context, /reloadRequested\.current = true[\s\S]*postMessage\(\{ type: 'SKIP_WAITING' \}\)/)

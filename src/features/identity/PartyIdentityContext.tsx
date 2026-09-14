@@ -12,6 +12,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useGuests } from '../guests/GuestsContext'
 import { supabase } from '../../lib/supabase'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
 
 export type PartyIdentity = {
   playerKey: string
@@ -115,6 +116,7 @@ function PartyIdentityProvider({
   children: ReactNode
 }) {
   const location = useLocation()
+  const requiresIosInstallation = useRequiresIosInstallation()
 
   const {
     guests,
@@ -407,6 +409,10 @@ function PartyIdentityProvider({
   const claimIdentity = useCallback(
     async (playerKey: string) => {
       if (busy) return false
+      if (requiresIosInstallation) {
+        setError('Ouvre Anniv 2026 depuis son icône pour choisir ton prénom.')
+        return false
+      }
 
       const player = playerByKeyRef.current.get(playerKey)
       if (!player) {
@@ -437,7 +443,7 @@ function PartyIdentityProvider({
       setBusy(false)
       return ok === true
     },
-    [busy, claimStoredIdentity],
+    [busy, claimStoredIdentity, requiresIosInstallation],
   )
 
   const releaseIdentity = useCallback(async () => {
