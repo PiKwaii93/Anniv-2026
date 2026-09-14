@@ -28,25 +28,25 @@ const slides: Array<{
     visual: 'home',
     eyebrow: 'Bienvenue',
     title: 'Toute la soirée, ici.',
-    body: "Jeux, photos, musique et infos utiles : tout est accessible depuis l'accueil.",
+    body: 'Tout ce dont tu as besoin pendant la soirée.',
   },
   {
     visual: 'games',
     eyebrow: 'Jouer',
     title: 'Participe à ton rythme.',
-    body: 'Vote, missions, bingo ou Beer Pong : choisis ce qui te tente.',
+    body: 'Choisis les activités qui te tentent.',
   },
   {
     visual: 'photos',
     eyebrow: 'Photos',
     title: 'Capture la soirée.',
-    body: 'Relève un défi, publie ta photo et retrouve les souvenirs de la soirée.',
+    body: 'Relève les défis et partage les souvenirs.',
   },
   {
     visual: 'music',
     eyebrow: 'Musique',
     title: 'Ajoute ton morceau.',
-    body: 'Recherche un titre, ajoute-le à la soirée et découvre la sélection des invités.',
+    body: 'Fais vivre la playlist de la soirée.',
   },
 ]
 
@@ -59,11 +59,20 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
           <small>Maintenant</small>
           <strong>La soirée est à toi.</strong>
           <span>Participe à ton rythme.</span>
+          <b>Découvrir les jeux <i>→</i></b>
         </article>
+        <p className="guest-guide-demo__group-title">Organisation de la soirée</p>
         <div className="guest-guide-demo__shortcuts">
           <div><i>i</i><b>Infos pratiques</b><span>→</span></div>
-          <div><i>●</i><b>Discussion</b><span>→</span></div>
-          <div><i>○</i><b>Invités</b><span>→</span></div>
+          <div><i>⌑</i><b>Ce qu’on ramène</b><span>→</span></div>
+          <div><i>●</i><b>Discussion entre invités</b><span>→</span></div>
+          <div><i>○</i><b>Liste des invités</b><span>→</span></div>
+        </div>
+        <p className="guest-guide-demo__group-title">Souvenirs &amp; rencontres</p>
+        <div className="guest-guide-demo__memories">
+          <div><i>✉</i><b>La capsule</b></div>
+          <div><i>△</i><b>L’iceberg</b></div>
+          <div><i>○</i><b>Les invités</b></div>
         </div>
       </div>
     )
@@ -73,6 +82,7 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
     return (
       <div className="guest-guide-demo guest-guide-demo--games">
         <p className="guest-guide-demo__section-label">À ton rythme</p>
+        <h3>On joue ?</h3>
         <div className="guest-guide-demo__game-list">
           <article className="is-live">
             <i>◉</i><span><strong>La Salle</strong><small>Vote avec tout le monde.</small></span><b>→</b>
@@ -80,8 +90,14 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
           <article>
             <i>◇</i><span><strong>Missions secrètes</strong><small>Un objectif à accomplir discrètement.</small></span><b>→</b>
           </article>
-          <article className="is-peeking">
-            <i>▦</i><span><strong>Bingo</strong><small>Observe et coche les scènes.</small></span><b>→</b>
+          <article>
+            <i>▦</i><span><strong>Bingo</strong><small>Observe la soirée et coche les scènes.</small></span><b>→</b>
+          </article>
+          <article>
+            <i>◌</i><span><strong>Beer Pong</strong><small>Les équipes et les prochains matchs.</small></span><b>→</b>
+          </article>
+          <article>
+            <i>↔</i><span><strong>Duos surprise</strong><small>Un partenaire et un défi à deux.</small></span><b>→</b>
           </article>
         </div>
       </div>
@@ -93,14 +109,23 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
       <div className="guest-guide-demo guest-guide-demo--photos">
         <p className="guest-guide-demo__photo-label">ANNIV 2026 · CHASSE PHOTO</p>
         <h3>Les <span>photos.</span></h3>
+        <p className="guest-guide-demo__intro">Un défi, une photo, un souvenir.</p>
         <div className="guest-guide-demo__tabs">
           <b>Défis</b><span>Galerie</span><span>Mes photos</span>
+        </div>
+        <div className="guest-guide-demo__subheading">
+          <small>Pour toi</small>
+          <strong>Ton prochain défi</strong>
         </div>
         <article className="guest-guide-demo__challenge">
           <small>01</small>
           <strong>Prends la photo la plus cinématographique possible de la soirée.</strong>
           <span>Faire ce défi →</span>
         </article>
+        <div className="guest-guide-demo__more">
+          <small>Autres défis</small>
+          <strong>0 / 24 tentés</strong>
+        </div>
       </div>
     )
   }
@@ -109,12 +134,18 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
     <div className="guest-guide-demo guest-guide-demo--music">
       <p className="guest-guide-demo__music-label">La musique</p>
       <h3>On met quoi ?</h3>
+      <p className="guest-guide-demo__intro">Cherche, choisis ton morceau et ajoute-le à la soirée.</p>
       <div className="guest-guide-demo__tabs guest-guide-demo__tabs--music">
         <b>Ajouter un morceau</b><span>La sélection</span>
       </div>
-      <article className="guest-guide-demo__field">
-        <small>Titre</small>
-        <span>Le morceau qui fait lever tout le monde</span>
+      <article className="guest-guide-demo__contribution">
+        <strong>Ta contribution</strong>
+        <p>0/3 propositions utilisées</p>
+        <label>Titre</label>
+        <span className="guest-guide-demo__input">Le morceau qui fait lever tout le monde</span>
+        <label>Préciser l’artiste · facultatif</label>
+        <small>Aucun compte Spotify nécessaire.</small>
+        <b>Rechercher mon morceau</b>
       </article>
     </div>
   )
