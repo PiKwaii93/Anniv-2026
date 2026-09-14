@@ -40,6 +40,7 @@ type PublishAnnouncementInput = {
   message: string
   kind?: AnnouncementKind
   durationSeconds?: number | null
+  notifyPhones?: boolean
 }
 
 type AnnouncementContextValue = {
@@ -48,6 +49,7 @@ type AnnouncementContextValue = {
   loading: boolean
   saving: boolean
   error: string
+  feedback: string
   refresh: () => Promise<void>
   publish: (input: PublishAnnouncementInput) => Promise<boolean>
   clear: () => Promise<boolean>
@@ -104,6 +106,7 @@ export function AnnouncementProvider({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [feedback, setFeedback] = useState('')
   const [expiredId, setExpiredId] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -233,6 +236,7 @@ export function AnnouncementProvider({
       message,
       kind = 'info',
       durationSeconds = 15,
+      notifyPhones = false,
     }: PublishAnnouncementInput) => {
       const trimmed = message.trim()
 
@@ -247,14 +251,68 @@ export function AnnouncementProvider({
 
       setSaving(true)
       setError('')
+      setFeedback('')
 
       const now = new Date()
+      const eventId = crypto.randomUUID()
       const expiresAt =
         durationSeconds === null
           ? null
           : new Date(
             now.getTime() + durationSeconds * 1000,
           ).toISOString()
+
+      if (notifyPhones) {
+        const optimisticAnnouncement: PartyAnnouncement = {
+          message: trimmed,
+          kind,
+          isActive: true,
+          expiresAt,
+          eventId,
+          updatedAt: now.toISOString(),
+        }
+        setAnnouncement(optimisticAnnouncement)
+        setExpiredId(expiredEventId(optimisticAnnouncement))
+
+        const { data, error: pushError } = await supabase.functions.invoke(
+          'announcement-push',
+          {
+            body: {
+              message: trimmed,
+              kind,
+              durationSeconds,
+              eventId,
+            },
+          },
+        )
+
+        setSaving(false)
+
+        if (pushError || !data?.ok || !data.announcement) {
+          await refresh()
+          console.error(
+            'Unable to publish party announcement with Push:',
+            pushError ?? data?.error,
+          )
+          setError('L’annonce n’a pas pu être diffusée.')
+          return false
+        }
+
+        const next = rowToAnnouncement(data.announcement as AnnouncementRow)
+        setAnnouncement(next)
+        setExpiredId(expiredEventId(next))
+
+        const sent = Number(data.delivery?.sent ?? 0)
+        const failed = Number(data.delivery?.failed ?? 0)
+        setFeedback(
+          failed > 0
+            ? `Annonce diffusée · ${sent} appareil${sent > 1 ? 's' : ''} notifié${sent > 1 ? 's' : ''}, ${failed} échec${failed > 1 ? 's' : ''}.`
+            : sent > 0
+              ? `Annonce diffusée · ${sent} appareil${sent > 1 ? 's' : ''} notifié${sent > 1 ? 's' : ''}.`
+              : 'Annonce diffusée · aucun appareil inscrit.',
+        )
+        return true
+      }
 
       const {
         data,
@@ -266,7 +324,7 @@ export function AnnouncementProvider({
           kind,
           is_active: true,
           expires_at: expiresAt,
-          event_id: crypto.randomUUID(),
+          event_id: eventId,
           updated_at: now.toISOString(),
         })
         .eq('id', 'main')
@@ -287,14 +345,16 @@ export function AnnouncementProvider({
       const next = rowToAnnouncement(data as AnnouncementRow)
       setAnnouncement(next)
       setExpiredId(expiredEventId(next))
+      setFeedback('Annonce diffusée.')
       return true
     },
-    [],
+    [refresh],
   )
 
   const clear = useCallback(async () => {
     setSaving(true)
     setError('')
+    setFeedback('')
 
     const now = new Date().toISOString()
 
@@ -337,6 +397,7 @@ export function AnnouncementProvider({
       loading,
       saving,
       error,
+      feedback,
       refresh,
       publish,
       clear,
@@ -347,6 +408,7 @@ export function AnnouncementProvider({
       loading,
       saving,
       error,
+      feedback,
       refresh,
       publish,
       clear,

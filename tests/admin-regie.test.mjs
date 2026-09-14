@@ -60,7 +60,7 @@ beforeEach(() => {
   fixture = globalThis.__regie = {
     auth: { isAdmin: true },
     party: { settings: { phase: 'preparation', featuredModule: null }, loading: false, saving: false, error: '', refresh: async () => {}, updateSettings: async value => writes.push(value) },
-    announcement: { announcement: { message: 'Test' }, visible: false, saving: false, error: '', refresh: async () => {}, publish: async value => { writes.push(value); return true }, clear: async () => writes.push('clear') },
+    announcement: { announcement: { message: 'Test' }, visible: false, saving: false, error: '', feedback: '', refresh: async () => {}, publish: async value => { writes.push(value); return true }, clear: async () => writes.push('clear') },
     db: { from: () => ({ select: () => ({ eq: async () => ({ count: 2, error: null }) }) }), channel: () => channel, removeChannel: async () => {}, rpc: async (...args) => { writes.push(args); return { data: { ok: true } } } },
   }
 })
@@ -152,6 +152,20 @@ test('announcement actions still publish and remove only when explicitly clicked
   assert.deepEqual(writes[0], { message: '🍕 Les pizzas sont arrivées !', kind: 'food', durationSeconds: 15 })
   await click('.director-announcement-current button')
   assert.equal(writes[1], 'clear')
+})
+test('announcement Push requires the explicit notification switch', async () => {
+  await render(); await openTools(); await click('.director-announcement-launch')
+  const notificationSwitch = query('.director-announcement-notify')
+  assert.equal(notificationSwitch.getAttribute('aria-checked'), 'false')
+  await act(async () => notificationSwitch.click())
+  assert.equal(notificationSwitch.getAttribute('aria-checked'), 'true')
+  await click('.director-announcement-quick button:nth-child(2)')
+  assert.deepEqual(writes[0], {
+    message: '📸 Photo de groupe dans 5 minutes !',
+    kind: 'photo',
+    durationSeconds: 15,
+    notifyPhones: true,
+  })
 })
 test('closing scene retains its confirmation and only submits after acceptance', async () => {
   await render(); await openTools(); await click('.director-scenes-launch')

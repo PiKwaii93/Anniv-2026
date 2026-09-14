@@ -248,6 +248,7 @@ test('service worker displays push payloads and rejects arbitrary click destinat
   let focused = 0
   const client = {
     url: 'https://anniv.test/admin',
+    visibilityState: 'visible',
     navigate: async url => { navigated.push(url); client.url = url },
     focus: async () => { focused++; return client },
   }
@@ -273,6 +274,21 @@ test('service worker displays push payloads and rejects arbitrary click destinat
   await pushWork
   assert.equal(shown[0][0], 'Test')
   assert.equal(shown[0][1].data.route, '/')
+
+  listeners.get('push')({
+    data: { json: () => ({ title: 'Annonce', body: 'Visible', route: '/', suppressWhenVisible: true }) },
+    waitUntil: promise => { pushWork = promise },
+  })
+  await pushWork
+  assert.equal(shown.length, 1, 'a visible app already displays the live announcement')
+
+  client.visibilityState = 'hidden'
+  listeners.get('push')({
+    data: { json: () => ({ title: 'Annonce', body: 'Arrière-plan', route: '/', suppressWhenVisible: true }) },
+    waitUntil: promise => { pushWork = promise },
+  })
+  await pushWork
+  assert.equal(shown.length, 2, 'a background app receives the system notification')
 
   let clickWork
   listeners.get('notificationclick')({

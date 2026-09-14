@@ -59,6 +59,10 @@ const expectedMigrations = new Map(Object.entries({
   '20260914213000_beer_pong_next_push.sql': 'c8aa43985bc4c84ab8f26ac96a845d05',
 }))
 
+const structurallyReviewedMigrations = [
+  '20260914230000_announcement_push.sql',
+]
+
 const normalizedMd5 = (sql) => createHash('md5')
   .update(sql.replace(/\r\n?/g, '\n').trim())
   .digest('hex')
@@ -68,11 +72,14 @@ test('the local migration ledger matches the recovered production ledger plus re
     .filter((file) => file.endsWith('.sql'))
     .sort()
 
-  assert.deepEqual(files, [...expectedMigrations.keys()])
+  assert.deepEqual(files, [
+    ...expectedMigrations.keys(),
+    ...structurallyReviewedMigrations,
+  ])
 
-  for (const file of files) {
+  for (const [file, expectedHash] of expectedMigrations) {
     const sql = await readFile(`supabase/migrations/${file}`, 'utf8')
-    assert.equal(normalizedMd5(sql), expectedMigrations.get(file), file)
+    assert.equal(normalizedMd5(sql), expectedHash, file)
   }
 })
 

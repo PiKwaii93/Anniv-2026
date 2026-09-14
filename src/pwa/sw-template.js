@@ -52,13 +52,22 @@ self.addEventListener('push', event => {
   const title = typeof notification.title === 'string' ? notification.title : 'Anniv 2026'
   const body = typeof notification.body === 'string' ? notification.body : 'Tu as une nouvelle notification.'
   const route = safeNotificationRoute(payload.route ?? notification.navigate)
-  event.waitUntil(self.registration.showNotification(title, {
-    body,
-    icon: '/pwa/icon-192.png',
-    badge: '/pwa/notification-badge.svg',
-    tag: typeof notification.tag === 'string' ? notification.tag : 'anniv-2026',
-    data: { route },
-  }))
+  const suppressWhenVisible = payload.suppressWhenVisible === true
+    || notification.suppressWhenVisible === true
+  event.waitUntil((async () => {
+    if (suppressWhenVisible) {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      if (clients.some(client => client.visibilityState === 'visible')) return
+    }
+
+    await self.registration.showNotification(title, {
+      body,
+      icon: '/pwa/icon-192.png',
+      badge: '/pwa/notification-badge.svg',
+      tag: typeof notification.tag === 'string' ? notification.tag : 'anniv-2026',
+      data: { route },
+    })
+  })())
 })
 
 self.addEventListener('notificationclick', event => {

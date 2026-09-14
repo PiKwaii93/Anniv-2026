@@ -29,3 +29,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/beer-pong-next-push/deno.json"
 entrypoint = "./functions/beer-pong-next-push/index.ts"
+
+[functions.announcement-push]
+enabled = true
+verify_jwt = true
+import_map = "./functions/announcement-push/deno.json"
+entrypoint = "./functions/announcement-push/index.ts"
