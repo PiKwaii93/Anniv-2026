@@ -61,18 +61,18 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
           <span>Participe à ton rythme.</span>
           <b>Découvrir les jeux <i>→</i></b>
         </article>
-        <p className="guest-guide-demo__group-title">Organisation de la soirée</p>
+        <p className="guest-guide-demo__group-title guest-guide-demo__group-title--organization">Organisation de la soirée</p>
         <div className="guest-guide-demo__shortcuts">
           <div><i>i</i><b>Infos pratiques</b><span>→</span></div>
           <div><i>⌑</i><b>Ce qu’on ramène</b><span>→</span></div>
           <div><i>●</i><b>Discussion entre invités</b><span>→</span></div>
           <div><i>○</i><b>Liste des invités</b><span>→</span></div>
         </div>
-        <p className="guest-guide-demo__group-title">Souvenirs &amp; rencontres</p>
+        <p className="guest-guide-demo__group-title guest-guide-demo__group-title--memories">Souvenirs &amp; rencontres</p>
         <div className="guest-guide-demo__memories">
-          <div><i>✉</i><b>La capsule</b></div>
-          <div><i>△</i><b>L’iceberg</b></div>
-          <div><i>○</i><b>Les invités</b></div>
+          <div><i>✉</i><b>La capsule</b><span>Quelques mots pour plus tard</span></div>
+          <div><i>△</i><b>L’iceberg</b><span>Les histoires entre nous</span></div>
+          <div><i>○</i><b>Les invités</b><span>Qui est de la partie ?</span></div>
         </div>
       </div>
     )
