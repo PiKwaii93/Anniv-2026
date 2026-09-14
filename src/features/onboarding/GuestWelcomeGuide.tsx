@@ -138,7 +138,7 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
       <div className="guest-guide-demo__tabs guest-guide-demo__tabs--music">
         <b>Ajouter un morceau</b><span>La sélection</span>
       </div>
-      <article className="guest-guide-demo__contribution">
+      <article className="guest-guide-demo__field guest-guide-demo__contribution">
         <strong>Ta contribution</strong>
         <p>0/3 propositions utilisées</p>
         <label>Titre</label>
