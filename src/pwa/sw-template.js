@@ -55,7 +55,7 @@ self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification(title, {
     body,
     icon: '/pwa/icon-192.png',
-    badge: '/pwa/icon-192.png',
+    badge: '/pwa/notification-badge.svg',
     tag: typeof notification.tag === 'string' ? notification.tag : 'anniv-2026',
     data: { route },
   }))

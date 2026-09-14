@@ -227,12 +227,16 @@ test('missing service worker support is reported as unsupported', () => {
 
 test('service worker template handles push and notification clicks with an internal route allow-list', async () => {
   const worker = await readFile(new URL('../src/pwa/sw-template.js', import.meta.url), 'utf8')
+  const badge = await readFile(new URL('../public/pwa/notification-badge.svg', import.meta.url), 'utf8')
   assert.match(worker, /addEventListener\('push'/)
   assert.match(worker, /registration\.showNotification/)
+  assert.match(worker, /badge: '\/pwa\/notification-badge\.svg'/)
   assert.match(worker, /addEventListener\('notificationclick'/)
   assert.match(worker, /url\.origin === self\.location\.origin && NOTIFICATION_ROUTES\.has\(url\.pathname\)/)
   assert.match(worker, /existing\.focus\(\)/)
   assert.match(worker, /clients\.openWindow\(destination\)/)
+  assert.match(badge, /viewBox="0 0 96 96"/)
+  assert.doesNotMatch(badge, /<rect[^>]+width="96"[^>]+height="96"/)
 })
 
 test('service worker displays push payloads and rejects arbitrary click destinations', async () => {
