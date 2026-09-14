@@ -15,10 +15,7 @@ entrypoint = "./functions/push-subscription/index.ts"
 
 [functions.push-test]
 enabled = true
-# The gateway's legacy JWT verifier rejects current publishable-key/Auth
-# combinations. Authentication remains mandatory inside the function through
-# withSupabase({ auth: 'user' }) followed by the app_admins membership check.
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/push-test/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx

@@ -11,7 +11,7 @@ function configuredOrigin() {
 
 export default {
   fetch: withSupabase({ auth: 'user' }, async (request, context) => {
-    const userId = context.userClaims?.sub
+    const userId = context.userClaims?.id
     const handler = createPushTestHandler({
       isAdmin: async () => {
         if (!userId) return false

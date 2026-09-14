@@ -73,14 +73,15 @@ test('anonymous guests cannot send a push and client text never controls the tes
   assert.deepEqual(notification, TEST_NOTIFICATION)
 })
 
-test('push functions bypass only gateway JWT verification and retain their own authentication boundaries', async () => {
+test('push functions retain the correct authentication boundaries', async () => {
   const config = await readFile(new URL('../supabase/config.toml', import.meta.url), 'utf8')
   const subscriptionSection = config.match(/\[functions\.push-subscription\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? ''
   const testSection = config.match(/\[functions\.push-test\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? ''
   const testEntry = await readFile(new URL('../supabase/functions/push-test/index.ts', import.meta.url), 'utf8')
   assert.match(subscriptionSection, /verify_jwt\s*=\s*false/)
-  assert.match(testSection, /verify_jwt\s*=\s*false/)
+  assert.match(testSection, /verify_jwt\s*=\s*true/)
   assert.match(testEntry, /withSupabase\(\{ auth: 'user' \}/)
+  assert.match(testEntry, /context\.userClaims\?\.id/)
   assert.match(testEntry, /from\('app_admins'\)/)
 })
 
