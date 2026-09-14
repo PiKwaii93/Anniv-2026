@@ -31,10 +31,16 @@ test('the first-use guide presents the four guest tabs and can be replayed', () 
   for (const label of ['Bienvenue', 'Jouer', 'Photos', 'Musique']) {
     assert.match(guide, new RegExp(`eyebrow: '${label}'`))
   }
-  for (const image of ['accueil.svg', 'jouer.svg', 'photos.svg', 'musique.svg']) {
-    assert.match(guide, new RegExp(`/onboarding/${image}`))
+  for (const visual of ['home', 'games', 'photos', 'music']) {
+    assert.match(guide, new RegExp(`visual: '${visual}'`))
   }
 
+  assert.match(guide, /GuestGuideVisual/)
+  assert.match(guide, /guest-guide-demo__shortcuts/)
+  assert.match(guide, /guest-guide-demo__game-list/)
+  assert.match(guide, /guest-guide-demo__challenge/)
+  assert.match(guide, /guest-guide-demo__field/)
+  assert.doesNotMatch(guide, /<img|\/onboarding\/.*\.svg/)
   assert.match(guide, /aria-modal="true"/)
   assert.match(guide, /onPointerDown=/)
   assert.match(guide, /onPointerUp=/)
