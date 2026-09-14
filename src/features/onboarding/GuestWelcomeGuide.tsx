@@ -170,7 +170,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
         onKeyDown={onDialogKeyDown}
       >
         <div className="guest-guide__preview" aria-hidden="true">
-          <div className="guest-guide__phone">
+          <div className="guest-guide__shot-frame">
             <img
               key={slide.image}
               src={slide.image}
