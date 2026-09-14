@@ -3,6 +3,7 @@ const STATIC_CACHE = `anniv-2026-static-${VERSION}`
 const SHELL_CACHE = `anniv-2026-shell-${VERSION}`
 const PRECACHE_URLS = __PRECACHE_URLS__
 const NETWORK_ONLY_PREFIXES = ['/screen', '/admin', '/captain', '/qr']
+const NOTIFICATION_ROUTES = new Set(['/', '/beer-pong', '/missions'])
 
 function isNetworkOnlyPath(pathname) {
   return NETWORK_ONLY_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))
@@ -30,6 +31,48 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
+function safeNotificationRoute(value) {
+  if (typeof value !== 'string') return '/'
+  try {
+    const url = new URL(value, self.location.origin)
+    return url.origin === self.location.origin && NOTIFICATION_ROUTES.has(url.pathname)
+      ? `${url.pathname}${url.search}${url.hash}`
+      : '/'
+  } catch {
+    return '/'
+  }
+}
+
+self.addEventListener('push', event => {
+  let payload = {}
+  try { payload = event.data?.json() ?? {} } catch { payload = {} }
+  const notification = payload.notification ?? payload
+  const title = typeof notification.title === 'string' ? notification.title : 'Anniv 2026'
+  const body = typeof notification.body === 'string' ? notification.body : 'Tu as une nouvelle notification.'
+  const route = safeNotificationRoute(payload.route ?? notification.navigate)
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: '/pwa/icon-192.png',
+    badge: '/pwa/icon-192.png',
+    tag: typeof notification.tag === 'string' ? notification.tag : 'anniv-2026',
+    data: { route },
+  }))
+})
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+  const route = safeNotificationRoute(event.notification.data?.route)
+  const destination = new URL(route, self.location.origin).href
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+    const existing = clients[0]
+    if (existing) {
+      if ('navigate' in existing && existing.url !== destination) await existing.navigate(destination)
+      return existing.focus()
+    }
+    return self.clients.openWindow(destination)
+  }))
 })
 
 self.addEventListener('fetch', event => {

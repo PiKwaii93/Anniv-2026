@@ -1,0 +1,13 @@
+.push-settings { margin-bottom: 12px; color: #f4f2ec; background: #131419; border: 1px solid #30313b; border-radius: 18px; }
+.push-settings summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 68px; padding: 12px 16px; list-style: none; cursor: pointer; }
+.push-settings summary::-webkit-details-marker { display: none; }
+.push-settings summary > span:nth-child(2) { display: grid; gap: 3px; }
+.push-settings summary strong { font-size: 15px; }
+.push-settings summary small, .push-settings__body small { color: #aaaab6; font-size: 13px; line-height: 1.4; }
+.push-settings__icon { display: grid; place-items: center; width: 34px; height: 34px; color: #caffea; background: rgba(92, 231, 170, .1); border-radius: 10px; font-weight: 900; }
+.push-settings__body { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 16px 16px 64px; }
+.push-settings__body p { flex: 1 0 100%; margin: 0; color: #aaaab6; font-size: 13px; line-height: 1.5; }
+.push-settings__body button { min-height: 40px; padding: 0 14px; color: #07120e; background: #caffea; border: 0; border-radius: 10px; font: inherit; font-size: .68rem; font-weight: 800; cursor: pointer; }
+.push-settings__body button:disabled { opacity: .6; cursor: default; }
+.push-settings__body .push-settings__secondary { color: #d9dde5; background: transparent; border: 1px solid #454751; }
+@media (max-width: 640px) { .push-settings__body { padding-left: 16px; } }

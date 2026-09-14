@@ -899,6 +899,7 @@ function AdminDashboard() {
         </div>
 
         <div className="control-shortcuts__grid">
+          <Link to="/admin/notifications" className="control-shortcut"><span><i aria-hidden="true">◉</i>Notifications</span><strong>Tester un appareil inscrit</strong><span>↗</span></Link>
           <Link to="/admin/info" className="control-shortcut"><span><i aria-hidden="true">i</i>Infos pratiques</span><strong>Modifier la date, l’adresse et la tenue</strong><span>↗</span></Link>
           <Link to="/admin/party-extras" className="control-shortcut"><span><i aria-hidden="true">✦</i>Petits plus</span><strong>Gérer Capsule, Jukebox, Duos et générique</strong><span>↗</span></Link>
           <Link to="/guests" className="control-shortcut">

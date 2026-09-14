@@ -13,6 +13,7 @@ import { useLocation } from 'react-router-dom'
 import { useGuests } from '../guests/GuestsContext'
 import { supabase } from '../../lib/supabase'
 import { useRequiresIosInstallation } from '../pwa/PwaState'
+import { unsubscribeLocalPush } from '../push/pushClient'
 
 export type PartyIdentity = {
   playerKey: string
@@ -478,6 +479,7 @@ function PartyIdentityProvider({
       return false
     }
 
+    await unsubscribeLocalPush()
     clearLocalIdentity()
     setIdentity(null)
     setMigrationConflict(false)

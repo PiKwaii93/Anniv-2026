@@ -52,7 +52,12 @@ test('service worker keeps sensitive and live traffic network-only', async () =>
   }
   assert.match(worker, /request\.method !== 'GET'/)
   assert.match(worker, /url\.origin !== self\.location\.origin/)
-  assert.doesNotMatch(worker, /addEventListener\(['"](?:push|sync|periodicsync)['"]/)
+  assert.doesNotMatch(worker, /addEventListener\(['"](?:sync|periodicsync)['"]/)
+  assert.match(worker, /addEventListener\('push'/)
+  assert.match(worker, /addEventListener\('notificationclick'/)
+  assert.match(worker, /NOTIFICATION_ROUTES = new Set\(\['\/', '\/beer-pong', '\/missions'\]\)/)
+  assert.match(worker, /clients\.matchAll\(\{ type: 'window', includeUncontrolled: true \}\)/)
+  assert.match(worker, /clients\.openWindow\(destination\)/)
   const installHandler = worker.slice(
     worker.indexOf("self.addEventListener('install'"),
     worker.indexOf("self.addEventListener('activate'"),

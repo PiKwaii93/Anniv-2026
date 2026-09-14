@@ -131,6 +131,10 @@ const SecretMissionsAdmin = lazy(
   () => import('./pages/SecretMissionsAdmin'),
 )
 
+const PushNotificationsAdmin = lazy(
+  () => import('./pages/PushNotificationsAdmin'),
+)
+
 type AdminRouteProps = {
   children: ReactNode
 }
@@ -490,6 +494,11 @@ function AppRoutes() {
                 <SecretMissionsAdmin />
               </AdminRoute>
             }
+          />
+
+          <Route
+            path="/admin/notifications"
+            element={<AdminRoute><PushNotificationsAdmin /></AdminRoute>}
           />
 
           <Route
