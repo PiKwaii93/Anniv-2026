@@ -6,7 +6,6 @@ import {
   getActiveRoundIndex,
   getChampionTeamId,
   normalizeTournamentRounds,
-  updateTournamentWinnerAt,
   type TournamentMatch,
   type TournamentTeam,
 } from '../features/beer-pong/tournament'
@@ -55,47 +54,6 @@ function parseState(value: unknown): State {
     rounds,
     championTeamId: getChampionTeamId(rounds),
   } as State
-}
-
-function getStoredWinner(
-  value: unknown,
-  roundIndex: number,
-  matchIndex: number,
-) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-  const rawRounds = (value as Record<string, unknown>).rounds
-  if (!Array.isArray(rawRounds)) return null
-  const rawRound = rawRounds[roundIndex]
-  if (!Array.isArray(rawRound)) return null
-  const rawMatch = rawRound[matchIndex]
-  if (!rawMatch || typeof rawMatch !== 'object' || Array.isArray(rawMatch)) return null
-  const winner = (rawMatch as Record<string, unknown>).winnerTeamId
-  return typeof winner === 'string' ? winner : null
-}
-
-function describeRound(value: unknown, roundIndex: number) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
-  const rawRounds = (value as Record<string, unknown>).rounds
-  if (!Array.isArray(rawRounds)) return []
-  const rawRound = rawRounds[roundIndex]
-  if (!Array.isArray(rawRound)) return []
-
-  return rawRound.map((candidate, matchIndex) => {
-    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-      return { matchIndex, invalid: true }
-    }
-
-    const match = candidate as Record<string, unknown>
-    return {
-      matchIndex,
-      id: match.id ?? null,
-      teamAId: match.teamAId ?? null,
-      teamBId: match.teamBId ?? null,
-      winnerTeamId: match.winnerTeamId ?? null,
-      teamASourceMatchId: match.teamASourceMatchId ?? null,
-      teamBSourceMatchId: match.teamBSourceMatchId ?? null,
-    }
-  })
 }
 
 export default function BeerPongBracketPage() {
@@ -191,7 +149,7 @@ export default function BeerPongBracketPage() {
 
   const pickWinner = async (
     roundIndex: number,
-    matchIndex: number,
+    _matchIndex: number,
     match: TournamentMatch,
     teamId: string,
   ) => {
@@ -200,95 +158,49 @@ export default function BeerPongBracketPage() {
       if (!window.confirm('Corriger ce résultat ? La branche concernée sera recalculée.')) return
     }
 
-    const nextRounds = updateTournamentWinnerAt(
-      rounds,
-      roundIndex,
-      matchIndex,
-      teamId,
-    )
-    const nextState = { ...state, rounds: nextRounds, championTeamId: getChampionTeamId(nextRounds) }
     setBusy(true)
-    setState(nextState)
     setError('')
     loadRequestRef.current += 1
     pendingWriteRef.current = true
+    let shouldReload = false
 
-    const { data: savedRow, error: saveError } = await supabase
-      .from('beer_pong_state')
-      .upsert(
-        { id: 'main', state: nextState },
-        { onConflict: 'id' },
+    try {
+      const { data, error: saveError } = await supabase.functions.invoke(
+        'beer-pong-next-push',
+        {
+          body: {
+            matchId: match.id,
+            winnerTeamId: teamId,
+          },
+        },
       )
-      .select('state')
-      .single()
 
-    pendingWriteRef.current = false
-    if (saveError || !savedRow) {
+      if (saveError || !data?.ok || !data.state) {
+        throw saveError ?? new Error(data?.error ?? 'INVALID_RESULT')
+      }
+
+      setState(parseState(data.state))
+
+      if (data.delivery?.failed > 0) {
+        setError('Résultat enregistré, mais une notification n’a pas pu être envoyée.')
+      }
+    } catch (saveError) {
+      shouldReload = true
       console.error('[BeerPongBracket][SAVE_FAILED]', {
         roundIndex,
-        matchIndex,
         matchId: match.id,
         expectedWinnerTeamId: teamId,
-        error: saveError?.message ?? 'Supabase did not return the saved row',
+        error: saveError instanceof Error ? saveError.message : 'Unknown error',
       })
-      await load()
       setError('Le résultat n’a pas été enregistré. L’arbre a été resynchronisé.')
-    } else {
-      const storedWinner = getStoredWinner(
-        savedRow.state,
-        roundIndex,
-        matchIndex,
-      )
-      const savedState = parseState(savedRow.state)
-      const savedWinner = savedState.rounds?.[roundIndex]?.[matchIndex]?.winnerTeamId
-
-      if (storedWinner !== teamId) {
-        console.error('[BeerPongBracket][STORAGE_MISMATCH]', {
-          roundIndex,
-          matchIndex,
-          matchId: match.id,
-          expectedWinnerTeamId: teamId,
-          storedWinnerTeamId: storedWinner,
-          storedPreviousRound: describeRound(savedRow.state, roundIndex - 1),
-          storedRound: describeRound(savedRow.state, roundIndex),
-          storedNextRound: describeRound(savedRow.state, roundIndex + 1),
-        })
-        await load()
-        setError('Supabase n’a pas conservé ce résultat. L’arbre a été resynchronisé.')
-        setBusy(false)
-        return
-      }
-
-      if (savedWinner !== teamId) {
+    } finally {
+      pendingWriteRef.current = false
+      if (deferredRefreshRef.current || shouldReload) {
         deferredRefreshRef.current = false
-        setState(nextState)
-        console.error('[BeerPongBracket][REBUILD_MISMATCH]', {
-          roundIndex,
-          matchIndex,
-          matchId: match.id,
-          expectedWinnerTeamId: teamId,
-          storedWinnerTeamId: storedWinner,
-          rebuiltWinnerTeamId: savedWinner ?? null,
-          storedPreviousRound: describeRound(savedRow.state, roundIndex - 1),
-          storedRound: describeRound(savedRow.state, roundIndex),
-          storedNextRound: describeRound(savedRow.state, roundIndex + 1),
-          rebuiltPreviousRound: savedState.rounds?.[roundIndex - 1] ?? [],
-          rebuiltRound: savedState.rounds?.[roundIndex] ?? [],
-          rebuiltNextRound: savedState.rounds?.[roundIndex + 1] ?? [],
-        })
-        setError('Le résultat est enregistré, mais la reconstruction de l’arbre a échoué (diagnostic BP-REBUILD).')
-        setBusy(false)
-        return
+        await load()
       }
-
-      setState(savedState)
+      setBusy(false)
     }
-
-    if (!saveError && savedRow && deferredRefreshRef.current) {
-      deferredRefreshRef.current = false
-      await load()
-    }
-    setBusy(false)
   }
 
   return (

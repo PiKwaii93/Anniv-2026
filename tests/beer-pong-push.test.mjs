@@ -186,6 +186,10 @@ test('the database transition owns next-match detection, deduplication, and play
     'utf8',
   )
   const page = await readFile(new URL('../src/pages/BeerPong.tsx', import.meta.url), 'utf8')
+  const bracketPage = await readFile(
+    new URL('../src/pages/BeerPongBracket.tsx', import.meta.url),
+    'utf8',
+  )
 
   assert.match(migration, /from public\.beer_pong_state[\s\S]*for update/)
   assert.match(migration, /private_beer_pong_next_match\(v_state\)/)
@@ -199,5 +203,7 @@ test('the database transition owns next-match detection, deduplication, and play
   assert.match(edge, /from\('app_admins'\)/)
   assert.match(edge, /\.in\('player_key', playerKeys\)/)
   assert.match(page, /functions\.invoke\([\s\S]*'beer-pong-next-push'/)
+  assert.match(bracketPage, /functions\.invoke\([\s\S]*'beer-pong-next-push'/)
+  assert.doesNotMatch(bracketPage, /\.from\('beer_pong_state'\)[\s\S]{0,200}\.upsert\(/)
   assert.doesNotMatch(page, /updateTournamentWinner\(/)
 })
