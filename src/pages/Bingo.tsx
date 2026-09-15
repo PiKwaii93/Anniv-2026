@@ -2,10 +2,12 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
+import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { supabase } from '../lib/supabase'
 
 import './Bingo.css'
@@ -23,13 +25,34 @@ type BingoCell = {
 
 type BingoGameState = {
   version: 1
+  id?: string
   cells: BingoCell[]
   createdAt: string
+  fullHouseAnnouncement?: 'pending' | 'sent'
 }
 
 const GRID_SIZE = 4
 const TOTAL_CELLS = GRID_SIZE * GRID_SIZE
 const STORAGE_KEY = 'anniv-2026-bingo-v1'
+
+function createGridId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  const bytes = new Uint8Array(16)
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes)
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256)
+    }
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const value = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`
+}
 
 const winningLines = [
   [0, 1, 2, 3],
@@ -168,6 +191,7 @@ function createGame(
 ): BingoGameState {
   return {
     version: 1,
+    id: createGridId(),
     createdAt:
       new Date().toISOString(),
     cells: shuffled(prompts)
@@ -197,6 +221,7 @@ function getLengthClass(
 function Bingo() {
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const { isAdmin } = useAuth()
+  const { identity } = usePartyIdentity()
 
   const [prompts, setPrompts] =
     useState<BingoPrompt[]>([])
@@ -211,6 +236,8 @@ function Bingo() {
 
   const [error, setError] =
     useState('')
+
+  const announcementInFlightRef = useRef(false)
 
   const loadPrompts =
     useCallback(async () => {
@@ -314,6 +341,48 @@ function Bingo() {
   const isFullHouse =
     checkedCount === TOTAL_CELLS
 
+  const announceFullHouse = useCallback(async (completedGame: BingoGameState) => {
+    if (announcementInFlightRef.current || completedGame.fullHouseAnnouncement !== 'pending') return
+
+    if (!identity) {
+      console.warn('[Bingo][FULL_HOUSE_WITHOUT_IDENTITY]')
+      return
+    }
+
+    const gridId = completedGame.id ?? createGridId()
+    announcementInFlightRef.current = true
+    const { error: announcementError } = await supabase.rpc('complete_bingo_grid', {
+      p_grid_id: gridId,
+      p_player_key: identity.playerKey,
+      p_session_token: identity.sessionToken,
+    })
+    announcementInFlightRef.current = false
+
+    if (announcementError) {
+      console.error('[Bingo][FULL_HOUSE_ANNOUNCEMENT_ERROR]', announcementError)
+      return
+    }
+
+    setGame((current) => {
+      if (!current || (current.id ?? gridId) !== gridId) return current
+      const acknowledged = {
+        ...current,
+        id: gridId,
+        fullHouseAnnouncement: 'sent' as const,
+      }
+      saveGame(acknowledged)
+      return acknowledged
+    })
+  }, [identity])
+
+  useEffect(() => {
+    if (game?.fullHouseAnnouncement !== 'pending') return
+
+    void announceFullHouse(game)
+    const retry = window.setInterval(() => void announceFullHouse(game), 10_000)
+    return () => window.clearInterval(retry)
+  }, [announceFullHouse, game])
+
   const toggleCell = (
     index: number,
   ) => {
@@ -332,9 +401,15 @@ function Bingo() {
           : cell,
     )
 
-    const nextGame = {
+    const wasFullHouse = game.cells.every((cell) => cell.checked)
+    const becomesFullHouse = cells.every((cell) => cell.checked)
+    const nextGame: BingoGameState = {
       ...game,
+      id: game.id ?? createGridId(),
       cells,
+      fullHouseAnnouncement: !wasFullHouse && becomesFullHouse
+        ? 'pending'
+        : game.fullHouseAnnouncement,
     }
 
     setGame(nextGame)
@@ -411,6 +486,10 @@ function Bingo() {
             <strong>{checkedCount}</strong>
             <span>/ {TOTAL_CELLS}</span>
           </div>
+        </div>
+
+        <div className="bingo-progress" aria-hidden="true">
+          <span style={{ width: `${(checkedCount / TOTAL_CELLS) * 100}%` }} />
         </div>
       </header>
 

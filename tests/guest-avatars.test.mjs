@@ -34,6 +34,7 @@ test('profile photos appear where guests identify people and choose witnesses', 
     readFile('src/pages/Guests.tsx', 'utf8'),
     readFile('src/pages/SecretMissions.tsx', 'utf8'),
     readFile('src/features/missions/MissionValidation.tsx', 'utf8'),
+    readFile('src/pages/LiveVoteRoom.tsx', 'utf8'),
   ])
 
   for (const source of sources) {
@@ -58,12 +59,15 @@ test('avatar initials remain visible and uploads are cropped before storage', as
   assert.match(cropper, /canvas\.toBlob\(resolve, 'image\/webp'/)
   assert.match(admin, /setCropFile\(file\)/)
   assert.match(admin, /onChange\(croppedFile\)/)
+  assert.match(admin, /guest-details-\$\{guest\.id\}/)
+  assert.match(admin, /toggleGuest\(guest\.id\)/)
 })
 
 test('Beer Pong keeps and displays guest photos throughout the tournament', async () => {
-  const [beerPong, partyScreen] = await Promise.all([
+  const [beerPong, partyScreen, eventOverlay] = await Promise.all([
     readFile('src/pages/BeerPong.tsx', 'utf8'),
     readFile('src/pages/PartyScreenAuto.tsx', 'utf8'),
+    readFile('src/features/screen/ScreenEventOverlay.tsx', 'utf8'),
   ])
 
   assert.match(beerPong, /avatarPath: guest\.avatarPath/)
@@ -73,4 +77,27 @@ test('Beer Pong keeps and displays guest photos throughout the tournament', asyn
   assert.match(beerPong, /beer-match__faces/)
   assert.match(partyScreen, /party-screen-auto__player-faces/)
   assert.match(partyScreen, /path=\{player\.avatarPath\}/)
+  assert.match(eventOverlay, /renderTeamAvatars/)
+  assert.match(eventOverlay, /path=\{player\.avatarPath\}/)
+  assert.match(eventOverlay, /BINGO_AVATAR_LOAD_ERROR/)
+  assert.match(eventOverlay, /path=\{bingoAvatarPath\}/)
+})
+
+test('the current Beer Pong team stays compact on desktop', async () => {
+  const [beerPong, styles] = await Promise.all([
+    readFile('src/pages/BeerPong.tsx', 'utf8'),
+    readFile('src/pages/BeerPong.css', 'utf8'),
+  ])
+
+  assert.match(beerPong, /guest-now beer-current-team/)
+  assert.match(styles, /@media \(min-width: 760px\)[\s\S]*\.beer-current-team/)
+  assert.match(styles, /font-size: clamp\(1\.4rem, 2\.2vw, 2rem\)/)
+})
+
+test('the validated Beer Pong draft stays folded above the bracket', async () => {
+  const beerPong = await readFile('src/pages/BeerPong.tsx', 'utf8')
+
+  assert.match(beerPong, /<details className="beer-section beer-validated-draft">/)
+  assert.match(beerPong, /afficher la composition/)
+  assert.doesNotMatch(beerPong, /<details className="beer-section beer-validated-draft" open/)
 })

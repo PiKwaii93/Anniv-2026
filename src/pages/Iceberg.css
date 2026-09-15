@@ -2037,3 +2037,131 @@
     );
   }
 }
+
+.iceberg-view-controls {
+  position: relative;
+  z-index: 20;
+  width: min(calc(100% - 32px), 1120px);
+  margin: 0 auto 20px;
+}
+
+.iceberg-page--list .iceberg-view-controls {
+  width: 100%;
+}
+
+.iceberg-view-controls .guest-tabs {
+  margin-bottom: 8px;
+}
+
+.iceberg-view-controls > p {
+  margin: 0;
+  color: #8494a2;
+  font-size: .75rem;
+  text-align: right;
+}
+
+.iceberg-readable__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.iceberg-readable__heading span {
+  color: #7792a5;
+  font-size: .65rem;
+  font-weight: 750;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.iceberg-readable__heading h2 {
+  margin: 5px 0 0;
+  color: #edf6ff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.35rem;
+}
+
+.iceberg-readable__heading > strong {
+  color: #7597ad;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem;
+}
+
+@media (max-width: 699px) {
+  .iceberg-scatter-item,
+  .iceberg-scatter-item--0,
+  .iceberg-scatter-item--1,
+  .iceberg-scatter-item--2,
+  .iceberg-scatter-item--3,
+  .iceberg-scatter-item--4,
+  .iceberg-scatter-item--5 {
+    top: var(--scatter-y-mobile);
+    left: var(--scatter-x-mobile);
+    text-align: center;
+  }
+
+  .iceberg-page--list {
+    padding-inline: 14px;
+  }
+
+  .iceberg-page--list .iceberg-header {
+    margin-bottom: 16px;
+  }
+
+  .iceberg-page--list .iceberg-header__navigation {
+    margin-bottom: 18px;
+  }
+
+  .iceberg-page--list .iceberg-header__description {
+    margin-top: 12px;
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+
+  .iceberg-view-controls {
+    position: sticky;
+    top: 8px;
+    width: calc(100% - 28px);
+    padding: 7px;
+    background: rgba(5, 11, 16, .9);
+    border: 1px solid rgba(139, 190, 218, .18);
+    border-radius: 18px;
+    backdrop-filter: blur(16px);
+  }
+
+  .iceberg-page--list .iceberg-view-controls {
+    width: 100%;
+  }
+
+  .iceberg-view-controls .guest-tabs {
+    margin: 0;
+    border: 0;
+  }
+
+  .iceberg-view-controls > p {
+    padding: 5px 8px 1px;
+    text-align: center;
+  }
+
+  .iceberg-readable .guest-section {
+    margin-top: 14px;
+    padding: 18px 14px;
+    background: rgba(10, 22, 30, .76);
+    border: 1px solid rgba(129, 178, 204, .14);
+    border-radius: 20px;
+  }
+
+  .iceberg-readable .guest-section > .guest-empty {
+    margin: 8px 0 14px;
+    font-size: .88rem;
+  }
+
+  .iceberg-readable__heading h2 {
+    font-size: 1.2rem;
+  }
+
+  .iceberg-readable__heading > strong {
+    font-size: 1.45rem;
+  }
+}

@@ -42,9 +42,12 @@ export default function AdminGuestSessions() {
   }
 
   if (!isAdmin) return null
-  return <section id="sessions" className="admin-guest-sessions" aria-labelledby="guest-sessions-title">
-    <div><p className="page-eyebrow">Accès des invités</p><h2 id="guest-sessions-title">Libérer les identités</h2>
-      <p>Un téléphone perdu ou un test en navigation privée bloque un prénom ? Déconnecte les invités pour leur permettre de se reconnecter.</p>
+  return <details id="sessions" className="admin-guest-sessions" aria-labelledby="guest-sessions-title">
+    <summary className="admin-sensitive-summary">
+      <span><span className="page-eyebrow">Accès des invités</span><strong id="guest-sessions-title">Libérer les identités</strong></span>
+      <span className="admin-sensitive-summary__action">Afficher <i aria-hidden="true">⌄</i></span>
+    </summary>
+    <div className="admin-sensitive-content"><div><p>Un téléphone perdu ou un test en navigation privée bloque un prénom ? Déconnecte les invités pour leur permettre de se reconnecter.</p>
       <p>Les messages, votes, scores, missions et photos sont conservés. Les comptes administrateurs restent connectés.</p></div>
     <button ref={trigger} type="button" className="guest-sessions-trigger" disabled={busy} aria-expanded={confirming} aria-controls="guest-sessions-confirm" onClick={() => { setConfirming(true); setNotice(''); setError('') }}>Déconnecter tous les invités</button>
     {confirming && <div id="guest-sessions-confirm" className="guest-sessions-confirm" role="group" aria-label="Confirmation de déconnexion">
@@ -55,5 +58,6 @@ export default function AdminGuestSessions() {
     </div>}
     {error && <p role="alert" className="guest-sessions-error">{error}</p>}
     {notice && <p role="status" className="guest-sessions-notice">{notice}</p>}
-  </section>
+    </div>
+  </details>
 }

@@ -104,7 +104,7 @@
   .party-environment-card {
     grid-template-columns: 1fr;
     gap: 16px;
-    margin-top: -28px;
+    margin-top: 0;
   }
 
   .party-environment-card > button {

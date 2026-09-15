@@ -259,9 +259,19 @@
 }
 
 .party-visibility-row > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   color: #c1c1c8;
   font-size: 0.7rem;
   font-weight: 600;
+}
+
+.party-visibility-row > span b {
+  width: 20px;
+  color: #aeb8db;
+  font-size: 1rem;
+  text-align: center;
 }
 
 .party-visibility-row strong {

@@ -6,6 +6,8 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import AdminSectionNav from '../features/party/AdminSectionNav'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 
@@ -74,6 +76,13 @@ const modeCopy: Record<VoteMode, { label: string; detail: string }> = {
     detail: 'Une bonne personne + 3 à 5 faux suspects crédibles. +1 point si trouvé.',
   },
 }
+
+const roomAdminSections = [
+  { href: '#room-live', icon: partyModuleIcons.room, label: 'En direct' },
+  { href: '#room-editor', icon: '+', label: 'Préparer' },
+  { href: '#room-questions', icon: '≡', label: 'Questions' },
+  { href: '#room-players', icon: '○', label: 'Participants' },
+]
 
 function adminError(code?: string) {
   switch (code) {
@@ -372,9 +381,14 @@ function LiveVoteRoomAdmin() {
         <Link to="/room" className="live-room-admin__public-link">Voir l’écran public ↗</Link>
       </header>
 
+      <AdminSectionNav
+        label="Sections de la régie La Salle"
+        items={roomAdminSections}
+      />
+
       {error && <div className="live-room-admin__error">{error}</div>}
 
-      <section className={`live-control live-control--${publicState.phase}${isLikelyRound ? ' live-control--likely' : ''}`}>
+      <section id="room-live" className={`live-control live-control--${publicState.phase}${isLikelyRound ? ' live-control--likely' : ''}`}>
         <div className="live-control__top">
           <div>
             <span className="live-control__dot" />
@@ -463,7 +477,7 @@ function LiveVoteRoomAdmin() {
         )}
       </section>
 
-      <section className="live-room-admin__editor">
+      <section id="room-editor" className="live-room-admin__editor">
         <div className="live-room-admin__section-title">
           <div>
             <span>{editingId ? 'Modification' : 'Nouvelle question'}</span>
@@ -549,7 +563,7 @@ function LiveVoteRoomAdmin() {
         </button>
       </section>
 
-      <section className="live-room-admin__bank">
+      <section id="room-questions" className="live-room-admin__bank">
         <div className="live-room-admin__section-title">
           <div>
             <span>File préparée</span>
@@ -585,7 +599,7 @@ function LiveVoteRoomAdmin() {
         </div>
       </section>
 
-      <section className="live-room-admin__players">
+      <section id="room-players" className="live-room-admin__players">
         <div className="live-room-admin__section-title">
           <div>
             <span>Identités La Salle</span>

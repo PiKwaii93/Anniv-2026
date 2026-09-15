@@ -7,6 +7,8 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import AdminSectionNav from '../features/party/AdminSectionNav'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { supabase } from '../lib/supabase'
 
 import './BingoAdmin.css'
@@ -18,6 +20,12 @@ type BingoPrompt = {
   is_active: boolean
   created_at: string
 }
+
+const bingoAdminSections = [
+  { href: '#bingo-overview', icon: partyModuleIcons.bingo, label: 'Aperçu' },
+  { href: '#bingo-create', icon: '+', label: 'Ajouter' },
+  { href: '#bingo-pool', icon: '≡', label: 'Cases' },
+]
 
 function BingoAdmin() {
   const [prompts, setPrompts] =
@@ -340,7 +348,12 @@ function BingoAdmin() {
         </p>
       </header>
 
-      <section className="bingo-admin-stats">
+      <AdminSectionNav
+        label="Sections de la régie Bingo"
+        items={bingoAdminSections}
+      />
+
+      <section id="bingo-overview" className="bingo-admin-stats">
         <article>
           <span>Total</span>
           <strong>{prompts.length}</strong>
@@ -375,7 +388,7 @@ function BingoAdmin() {
         </div>
       )}
 
-      <section className="bingo-admin-create">
+      <section id="bingo-create" className="bingo-admin-create">
         <div className="bingo-admin-section-heading">
           <div>
             <p className="bingo-admin-eyebrow">
@@ -422,7 +435,7 @@ function BingoAdmin() {
         </form>
       </section>
 
-      <section className="bingo-admin-pool">
+      <section id="bingo-pool" className="bingo-admin-pool">
         <div className="bingo-admin-section-heading bingo-admin-section-heading--pool">
           <div>
             <p className="bingo-admin-eyebrow">

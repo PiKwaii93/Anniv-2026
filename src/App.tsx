@@ -51,8 +51,20 @@ const AdminLogin = lazy(
   () => import('./pages/AdminLogin'),
 )
 
+const CaptainJoin = lazy(
+  () => import('./pages/CaptainJoin'),
+)
+
+const CaptainManagement = lazy(
+  () => import('./pages/CaptainManagement'),
+)
+
 const BeerPong = lazy(
   () => import('./pages/BeerPong'),
+)
+
+const BeerPongBracket = lazy(
+  () => import('./pages/BeerPongBracket'),
 )
 
 const Bingo = lazy(
@@ -117,6 +129,10 @@ const SecretMissions = lazy(
 
 const SecretMissionsAdmin = lazy(
   () => import('./pages/SecretMissionsAdmin'),
+)
+
+const PushNotificationsAdmin = lazy(
+  () => import('./pages/PushNotificationsAdmin'),
 )
 
 type AdminRouteProps = {
@@ -262,12 +278,13 @@ function GuestPhaseGate({ children }: { children: ReactNode }) {
 
 function App() {
   const { pathname } = useLocation()
+  const immersive = pathname === '/beer-pong/bracket'
   const content = <AppRoutes />
   return (
     <>
       <PartyEnvironmentBanner />
-      <AdminPartyDock />
-      <LiveAnnouncementOverlay />
+      {!immersive && <AdminPartyDock />}
+      {!immersive && <LiveAnnouncementOverlay />}
       {isGuestPath(pathname) ? <GuestShell><GuestPhaseGate>{content}</GuestPhaseGate></GuestShell> : content}
     </>
   )
@@ -317,6 +334,15 @@ function AppRoutes() {
             element={
               <ModuleGate module="beer-pong">
                 <BeerPong />
+              </ModuleGate>
+            }
+          />
+
+          <Route
+            path="/beer-pong/bracket"
+            element={
+              <ModuleGate module="beer-pong">
+                <BeerPongBracket />
               </ModuleGate>
             }
           />
@@ -385,10 +411,24 @@ function AppRoutes() {
           />
 
           <Route
+            path="/captain"
+            element={<CaptainJoin />}
+          />
+
+          <Route
             path="/admin"
             element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/captains"
+            element={
+              <AdminRoute>
+                <CaptainManagement />
               </AdminRoute>
             }
           />
@@ -439,12 +479,26 @@ function AppRoutes() {
           />
 
           <Route
+            path="/admin/beer-pong"
+            element={
+              <AdminRoute>
+                <Navigate to="/beer-pong" replace />
+              </AdminRoute>
+            }
+          />
+
+          <Route
             path="/admin/missions"
             element={
               <AdminRoute>
                 <SecretMissionsAdmin />
               </AdminRoute>
             }
+          />
+
+          <Route
+            path="/admin/notifications"
+            element={<AdminRoute><PushNotificationsAdmin /></AdminRoute>}
           />
 
           <Route

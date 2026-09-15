@@ -112,6 +112,61 @@
   line-height: 1.6;
 }
 
+.home-onboarding__card--ios-install {
+  width: min(620px, 100%);
+}
+
+.home-onboarding__safari-identity {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 14px;
+  color: #f0d8a9;
+  background: rgba(176, 119, 24, 0.09);
+  border: 1px solid rgba(223, 166, 70, 0.22);
+  border-radius: 14px;
+}
+
+.home-onboarding__safari-identity strong {
+  font-size: 0.82rem;
+}
+
+.home-onboarding__safari-identity p {
+  margin: 0;
+  color: #baa986;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.home-onboarding__safari-identity button {
+  min-height: 46px;
+  margin-top: 3px;
+  color: #17110a;
+  background: #f0d8a9;
+  border: 0;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.home-onboarding__safari-identity button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.home-onboarding__release-success {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  color: #bff8dc;
+  background: rgba(72, 168, 119, 0.09);
+  border: 1px solid rgba(104, 209, 155, 0.2);
+  border-radius: 12px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 .home-onboarding__notice,
 .home-onboarding__error,
 .home-onboarding__empty {

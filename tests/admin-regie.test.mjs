@@ -60,7 +60,7 @@ beforeEach(() => {
   fixture = globalThis.__regie = {
     auth: { isAdmin: true },
     party: { settings: { phase: 'preparation', featuredModule: null }, loading: false, saving: false, error: '', refresh: async () => {}, updateSettings: async value => writes.push(value) },
-    announcement: { announcement: { message: 'Test' }, visible: false, saving: false, error: '', refresh: async () => {}, publish: async value => { writes.push(value); return true }, clear: async () => writes.push('clear') },
+    announcement: { announcement: { message: 'Test' }, visible: false, saving: false, error: '', feedback: '', refresh: async () => {}, publish: async value => { writes.push(value); return true }, clear: async () => writes.push('clear') },
     db: { from: () => ({ select: () => ({ eq: async () => ({ count: 2, error: null }) }) }), channel: () => channel, removeChannel: async () => {}, rpc: async (...args) => { writes.push(args); return { data: { ok: true } } } },
   }
 })
@@ -79,7 +79,7 @@ test('one launcher replaces the pile, and every command belongs to its tools pan
     assert.ok(query('#admin-regie-tools').querySelector(selector), selector)
   }
   assert.equal(query('a[href="/screen"]').target, '_blank')
-  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos à valider'), true)
+  assert.equal(query('a[href="/admin/photos"]').textContent.includes('2 photos publiées'), true)
   assert.deepEqual(writes, [])
 })
 test('scenes and announcements expand in normal DOM order, one at a time', async () => {
@@ -116,6 +116,27 @@ test('navigation to content closes the tools and retains the admin launcher', as
   await click('.admin-regie__launcher')
   assert.equal(query('.director-scenes-dock'), null)
 })
+
+test('mobile admin navigation exposes the primary admin destinations', async () => {
+  await render('/admin/guests')
+  const navigation = query('[aria-label="Navigation administration"]')
+  assert.ok(navigation)
+  assert.equal(navigation.querySelector('a[href="/admin"]')?.textContent.includes('Accueil'), true)
+  assert.equal(navigation.querySelector('a[href="/admin/live"]')?.textContent.includes('Directeur'), true)
+  assert.equal(navigation.querySelector('a[href="/admin/guests"]')?.getAttribute('aria-current'), 'page')
+  assert.deepEqual(writes, [])
+})
+test('only the owner receives captain management in the admin dock', async () => {
+  fixture.auth.adminRole = 'owner'
+  await render(); await openTools()
+  assert.ok(query('a[href="/admin/captains"]'))
+
+  await act(async () => root.unmount())
+  root = createRoot(query('#root'))
+  fixture.auth.adminRole = 'captain'
+  await render(); await openTools()
+  assert.equal(query('a[href="/admin/captains"]'), null)
+})
 test('Mode soirée opens its existing settings separately, without changing data', async () => {
   await render(); await openTools(); await click('.party-dock')
   assert.ok(query('[role="dialog"]'))
@@ -131,6 +152,20 @@ test('announcement actions still publish and remove only when explicitly clicked
   assert.deepEqual(writes[0], { message: '🍕 Les pizzas sont arrivées !', kind: 'food', durationSeconds: 15 })
   await click('.director-announcement-current button')
   assert.equal(writes[1], 'clear')
+})
+test('announcement Push requires the explicit notification switch', async () => {
+  await render(); await openTools(); await click('.director-announcement-launch')
+  const notificationSwitch = query('.director-announcement-notify')
+  assert.equal(notificationSwitch.getAttribute('aria-checked'), 'false')
+  await act(async () => notificationSwitch.click())
+  assert.equal(notificationSwitch.getAttribute('aria-checked'), 'true')
+  await click('.director-announcement-quick button:nth-child(2)')
+  assert.deepEqual(writes[0], {
+    message: '📸 Photo de groupe dans 5 minutes !',
+    kind: 'photo',
+    durationSeconds: 15,
+    notifyPhones: true,
+  })
 })
 test('closing scene retains its confirmation and only submits after acceptance', async () => {
   await render(); await openTools(); await click('.director-scenes-launch')

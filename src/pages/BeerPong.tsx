@@ -12,6 +12,14 @@ import GuestAvatar from '../features/guests/GuestAvatar'
 import { usePartyIdentity } from '../features/identity/PartyIdentityContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
+import {
+  completeTournamentBracket,
+  createTournamentBracket,
+  getActiveRoundIndex,
+  getChampionTeamId,
+  getRoundName,
+  updateTournamentWinner,
+} from '../features/beer-pong/tournament'
 
 import './BeerPong.css'
 
@@ -36,6 +44,8 @@ type Match = {
   teamAId: string | null
   teamBId: string | null
   winnerTeamId: string | null
+  teamASourceMatchId?: string | null
+  teamBSourceMatchId?: string | null
 }
 
 type BeerPongState = {
@@ -135,7 +145,17 @@ function normalizeMatch(
       ? value.teamBId
       : null
 
-  if (!teamAId && !teamBId) {
+  const teamASourceMatchId =
+    typeof value.teamASourceMatchId === 'string'
+      ? value.teamASourceMatchId
+      : null
+
+  const teamBSourceMatchId =
+    typeof value.teamBSourceMatchId === 'string'
+      ? value.teamBSourceMatchId
+      : null
+
+  if (!teamAId && !teamBId && !teamASourceMatchId && !teamBSourceMatchId) {
     return null
   }
 
@@ -158,6 +178,8 @@ function normalizeMatch(
     teamAId,
     teamBId,
     winnerTeamId,
+    teamASourceMatchId,
+    teamBSourceMatchId,
   }
 }
 
@@ -196,7 +218,7 @@ function normalizeState(
         .filter((team): team is Team => team !== null)
     : []
 
-  const rounds = Array.isArray(value.rounds)
+  const parsedRounds = Array.isArray(value.rounds)
     ? value.rounds
         .map((round) => {
           if (!Array.isArray(round)) {
@@ -210,13 +232,11 @@ function normalizeState(
         .filter((round) => round.length > 0)
     : []
 
-  const teamIds = new Set(teams.map((team) => team.id))
+  const rounds = value.draftValidated === true
+    ? completeTournamentBracket(parsedRounds)
+    : parsedRounds
 
-  const championTeamId =
-    typeof value.championTeamId === 'string' &&
-    teamIds.has(value.championTeamId)
-      ? value.championTeamId
-      : null
+  const championTeamId = getChampionTeamId(rounds)
 
   return {
     selectedPlayerIds,
@@ -330,111 +350,6 @@ function createRandomTeams(
   ]
 }
 
-function getNextPowerOfTwo(
-  value: number,
-) {
-  let power = 1
-
-  while (power < value) {
-    power *= 2
-  }
-
-  return power
-}
-
-function createFirstRound(
-  teams: Team[],
-): Match[] {
-  if (teams.length < 2) {
-    return []
-  }
-
-  const shuffledTeams = shuffle(teams)
-  const bracketSize = getNextPowerOfTwo(shuffledTeams.length)
-  const matchCount = bracketSize / 2
-  const byeCount = bracketSize - shuffledTeams.length
-  const competitiveMatchCount = matchCount - byeCount
-  const matches: Match[] = []
-
-  let teamIndex = 0
-
-  for (
-    let matchIndex = 0;
-    matchIndex < competitiveMatchCount;
-    matchIndex += 1
-  ) {
-    const teamA = shuffledTeams[teamIndex]
-    const teamB = shuffledTeams[teamIndex + 1]
-
-    matches.push({
-      id: crypto.randomUUID(),
-      teamAId: teamA.id,
-      teamBId: teamB.id,
-      winnerTeamId: null,
-    })
-
-    teamIndex += 2
-  }
-
-  while (teamIndex < shuffledTeams.length) {
-    const team = shuffledTeams[teamIndex]
-
-    matches.push({
-      id: crypto.randomUUID(),
-      teamAId: team.id,
-      teamBId: null,
-      winnerTeamId: team.id,
-    })
-
-    teamIndex += 1
-  }
-
-  return shuffle(matches)
-}
-
-function createNextRound(
-  winnerTeamIds: string[],
-): Match[] {
-  const matches: Match[] = []
-
-  for (
-    let index = 0;
-    index < winnerTeamIds.length;
-    index += 2
-  ) {
-    const teamAId = winnerTeamIds[index]
-    const teamBId = winnerTeamIds[index + 1] ?? null
-
-    matches.push({
-      id: crypto.randomUUID(),
-      teamAId,
-      teamBId,
-      winnerTeamId: teamBId === null ? teamAId : null,
-    })
-  }
-
-  return matches
-}
-
-function getRoundName(
-  matches: Match[],
-  index: number,
-) {
-  if (matches.length === 1) {
-    return 'Finale'
-  }
-
-  if (matches.length === 2) {
-    return 'Demi-finales'
-  }
-
-  if (matches.length === 4) {
-    return 'Quarts de finale'
-  }
-
-  return `Tour ${index + 1}`
-}
-
 function BeerPong() {
   const { guests } = useGuests()
   const {
@@ -448,6 +363,7 @@ function BeerPong() {
   const [error, setError] = useState('')
   const [synchronizationError, setSynchronizationError] = useState('')
   const [swapMessage, setSwapMessage] = useState('')
+  const [winnerSaving, setWinnerSaving] = useState(false)
 
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const pendingWritesRef = useRef(0)
@@ -1085,9 +1001,9 @@ function BeerPong() {
       return
     }
 
-    const firstRound = createFirstRound(state.teams)
+    const rounds = createTournamentBracket(state.teams)
 
-    if (firstRound.length === 0) {
+    if (rounds.length === 0) {
       setError('Impossible de créer le bracket avec ces équipes.')
       return
     }
@@ -1098,7 +1014,7 @@ function BeerPong() {
     saveState({
       ...state,
       draftValidated: true,
-      rounds: [firstRound],
+      rounds,
       championTeamId: null,
     })
   }
@@ -1121,7 +1037,7 @@ function BeerPong() {
   }
 
   const resetTournament = () => {
-    if (!canManage) {
+    if (!canManage || winnerSaving) {
       return
     }
 
@@ -1140,12 +1056,12 @@ function BeerPong() {
     })
   }
 
-  const selectWinner = (
+  const selectWinner = async (
     roundIndex: number,
     matchId: string,
     teamId: string,
   ) => {
-    if (!canManage) {
+    if (!canManage || winnerSaving) {
       return
     }
 
@@ -1169,9 +1085,13 @@ function BeerPong() {
       return
     }
 
-    const hasDownstreamResults =
-      roundIndex < state.rounds.length - 1 ||
-      Boolean(state.championTeamId)
+    const hasDownstreamResults = Boolean(
+      match.winnerTeamId
+      || state.championTeamId
+      || state.rounds.slice(roundIndex + 1).some((nextRound) =>
+        nextRound.some((nextMatch) => nextMatch.winnerTeamId),
+      ),
+    )
 
     if (hasDownstreamResults) {
       const shouldCorrect = window.confirm(
@@ -1183,49 +1103,52 @@ function BeerPong() {
       }
     }
 
-    const updatedRound = round.map((currentMatch) =>
-      currentMatch.id === matchId
-        ? {
-            ...currentMatch,
-            winnerTeamId: teamId,
-          }
-        : currentMatch,
-    )
-
-    const nextRounds = [
-      ...state.rounds.slice(0, roundIndex),
-      updatedRound,
-    ]
-
-    let nextChampionTeamId: string | null = null
-
-    const allMatchesCompleted = updatedRound.every(
-      (currentMatch) => currentMatch.winnerTeamId !== null,
-    )
-
-    if (allMatchesCompleted) {
-      const winnerTeamIds = updatedRound
-        .map((currentMatch) => currentMatch.winnerTeamId)
-        .filter(
-          (winnerTeamId): winnerTeamId is string =>
-            winnerTeamId !== null,
-        )
-
-      if (winnerTeamIds.length === 1) {
-        nextChampionTeamId = winnerTeamIds[0]
-      } else if (winnerTeamIds.length > 1) {
-        nextRounds.push(createNextRound(winnerTeamIds))
-      }
-    }
-
     setError('')
     setSwapMessage('')
-
-    saveState({
+    setSynchronizationError('')
+    setWinnerSaving(true)
+    const optimisticRounds = updateTournamentWinner(
+      state.rounds,
+      matchId,
+      teamId,
+    )
+    setState({
       ...state,
-      rounds: nextRounds,
-      championTeamId: nextChampionTeamId,
+      rounds: optimisticRounds,
+      championTeamId: getChampionTeamId(optimisticRounds),
     })
+
+    try {
+      const { data, error: winnerError } = await supabase.functions.invoke(
+        'beer-pong-next-push',
+        {
+          body: {
+            matchId,
+            winnerTeamId: teamId,
+          },
+        },
+      )
+
+      if (winnerError || !data?.ok || !data.state) {
+        throw winnerError ?? new Error(data?.error ?? 'INVALID_RESULT')
+      }
+
+      setState(normalizeState(data.state))
+
+      if (data.delivery?.failed > 0) {
+        setSynchronizationError(
+          'Résultat enregistré, mais une notification n’a pas pu être envoyée.',
+        )
+      }
+    } catch (winnerError) {
+      console.error('Unable to record Beer Pong winner:', winnerError)
+      setSynchronizationError(
+        'Impossible d’enregistrer ce résultat pour le moment.',
+      )
+      void loadTournament()
+    } finally {
+      setWinnerSaving(false)
+    }
   }
 
   const getTeamName = (
@@ -1282,6 +1205,7 @@ function BeerPong() {
   const championTeam = state.championTeamId
     ? teamById.get(state.championTeamId)
     : undefined
+  const activeRoundIndex = getActiveRoundIndex(state.rounds)
 
   if (loading || authLoading) {
     return (
@@ -1359,10 +1283,10 @@ function BeerPong() {
       {state.draftValidated && partyIdentity && (() => {
         const team = state.teams.find(item => item.playerIds.includes(partyIdentity.playerKey))
         if (!team) return null
-        const match = state.rounds.flat().find(item => !item.winnerTeamId && (item.teamAId === team.id || item.teamBId === team.id))
+        const match = state.rounds[activeRoundIndex]?.find(item => !item.winnerTeamId && item.teamAId && item.teamBId && (item.teamAId === team.id || item.teamBId === team.id))
         const opponentId = match && (match.teamAId === team.id ? match.teamBId : match.teamAId)
         const opponent = opponentId ? teamById.get(opponentId) : null
-        return <section className="guest-now"><p className="guest-eyebrow">Ton équipe</p>{renderTeamMembers(team, 'beer-team__members--current')}<h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></section>
+        return <section className="guest-now beer-current-team"><p className="guest-eyebrow">Ton équipe</p>{renderTeamMembers(team, 'beer-team__members--current')}<div className="beer-current-team__copy"><h2>{team.playerIds.map(getPlayerName).join(' & ')}</h2><p>{state.championTeamId === team.id ? 'Vous avez remporté le tournoi !' : match ? opponent ? `Prochain match contre ${opponent.playerIds.map(getPlayerName).join(' & ')}.` : 'Ton prochain adversaire n’est pas encore connu.' : 'Aucun prochain match annoncé pour ton équipe.'}</p></div></section>
       })()}
       {synchronizationError && (
         <div className="beer-sync-error">
@@ -1835,8 +1759,8 @@ function BeerPong() {
 
       {state.draftValidated && (
         <>
-          <section className="beer-section">
-            <div className="beer-section__heading">
+          <details className="beer-section beer-validated-draft">
+            <summary>
               <div>
                 <p className="beer-eyebrow">
                   Équipes
@@ -1845,8 +1769,14 @@ function BeerPong() {
                 <h2>
                   Draft validée
                 </h2>
+                <span>
+                  {state.teams.length} équipe{state.teams.length !== 1 ? 's' : ''} · afficher la composition
+                </span>
               </div>
+              <i aria-hidden="true">⌄</i>
+            </summary>
 
+            <div className="beer-validated-draft__content">
               {canManage && (
                 <button
                   type="button"
@@ -1856,27 +1786,27 @@ function BeerPong() {
                   Réinitialiser
                 </button>
               )}
+
+              <div className="beer-teams beer-teams--validated">
+                {state.teams.map((team, index) => (
+                  <article
+                    key={team.id}
+                    className="beer-team"
+                  >
+                    <div className="beer-team__number beer-team__number--validated">
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
+
+                    <p>
+                      Équipe {index + 1}
+                    </p>
+
+                    {renderTeamMembers(team)}
+                  </article>
+                ))}
+              </div>
             </div>
-
-            <div className="beer-teams beer-teams--validated">
-              {state.teams.map((team, index) => (
-                <article
-                  key={team.id}
-                  className="beer-team"
-                >
-                  <div className="beer-team__number beer-team__number--validated">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
-
-                  <p>
-                    Équipe {index + 1}
-                  </p>
-
-                  {renderTeamMembers(team)}
-                </article>
-              ))}
-            </div>
-          </section>
+          </details>
 
           <section className="beer-section">
             <div className="beer-section__heading">
@@ -1886,24 +1816,18 @@ function BeerPong() {
                 </p>
 
                 <h2>
-                  Bracket
+                  Tour en cours
                 </h2>
               </div>
 
-              {!canManage && (
-                <span className="beer-readonly-pill">
-                  Lecture seule
-                </span>
-              )}
+              <Link className="beer-bracket-link" to="/beer-pong/bracket">
+                Voir l’arbre complet →
+              </Link>
             </div>
 
             <div className="beer-bracket">
               {state.rounds.map((round, roundIndex) => {
-                const isCurrentRound =
-                  roundIndex === state.rounds.length - 1 &&
-                  !state.championTeamId
-
-                const isHistoricalRound = !isCurrentRound
+                if (roundIndex !== activeRoundIndex) return null
 
                 return (
                   <div
@@ -1926,10 +1850,10 @@ function BeerPong() {
                           !match.teamAId || !match.teamBId
 
                         const canEditResult =
-                          canManage && !isAutomaticBye
+                          canManage && !winnerSaving && !isAutomaticBye
 
                         const correctionTitle =
-                          canEditResult && isHistoricalRound
+                          canEditResult && Boolean(match.winnerTeamId)
                             ? 'Corriger ce résultat'
                             : undefined
 

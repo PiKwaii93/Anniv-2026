@@ -40,7 +40,7 @@ export function usePartyExtras(identity: Identity = null) {
     mounted.current = true
     currentScope.current = scope
     void refresh()
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 10000)
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 30000)
     const visible = () => { if (document.visibilityState === 'visible') void refresh() }
     document.addEventListener('visibilitychange', visible)
     return () => { mounted.current = false; window.clearInterval(interval); document.removeEventListener('visibilitychange', visible) }

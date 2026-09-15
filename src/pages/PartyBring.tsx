@@ -22,6 +22,8 @@ export default function PartyBring() {
   const [saving, setSaving] = useState(false)
   const [failure, setFailure] = useState('')
   const readOnly = data?.phase === 'ended'
+  const totalItems = data?.items.length ?? 0
+  const filledCategories = new Set(data?.items.map(item => item.category) ?? []).size
   const similar = useMemo(() => {
     const query = normalized(draft.item)
     if (query.length < 3) return []
@@ -68,6 +70,11 @@ export default function PartyBring() {
 
     {readOnly && <p className="bring-notice">La soirée est terminée : la liste reste visible en lecture seule.</p>}
     {(error || failure) && <p className="bring-error" role="alert">{failure || error}</p>}
+
+    {!loading && data && <div className="bring-summary" aria-label="Résumé de la liste">
+      <span><strong>{totalItems}</strong><small>{totalItems === 1 ? 'élément prévu' : 'éléments prévus'}</small></span>
+      <span><strong>{filledCategories}</strong><small>{filledCategories === 1 ? 'catégorie remplie' : 'catégories remplies'}</small></span>
+    </div>}
 
     {editing && <form className="bring-form" onSubmit={submit}>
       <div className="bring-form__title"><div><p className="guest-eyebrow">{editing === 'new' ? 'Nouvel apport' : 'Modifier'}</p><h2>Je pense ramener…</h2></div><button type="button" onClick={() => setEditing(null)} aria-label="Fermer">×</button></div>

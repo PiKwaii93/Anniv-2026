@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { usePartyIdentity } from '../identity/PartyIdentityContext'
 import { supabase } from '../../lib/supabase'
 
-export type ChatMessage = { id: string; name: string; body: string; created_at: string; mine: boolean }
+export type ChatMessage = { id: string; name: string; body: string; created_at: string; mine: boolean; avatarPath: string | null }
 export type ChatState = { messages: ChatMessage[]; unread: number; latest: string; open: boolean; more: boolean; oldest: string | null }
 
 export function chatError(error: unknown) {
@@ -51,7 +51,7 @@ export function usePartyChat({ admin = false, summary = false, before = null }: 
       try { await refresh() } finally { running = false }
     }
     void visible()
-    const timer = window.setInterval(() => void visible(), summary ? 20000 : 3000)
+    const timer = window.setInterval(() => void visible(), summary ? 30000 : 5000)
     document.addEventListener('visibilitychange', visible)
     window.addEventListener('online', visible)
     return () => {

@@ -63,9 +63,12 @@ export default function AdminPartyDataReset() {
 
   if (!isAdmin) return null
   const cleanupPending = (status?.pending ?? 0) > 0
-  return <section id="reset-data" className="admin-guest-sessions admin-party-reset" aria-labelledby="party-reset-title">
-    <p className="page-eyebrow">Avant la soirée · Zone sensible</p>
-    <h2 id="party-reset-title">Effacer les données de test</h2>
+  return <details id="reset-data" className="admin-guest-sessions admin-party-reset" aria-labelledby="party-reset-title">
+    <summary className="admin-sensitive-summary">
+      <span><span className="page-eyebrow">Avant la soirée · Zone sensible</span><strong id="party-reset-title">Effacer les données de test</strong></span>
+      <span className="admin-sensitive-summary__action">Afficher <i aria-hidden="true">⌄</i></span>
+    </summary>
+    <div className="admin-sensitive-content">
     <p>Remets les activités à zéro pour tous les invités. À utiliser uniquement avant la soirée, en mode <Link to="/admin/live">Préparation</Link>.</p>
     <p><strong>Effacés :</strong> musique et votes dans l’app, messages, capsule, photos et fichiers, duos, missions, scores, Bingo, questions jouées et tournoi Beer Pong. Tous les invités sont déconnectés.</p>
     <p><strong>Conservés :</strong> liste et réponses des invités, accompagnants, notes privées, comptes admins, réglages, catalogues de questions/défis et Iceberg. La connexion Spotify reste active ; sa file d’attente externe n’est pas vidée.</p>
@@ -85,5 +88,6 @@ export default function AdminPartyDataReset() {
     {busy && <p role="status">Traitement en cours. Garde cette page ouverte.</p>}
     {error && <p role="alert" className="guest-sessions-error">{error}</p>}
     {notice && <p role="status" className="guest-sessions-notice">{notice}</p>}
-  </section>
+    </div>
+  </details>
 }

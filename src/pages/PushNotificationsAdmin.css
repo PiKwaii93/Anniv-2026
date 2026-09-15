@@ -1,0 +1,17 @@
+.push-admin { width: min(880px, calc(100% - 32px)); margin: 0 auto; padding: 110px 0 120px; color: #f5f2ea; }
+.push-admin > header { margin: 48px 0 34px; }
+.push-admin > header p { margin: 0 0 10px; color: #e7c98d; font-size: .72rem; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.push-admin > header h1 { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(3.2rem, 9vw, 6.6rem); line-height: .92; letter-spacing: -.065em; }
+.push-admin > header span { display: block; margin-top: 18px; color: #96949c; }
+.push-admin__card { display: grid; gap: 18px; padding: clamp(20px, 4vw, 34px); background: #131419; border: 1px solid #30313b; border-radius: 22px; }
+.push-admin__preview { display: grid; gap: 5px; padding: 16px; background: #090b10; border: 1px solid #252a35; border-radius: 14px; }
+.push-admin__preview span, .push-admin__card p { color: #aaaab6; }
+.push-admin__card label { display: grid; gap: 8px; }
+.push-admin__card label > span { color: #8e909b; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+.push-admin__card select, .push-admin__card button { min-height: 50px; padding: 0 15px; border-radius: 12px; font: inherit; }
+.push-admin__card select { color: #eeeef2; background: #0b0d12; border: 1px solid #363944; }
+.push-admin__card button { color: #07120e; background: #caffea; border: 0; font-weight: 850; cursor: pointer; }
+.push-admin__card button:disabled { opacity: .5; cursor: default; }
+.push-admin__card .push-admin__success { color: #bff8dc; }
+.push-admin__card .push-admin__error { color: #ffb3bd; }
+@media (max-width: 640px) { .push-admin { width: calc(100% - 24px); padding-top: 86px; } }

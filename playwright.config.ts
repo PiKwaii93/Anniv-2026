@@ -12,6 +12,7 @@ export default defineConfig({
   },
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    serviceWorkers: 'block',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
@@ -23,8 +24,15 @@ export default defineConfig({
     {
       name: 'mobile-chromium',
       use: {
-        ...devices['iPhone 13'],
+        ...devices['Pixel 7'],
         browserName: 'chromium',
+      },
+    },
+    {
+      name: 'mobile-webkit',
+      use: {
+        ...devices['iPhone 13'],
+        browserName: 'webkit',
       },
     },
   ],

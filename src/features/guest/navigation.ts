@@ -1,11 +1,12 @@
 import { isPartyModuleVisible, type PartySettings, type PartyVisibilityModule } from '../party/PartyContext'
+import { partyModuleIcons } from '../party/moduleVisuals'
 import type { ExtrasSettings } from '../party-extras/model'
 
 export const activities: { key: PartyVisibilityModule; title: string; detail: string; path: string; icon: string }[] = [
-  { key: 'room', title: 'La Salle', detail: 'Vote avec tout le monde.', path: '/room', icon: '◉' },
-  { key: 'missions', title: 'Missions secrètes', detail: 'Un objectif à accomplir discrètement.', path: '/missions', icon: '◇' },
-  { key: 'bingo', title: 'Bingo', detail: 'Observe la soirée et coche les scènes.', path: '/bingo', icon: '▦' },
-  { key: 'beer-pong', title: 'Beer Pong', detail: 'Les équipes et les prochains matchs.', path: '/beer-pong', icon: '◌' },
+  { key: 'room', title: 'La Salle', detail: 'Vote avec tout le monde.', path: '/room', icon: partyModuleIcons.room },
+  { key: 'missions', title: 'Missions secrètes', detail: 'Un objectif à accomplir discrètement.', path: '/missions', icon: partyModuleIcons.missions },
+  { key: 'bingo', title: 'Bingo', detail: 'Observe la soirée et coche les scènes.', path: '/bingo', icon: partyModuleIcons.bingo },
+  { key: 'beer-pong', title: 'Beer Pong', detail: 'Les équipes et les prochains matchs.', path: '/beer-pong', icon: partyModuleIcons['beer-pong'] },
 ]
 
 export function guestTabs(settings: PartySettings, extras?: ExtrasSettings) {
@@ -33,11 +34,43 @@ export function isGuestPathAvailable(path: string, phase: PartySettings['phase']
 }
 
 export function activeGuestTab(path: string) {
-  if (path === '/play' || path === '/duos' || activities.some(item => item.path === path)) return '/play'
+  if (path === '/play' || path === '/duos' || path.startsWith('/beer-pong/') || activities.some(item => item.path === path)) return '/play'
   if (path === '/photos' || path === '/jukebox') return path
   return '/'
 }
 
+type GuestAdminDestination = {
+  path: string
+  label: string
+}
+
+export function adminDestinationForGuestPath(path: string): GuestAdminDestination {
+  const pathname = path.length > 1 ? path.replace(/\/+$/, '') : path
+
+  if (pathname.startsWith('/beer-pong')) return { path: '/admin/beer-pong', label: 'Beer Pong' }
+  if (pathname === '/bingo') return { path: '/admin/bingo', label: 'Bingo' }
+  if (pathname === '/missions') return { path: '/admin/missions', label: 'Missions' }
+  if (pathname === '/room') return { path: '/admin/room', label: 'La Salle' }
+  if (pathname === '/photos') return { path: '/admin/photos', label: 'Photo Hunt' }
+  if (pathname === '/iceberg') return { path: '/admin/iceberg', label: 'Iceberg' }
+  if (pathname === '/guests') return { path: '/admin/guests', label: 'Invités' }
+  if (pathname === '/info') return { path: '/admin/info', label: 'Infos pratiques' }
+  if (pathname === '/chat') return { path: '/admin/chat', label: 'Discussion' }
+  if (['/capsule', '/jukebox', '/duos'].includes(pathname)) {
+    const labels: Record<string, string> = {
+      '/capsule': 'Capsule',
+      '/jukebox': 'Jukebox',
+      '/duos': 'Duos',
+    }
+    return { path: '/admin/party-extras', label: labels[pathname] }
+  }
+  if (pathname === '/play' || pathname === '/hall-of-fame') {
+    return { path: '/admin/content', label: 'Contenus' }
+  }
+
+  return { path: '/admin', label: 'Tableau de bord' }
+}
+
 export function isGuestPath(path: string) {
-  return !path.startsWith('/admin') && path !== '/screen' && path !== '/qr'
+  return !path.startsWith('/admin') && path !== '/captain' && path !== '/screen' && path !== '/qr'
 }

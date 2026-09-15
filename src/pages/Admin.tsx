@@ -5,11 +5,13 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useAuth } from '../features/auth/AuthContext'
 import { useGuests } from '../features/guests/GuestsContext'
 import GuestAvatar from '../features/guests/GuestAvatar'
 import AvatarCropDialog from '../features/guests/AvatarCropDialog'
 import AdminGuestSessions from '../features/identity/AdminGuestSessions'
 import AdminPartyDataReset from '../features/identity/AdminPartyDataReset'
+import { AdminPlusOneRequests } from '../features/plus-ones/PlusOneRequests'
 import type {
   Guest,
   GuestStatus,
@@ -116,6 +118,9 @@ function withoutKey<T>(
 }
 
 function Admin() {
+  const { adminRole } = useAuth()
+  const isOwner = adminRole !== 'captain'
+
   const {
     guests,
     loading,
@@ -509,8 +514,8 @@ function Admin() {
         </div>
       )}
 
-      <AdminGuestSessions />
-      <AdminPartyDataReset />
+      {isOwner && <AdminGuestSessions />}
+      {isOwner && <AdminPartyDataReset />}
 
       <section className="admin-stats">
         <article className="stat-card">
@@ -535,6 +540,8 @@ function Admin() {
           </strong>
         </article>
       </section>
+
+      <AdminPlusOneRequests />
 
       <section className="admin-section">
         <div className="section-heading">
@@ -717,7 +724,15 @@ function Admin() {
                       : ''
                   }`}
                 >
-                  <div className="guest-row__identity">
+                  <div
+                    className="guest-row__identity"
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement
+                      if (target.closest('button, label, a')) return
+                      if (isExpanded && target.closest('input')) return
+                      toggleGuest(guest.id)
+                    }}
+                  >
                     <GuestAvatar
                       name={guest.name}
                       path={guest.avatarPath}
@@ -759,6 +774,7 @@ function Admin() {
                       type="button"
                       className="guest-row__toggle"
                       aria-expanded={isExpanded}
+                      aria-controls={`guest-details-${guest.id}`}
                       aria-label={
                         isExpanded
                           ? `Replier ${guest.name}`
@@ -774,7 +790,7 @@ function Admin() {
                     </button>
                   </div>
 
-                  <div className="guest-row__content">
+                  <div id={`guest-details-${guest.id}`} className="guest-row__content">
                     <AvatarEditor
                       name={guest.name}
                       path={guest.avatarPath}
@@ -786,13 +802,26 @@ function Admin() {
                       <select
                         value={guest.status}
                         aria-label={`Statut de ${guest.name}`}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextStatus =
+                            event.target
+                              .value as GuestStatus
+
+                          console.info(
+                            '[Guests][STATUS_SELECT]',
+                            {
+                              guestId: guest.id,
+                              previousStatus:
+                                guest.status,
+                              requestedStatus:
+                                nextStatus,
+                            },
+                          )
+
                           updateGuest(guest.id, {
-                            status:
-                              event.target
-                                .value as GuestStatus,
+                            status: nextStatus,
                           })
-                        }
+                        }}
                       >
                         {Object.entries(
                           statusLabels,
@@ -816,23 +845,25 @@ function Admin() {
                         + Ajouter un +1
                       </button>
 
-                      <button
-                        type="button"
-                        className="delete-button"
-                        onClick={() => {
-                          const shouldDelete =
-                            window.confirm(
-                              `Supprimer ${guest.name} ?`,
-                            )
+                      {isOwner && (
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() => {
+                            const shouldDelete =
+                              window.confirm(
+                                `Supprimer ${guest.name} ?`,
+                              )
 
-                          if (shouldDelete) {
-                            clearDraftsForGuest(guest.id)
-                            removeGuest(guest.id)
-                          }
-                        }}
-                      >
-                        Supprimer
-                      </button>
+                            if (shouldDelete) {
+                              clearDraftsForGuest(guest.id)
+                              removeGuest(guest.id)
+                            }
+                          }}
+                        >
+                          Supprimer
+                        </button>
+                      )}
                     </div>
 
                     <label className="guest-row__notes-editor">

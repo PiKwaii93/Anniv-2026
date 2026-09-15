@@ -356,6 +356,75 @@
   font-size: 0.78rem;
 }
 
+@media (max-width: 699px) {
+  .bingo-admin-page {
+    padding: max(18px, env(safe-area-inset-top)) 14px max(110px, env(safe-area-inset-bottom));
+  }
+
+  .bingo-admin-header {
+    margin-bottom: 24px;
+  }
+
+  .bingo-admin-header__navigation {
+    margin-bottom: 28px;
+  }
+
+  .bingo-admin-preview {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 11px;
+  }
+
+  .bingo-admin-header h1 {
+    font-size: 3.15rem;
+  }
+
+  .bingo-admin-description {
+    color: #aaa59e;
+    font-size: 0.94rem;
+  }
+
+  .bingo-admin-stats {
+    margin-bottom: 22px;
+  }
+
+  .bingo-admin-stats article,
+  .bingo-admin-create__form,
+  .bingo-admin-prompt {
+    padding: 15px;
+  }
+
+  .bingo-admin-create {
+    margin-bottom: 38px;
+  }
+
+  .bingo-admin-create__form textarea,
+  .bingo-admin-search input,
+  .bingo-admin-prompt textarea {
+    font-size: 16px;
+  }
+
+  .bingo-admin-create__form > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bingo-admin-create__form button,
+  .bingo-admin-search input,
+  .bingo-admin-prompt__actions button {
+    min-height: 46px;
+  }
+
+  .bingo-admin-prompt__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 700px) {
   .bingo-admin-page {
     padding: 52px 36px 90px;

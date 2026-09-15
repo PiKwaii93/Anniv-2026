@@ -7,12 +7,20 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import AdminSectionNav from '../features/party/AdminSectionNav'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
+
 import { useAuth } from '../features/auth/AuthContext'
 import { supabase } from '../lib/supabase'
 
 import './IcebergAdmin.css'
 
 type IcebergLevel = 1 | 2 | 3 | 4 | 5
+
+const icebergAdminSections = [
+  { href: '#iceberg-create', icon: '+', label: 'Ajouter' },
+  { href: '#iceberg-content', icon: partyModuleIcons.iceberg, label: 'Contenu' },
+]
 
 type IcebergEntry = {
   id: string
@@ -688,6 +696,11 @@ function IcebergAdmin() {
         </p>
       </header>
 
+      <AdminSectionNav
+        label="Sections de la régie Iceberg"
+        items={icebergAdminSections}
+      />
+
       {error && (
         <div className="iceberg-admin-message iceberg-admin-message--error">
           {error}
@@ -700,7 +713,7 @@ function IcebergAdmin() {
         </div>
       )}
 
-      <section className="iceberg-admin-create">
+      <section id="iceberg-create" className="iceberg-admin-create">
         <div className="iceberg-admin-section-heading">
           <div>
             <p className="iceberg-admin-eyebrow">
@@ -826,7 +839,7 @@ function IcebergAdmin() {
         </form>
       </section>
 
-      <section className="iceberg-admin-content">
+      <section id="iceberg-content" className="iceberg-admin-content">
         <div className="iceberg-admin-section-heading">
           <div>
             <p className="iceberg-admin-eyebrow">

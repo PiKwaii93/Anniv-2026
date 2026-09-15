@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import GuestAvatar from '../features/guests/GuestAvatar'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 import { useNow } from '../hooks/useNow'
@@ -74,6 +75,7 @@ type AvailablePlayer = {
   key: string
   name: string
   detail: string
+  avatarPath: string | null
 }
 
 const STORAGE_KEY = 'anniv-2026-live-vote-identity-v1'
@@ -155,15 +157,19 @@ function LiveVoteRoom() {
     guests
       .filter((guest) => guest.status === 'confirmed')
       .forEach((guest) => {
-        players.push({ key: `guest:${guest.id}`, name: guest.name, detail: 'Invité' })
+        players.push({ key: `guest:${guest.id}`, name: guest.name, detail: 'Invité', avatarPath: guest.avatarPath })
         guest.plusOnes.forEach((plusOne) => {
-          players.push({ key: `plus:${plusOne.id}`, name: plusOne.name, detail: `+1 de ${guest.name}` })
+          players.push({ key: `plus:${plusOne.id}`, name: plusOne.name, detail: `+1 de ${guest.name}`, avatarPath: plusOne.avatarPath })
         })
       })
     return players.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
   }, [guests])
 
   const participantCount = availablePlayers.length
+  const playerByKey = useMemo(
+    () => new Map(availablePlayers.map((player) => [player.key, player])),
+    [availablePlayers],
+  )
 
   const loadScores = useCallback(async () => {
     const { data, error: scoreError } = await supabase.rpc('get_live_vote_scoreboard')
@@ -438,8 +444,11 @@ function LiveVoteRoom() {
                 className={selectedPlayerKey === player.key ? 'live-room__person live-room__person--selected' : 'live-room__person'}
                 onClick={() => setSelectedPlayerKey(player.key)}
               >
-                <strong>{player.name}</strong>
-                <span>{player.detail}</span>
+                <GuestAvatar name={player.name} path={player.avatarPath} size="small" />
+                <span className="live-room__person-copy">
+                  <strong>{player.name}</strong>
+                  <span>{player.detail}</span>
+                </span>
               </button>
             ))}
           </div>
@@ -457,6 +466,7 @@ function LiveVoteRoom() {
       <header className="live-room__header">
         <Link to="/" className="back-link">← Accueil</Link>
         <div className="live-room__identity">
+          <GuestAvatar name={playerState.playerName ?? ''} path={playerByKey.get(identity.playerKey)?.avatarPath} size="small" />
           <span>{playerState.playerName}</span>
           <strong>{playerState.score ?? 0} pt</strong>
         </div>
@@ -505,8 +515,11 @@ function LiveVoteRoom() {
                     className={myVote === player.key ? 'live-room__choice live-room__choice--selected' : 'live-room__choice'}
                     onClick={() => void vote(player.key)}
                   >
-                    <strong>{player.name}</strong>
-                    {myVote === player.key && <span>✓ Ton vote</span>}
+                    <GuestAvatar name={player.name} path={player.avatarPath} size="medium" />
+                    <span className="live-room__choice-copy">
+                      <strong>{player.name}</strong>
+                      {myVote === player.key && <span>✓ Ton vote</span>}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -583,6 +596,7 @@ function LiveVoteRoom() {
           scores.slice(0, 8).map((row, index) => (
             <div key={row.player_key} className={row.player_key === identity.playerKey ? 'live-room__score-row live-room__score-row--me' : 'live-room__score-row'}>
               <span>{index + 1}</span>
+              <GuestAvatar name={row.player_name} path={playerByKey.get(row.player_key)?.avatarPath} size="small" />
               <strong>{row.player_name}</strong>
               <b>{row.score}{row.score === topScore && row.score > 0 ? ' ★' : ''}</b>
             </div>

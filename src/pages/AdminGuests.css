@@ -207,8 +207,38 @@
 }
 
 @media (max-width: 749px) {
+  .guest-row__identity {
+    cursor: pointer;
+  }
+
   .guest-avatar-editor:not(.guest-avatar-editor--compact) {
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) button,
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) .guest-avatar-editor__upload {
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 9px;
+  }
+
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) > div:not(:has(button)) .guest-avatar-editor__upload {
+    grid-column: 1 / -1;
+  }
+
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) [role='status'],
+  .guest-avatar-editor:not(.guest-avatar-editor--compact) .guest-avatar-editor__error {
+    grid-column: 1 / -1;
   }
 
   .guest-row__notes-editor textarea {
