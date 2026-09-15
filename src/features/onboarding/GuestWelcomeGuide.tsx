@@ -28,6 +28,7 @@ type GuideVisual =
   | 'prepare-bring'
   | 'prepare-chat'
   | 'prepare-guests'
+  | 'prepare-app'
 
 type GuideSlide = {
   visual: GuideVisual
@@ -93,6 +94,12 @@ const preparationSlides: GuideSlide[] = [
     eyebrow: 'Invités',
     title: 'Découvre qui sera là.',
     body: 'La liste se complète au fil des confirmations.',
+  },
+  {
+    visual: 'prepare-app',
+    eyebrow: 'Application',
+    title: 'Garde la soirée sous la main.',
+    body: 'Installe l’app et active les notifications utiles.',
   },
 ]
 
@@ -170,6 +177,40 @@ function PreparationGuideVisual({ visual }: { visual: GuideVisual }) {
           <article className="is-self"><div><small>Toi · 18:47</small><p>Merci, j’ai mis la liste à jour ✨</p></div></article>
         </div>
         <div className="guest-guide-demo__composer"><span>Écrire un message…</span><b>↑</b></div>
+      </div>
+    )
+  }
+
+  if (visual === 'prepare-app') {
+    return (
+      <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-app">
+        <p className="guest-guide-demo__section-label">Sur ton téléphone</p>
+        <h3>L’app, toujours avec toi.</h3>
+        <p className="guest-guide-demo__intro">Un accès rapide et les bons rappels au bon moment.</p>
+        <div className="guest-guide-demo__app-panels">
+          <article className="guest-guide-demo__app-panel guest-guide-demo__app-panel--install">
+            <div className="guest-guide-demo__app-panel-heading">
+              <i>↗</i>
+              <span><strong>Application</strong><small>Accès rapide depuis l’écran d’accueil</small></span>
+              <b>⌃</b>
+            </div>
+            <p>L’application reste entièrement utilisable depuis ton navigateur.</p>
+            <button type="button" tabIndex={-1}>Installer l’application <span>→</span></button>
+          </article>
+          <article className="guest-guide-demo__app-panel guest-guide-demo__app-panel--notifications">
+            <div className="guest-guide-demo__app-panel-heading">
+              <i>◉</i>
+              <span><strong>Notifications</strong><small>Matchs à venir et missions</small></span>
+              <b>⌃</b>
+            </div>
+            <p>Sois prévenu quand un match approche ou qu’une nouvelle mission t’attend.</p>
+            <button type="button" tabIndex={-1}>Activer les notifications</button>
+          </article>
+        </div>
+        <div className="guest-guide-demo__app-reassurance">
+          <i>✓</i>
+          <span><strong>Tu gardes le contrôle.</strong><small>Les notifications peuvent être désactivées à tout moment.</small></span>
+        </div>
       </div>
     )
   }

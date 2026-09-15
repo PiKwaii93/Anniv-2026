@@ -41,9 +41,11 @@ test('the first-use guide presents preparation and live modules and can be repla
   for (const visual of ['home', 'games', 'photos', 'music']) {
     assert.match(guide, new RegExp(`visual: '${visual}'`))
   }
-  for (const visual of ['prepare-home', 'prepare-info', 'prepare-bring', 'prepare-chat', 'prepare-guests']) {
+  for (const visual of ['prepare-home', 'prepare-info', 'prepare-bring', 'prepare-chat', 'prepare-guests', 'prepare-app']) {
     assert.match(guide, new RegExp(`visual: '${visual}'`))
   }
+  assert.match(guide, /Installer l’application/)
+  assert.match(guide, /Activer les notifications/)
 
   assert.match(guide, /GuestGuideVisual/)
   assert.match(guide, /guest-guide-demo__shortcuts/)
