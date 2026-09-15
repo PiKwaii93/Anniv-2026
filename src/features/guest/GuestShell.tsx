@@ -31,6 +31,9 @@ export default function GuestShell({ children }: { children: ReactNode }) {
   const immersive = pathname === '/beer-pong/bracket'
   const navigationType = useNavigationType()
   const tabs = guestTabs(settings, extras?.settings)
+  const guidePhase = settings.phase === 'preparation' || settings.phase === 'live'
+    ? settings.phase
+    : null
   useEffect(() => {
     if (navigationType !== 'POP') window.scrollTo({ top: 0, behavior: 'instant' })
   }, [pathname, navigationType])
@@ -46,7 +49,11 @@ export default function GuestShell({ children }: { children: ReactNode }) {
       {immersive && <AdminShortcut immersive />}
       <ConnectionNotice />
       <PwaUpdateNotice />
-      <GuestWelcomeGuide enabled={!isAdmin && Boolean(identity) && !requiresIosInstallation} />
+      {guidePhase && <GuestWelcomeGuide
+        key={guidePhase}
+        enabled={!loading && !isAdmin && Boolean(identity) && !requiresIosInstallation}
+        phase={guidePhase}
+      />}
       {!immersive && settings.phase === 'live' && settings.roomVisible && room?.phase === 'open' && pathname !== '/room' && pathname !== '/' && <Link className="guest-live-link" to="/room"><span className="guest-live-dot" />Un vote est ouvert <strong>Participer →</strong></Link>}
       {requiresIosInstallation && !isAdmin ? <IosInstallIdentityGate /> : children}
       {!immersive && <nav className="guest-nav" aria-label="Navigation principale" inert={onboarding}>

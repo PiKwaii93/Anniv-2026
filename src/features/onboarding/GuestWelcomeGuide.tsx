@@ -9,21 +9,34 @@ import {
   completeGuestGuide,
   GUEST_GUIDE_REPLAY_EVENT,
   hasCompletedGuestGuide,
+  type GuestGuidePhase,
 } from './guestGuideState'
 import './GuestWelcomeGuide.css'
 
 type GuestWelcomeGuideProps = {
   enabled: boolean
+  phase: GuestGuidePhase
 }
 
-type GuideVisual = 'home' | 'games' | 'photos' | 'music'
+type GuideVisual =
+  | 'home'
+  | 'games'
+  | 'photos'
+  | 'music'
+  | 'prepare-home'
+  | 'prepare-info'
+  | 'prepare-bring'
+  | 'prepare-chat'
+  | 'prepare-guests'
 
-const slides: Array<{
+type GuideSlide = {
   visual: GuideVisual
   eyebrow: string
   title: string
   body: string
-}> = [
+}
+
+const liveSlides: GuideSlide[] = [
   {
     visual: 'home',
     eyebrow: 'Bienvenue',
@@ -50,7 +63,142 @@ const slides: Array<{
   },
 ]
 
+const preparationSlides: GuideSlide[] = [
+  {
+    visual: 'prepare-home',
+    eyebrow: 'Bienvenue',
+    title: 'Prépare la soirée.',
+    body: 'Retrouve ici tout ce qui est utile avant le jour J.',
+  },
+  {
+    visual: 'prepare-info',
+    eyebrow: 'Infos pratiques',
+    title: 'Tout savoir avant de venir.',
+    body: 'Date, lieu et accès restent toujours à portée de main.',
+  },
+  {
+    visual: 'prepare-bring',
+    eyebrow: 'Organisation',
+    title: 'Dis ce que tu ramènes.',
+    body: 'Consulte la liste et ajoute ce que tu prévois d’apporter.',
+  },
+  {
+    visual: 'prepare-chat',
+    eyebrow: 'Discussion',
+    title: 'Échange avec les invités.',
+    body: 'Une conversation commune pour préparer la soirée ensemble.',
+  },
+  {
+    visual: 'prepare-guests',
+    eyebrow: 'Invités',
+    title: 'Découvre qui sera là.',
+    body: 'La liste se complète au fil des confirmations.',
+  },
+]
+
+function PreparationGuideVisual({ visual }: { visual: GuideVisual }) {
+  if (visual === 'prepare-home') {
+    return (
+      <div className="guest-guide-demo guest-guide-demo--prepare-home">
+        <div className="guest-guide-demo__prepare-heading">
+          <p className="guest-guide-demo__brand">ANNIV <span>2026</span></p>
+          <span>Avant la soirée</span>
+        </div>
+        <h3>On se retrouve bientôt.</h3>
+        <article className="guest-guide-demo__hero">
+          <small>Maintenant</small>
+          <strong>Les derniers détails, tous ensemble.</strong>
+          <span>Tout est prêt pour organiser la soirée.</span>
+          <b>Voir l’organisation <i>→</i></b>
+        </article>
+        <p className="guest-guide-demo__group-title">À préparer</p>
+        <div className="guest-guide-demo__prepare-grid">
+          <article><i>i</i><strong>Infos pratiques</strong><small>Date, lieu et accès</small><b>→</b></article>
+          <article><i>⌑</i><strong>Ce qu’on ramène</strong><small>La liste partagée</small><b>→</b></article>
+          <article><i>●</i><strong>Discussion</strong><small>Échange avec le groupe</small><b>→</b></article>
+          <article><i>○</i><strong>Invités</strong><small>Les confirmations</small><b>→</b></article>
+        </div>
+      </div>
+    )
+  }
+
+  if (visual === 'prepare-info') {
+    return (
+      <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-info">
+        <p className="guest-guide-demo__section-label">Organisation</p>
+        <h3>Infos pratiques</h3>
+        <p className="guest-guide-demo__intro">Tout ce qu’il faut pour arriver sereinement.</p>
+        <div className="guest-guide-demo__info-card">
+          <article><i>◇</i><span><small>Date</small><strong>Samedi 24 octobre</strong></span></article>
+          <article><i>⌂</i><span><small>Lieu</small><strong>Chez Maxence</strong></span></article>
+          <article><i>↗</i><span><small>Accès</small><strong>Adresse et trajet</strong></span></article>
+        </div>
+        <div className="guest-guide-demo__prepare-note">
+          <small>Bon à savoir</small>
+          <strong>Les informations restent disponibles à tout moment dans l’app.</strong>
+        </div>
+      </div>
+    )
+  }
+
+  if (visual === 'prepare-bring') {
+    return (
+      <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-bring">
+        <p className="guest-guide-demo__section-label">Organisation</p>
+        <h3>Ce qu’on ramène</h3>
+        <p className="guest-guide-demo__intro">Une liste commune pour éviter les oublis et les doublons.</p>
+        <div className="guest-guide-demo__bring-summary">
+          <span><strong>6</strong><small>éléments</small></span>
+          <span><strong>4</strong><small>déjà pris</small></span>
+        </div>
+        <div className="guest-guide-demo__bring-list">
+          <article><i>✓</i><span><strong>Boissons</strong><small>Pris par Camille</small></span><b>2</b></article>
+          <article><i>✓</i><span><strong>À manger</strong><small>Pris par Alex</small></span><b>2</b></article>
+          <article><i>○</i><span><strong>Glaçons</strong><small>Encore disponible</small></span><b>1</b></article>
+        </div>
+        <button type="button" tabIndex={-1}>Ajouter ce que j’apporte <span>＋</span></button>
+      </div>
+    )
+  }
+
+  if (visual === 'prepare-chat') {
+    return (
+      <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-chat">
+        <div className="guest-guide-demo__chat-heading">
+          <div><p className="guest-guide-demo__section-label">Entre invités</p><h3>Discussion</h3></div>
+          <span>8 participants</span>
+        </div>
+        <div className="guest-guide-demo__messages">
+          <article><i>C</i><div><small>Camille · 18:42</small><p>Je peux ramener des boissons 🥤</p></div></article>
+          <article><i>A</i><div><small>Alex · 18:45</small><p>Parfait, je m’occupe de quoi manger !</p></div></article>
+          <article className="is-self"><div><small>Toi · 18:47</small><p>Merci, j’ai mis la liste à jour ✨</p></div></article>
+        </div>
+        <div className="guest-guide-demo__composer"><span>Écrire un message…</span><b>↑</b></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-guests">
+      <div className="guest-guide-demo__guest-heading">
+        <div><p className="guest-guide-demo__section-label">La soirée</p><h3>Les invités</h3></div>
+        <span><strong>12</strong> confirmés</span>
+      </div>
+      <p className="guest-guide-demo__intro">Découvre les personnes qui seront de la partie.</p>
+      <div className="guest-guide-demo__guest-list">
+        <article><i>CM</i><span><strong>Camille</strong><small>Confirmée</small></span><b>✓</b></article>
+        <article><i>AL</i><span><strong>Alex</strong><small>Confirmé</small></span><b>✓</b></article>
+        <article><i>SA</i><span><strong>Sarah</strong><small>Confirmée</small></span><b>✓</b></article>
+        <article><i>TH</i><span><strong>Thomas</strong><small>En attente</small></span><b>·</b></article>
+      </div>
+      <div className="guest-guide-demo__guest-footer"><span>12 viennent</span><span>3 en attente</span></div>
+    </div>
+  )
+}
+
 function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
+  if (visual.startsWith('prepare-')) return <PreparationGuideVisual visual={visual} />
+
   if (visual === 'home') {
     return (
       <div className="guest-guide-demo guest-guide-demo--home">
@@ -153,25 +301,27 @@ function GuestGuideVisual({ visual }: { visual: GuideVisual }) {
   )
 }
 
-export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
+export function GuestWelcomeGuide({ enabled, phase }: GuestWelcomeGuideProps) {
+  const slides = phase === 'preparation' ? preparationSlides : liveSlides
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
   const pointerStart = useRef<number | null>(null)
   const dialogRef = useRef<HTMLElement | null>(null)
 
   const finish = () => {
-    completeGuestGuide()
+    completeGuestGuide(phase)
     setOpen(false)
   }
 
   useEffect(() => {
-    if (!enabled || hasCompletedGuestGuide()) return
+    setOpen(false)
+    if (!enabled || hasCompletedGuestGuide(phase)) return
     const timer = window.setTimeout(() => {
       setStep(0)
       setOpen(true)
     }, 260)
     return () => window.clearTimeout(timer)
-  }, [enabled])
+  }, [enabled, phase])
 
   useEffect(() => {
     const replay = () => {
@@ -181,7 +331,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
     }
     window.addEventListener(GUEST_GUIDE_REPLAY_EVENT, replay)
     return () => window.removeEventListener(GUEST_GUIDE_REPLAY_EVENT, replay)
-  }, [enabled])
+  }, [enabled, phase])
 
   useEffect(() => {
     if (!open) return
@@ -232,7 +382,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
       document.body.style.overflow = previousOverflow
       previousFocus?.focus()
     }
-  }, [open, step])
+  }, [open, step, phase, slides.length])
 
   const goNext = () => {
     if (step === slides.length - 1) finish()
@@ -265,7 +415,7 @@ export function GuestWelcomeGuide({ enabled }: GuestWelcomeGuideProps) {
     <div className="guest-guide" role="presentation">
       <section
         ref={dialogRef}
-        className="guest-guide__dialog"
+        className={`guest-guide__dialog guest-guide__dialog--${phase}`}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
