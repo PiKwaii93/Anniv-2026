@@ -328,6 +328,16 @@
   cursor: pointer;
 }
 
+.party-identity-gate > .back-link {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(680px, 100%);
+  min-height: 44px;
+  align-items: center;
+  margin-inline: auto;
+}
+
 .party-identity-popover__current > .party-identity-popover__guide {
   color: #f0deb0;
   background: rgba(222, 208, 160, 0.08);

@@ -133,7 +133,7 @@ function ChatRoom({ admin }: { admin: boolean }) {
       if (el) setFollowing(el.scrollHeight - el.scrollTop - el.clientHeight < 60)
     }}>
       {loading && <p className="chat-empty">Ouverture de la discussion…</p>}
-      {data && data.messages.length === 0 && <div className="chat-empty"><span aria-hidden="true">✳</span><h2>{before ? 'Plus de messages ici.' : 'Tout commence par un petit mot.'}</h2><p>{before ? 'Reviens aux derniers messages pour retrouver la discussion.' : <>« Qui est partant pour une photo ? »<br />« On se retrouve près du gâteau ! »</>}</p></div>}
+      {data && data.messages.length === 0 && <div className="chat-empty"><span aria-hidden="true">✳</span><h2>{before ? 'Plus de messages ici.' : 'Tout commence par un petit mot.'}</h2>{before ? <p>Reviens aux derniers messages pour retrouver la discussion.</p> : <div className="chat-empty__prompts"><span>Qui est partant pour une photo ?</span><span>On se retrouve près du gâteau !</span></div>}</div>}
       {data?.messages.map(message => <div key={message.id} className={`chat-message-row${message.mine ? ' chat-message-row--mine' : ''}`}>
         {!message.mine && <GuestAvatar name={message.name} path={message.avatarPath} size="small" className="chat-message__avatar" />}
         <article

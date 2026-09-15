@@ -104,19 +104,19 @@ function PreparationGuideVisual({ visual }: { visual: GuideVisual }) {
           <p className="guest-guide-demo__brand">ANNIV <span>2026</span></p>
           <span>Avant la soirée</span>
         </div>
-        <h3>On se retrouve bientôt.</h3>
+        <h3>Bienvenue.</h3>
         <article className="guest-guide-demo__hero">
           <small>Maintenant</small>
-          <strong>Les derniers détails, tous ensemble.</strong>
-          <span>Tout est prêt pour organiser la soirée.</span>
+          <strong>On se retrouve bientôt.</strong>
+          <span>Organise les derniers détails avec les autres invités.</span>
           <b>Voir l’organisation <i>→</i></b>
         </article>
-        <p className="guest-guide-demo__group-title">À préparer</p>
+        <p className="guest-guide-demo__group-title">Organisation de la soirée</p>
         <div className="guest-guide-demo__prepare-grid">
-          <article><i>i</i><strong>Infos pratiques</strong><small>Date, lieu et accès</small><b>→</b></article>
-          <article><i>⌑</i><strong>Ce qu’on ramène</strong><small>La liste partagée</small><b>→</b></article>
-          <article><i>●</i><strong>Discussion</strong><small>Échange avec le groupe</small><b>→</b></article>
-          <article><i>○</i><strong>Invités</strong><small>Les confirmations</small><b>→</b></article>
+          <article><i>i</i><strong>Infos pratiques</strong><small>Date, lieu, accès et détails utiles pour la soirée.</small><b>→</b></article>
+          <article><i>⌑</i><strong>Ce qu’on ramène</strong><small>Consulte la liste et indique ce que tu prévois d’apporter.</small><b>→</b></article>
+          <article><i>●</i><strong>Discussion entre invités</strong><small>Écris un message à tous les invités.</small><b>→</b></article>
+          <article><i>○</i><strong>Liste des invités</strong><small>Découvre qui sera présent à la soirée.</small><b>→</b></article>
         </div>
       </div>
     )
@@ -125,17 +125,13 @@ function PreparationGuideVisual({ visual }: { visual: GuideVisual }) {
   if (visual === 'prepare-info') {
     return (
       <div className="guest-guide-demo guest-guide-demo--prepare-module guest-guide-demo--prepare-info">
-        <p className="guest-guide-demo__section-label">Organisation</p>
+        <p className="guest-guide-demo__info-kicker">ANNIV 2026</p>
         <h3>Infos pratiques</h3>
-        <p className="guest-guide-demo__intro">Tout ce qu’il faut pour arriver sereinement.</p>
+        <p className="guest-guide-demo__intro">Tout ce qu’il faut pour arriver tranquille.</p>
         <div className="guest-guide-demo__info-card">
-          <article><i>◇</i><span><small>Date</small><strong>Samedi 24 octobre</strong></span></article>
-          <article><i>⌂</i><span><small>Lieu</small><strong>Chez Maxence</strong></span></article>
-          <article><i>↗</i><span><small>Accès</small><strong>Adresse et trajet</strong></span></article>
-        </div>
-        <div className="guest-guide-demo__prepare-note">
-          <small>Bon à savoir</small>
-          <strong>Les informations restent disponibles à tout moment dans l’app.</strong>
+          <article className="guest-guide-demo__info-date"><i>24</i><span><small>Date et heure</small><strong>samedi 24 octobre 2026 à 21:30</strong></span></article>
+          <article className="guest-guide-demo__info-address"><i>↗</i><span><small>Adresse</small><strong>19 Rue Louison Bobet, Neuilly-Plaisance</strong><b>Ouvrir dans Google Maps <em>↗</em></b></span></article>
+          <article className="guest-guide-demo__info-dress"><i>✦</i><span><small>Tenue</small><strong>Tenue libre</strong></span></article>
         </div>
       </div>
     )
