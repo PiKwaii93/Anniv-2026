@@ -15,8 +15,8 @@ function normalized(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-export default function PartyBring() {
-  const { data, error, loading, action } = usePartyBring()
+export default function PartyBring({ admin = false }: { admin?: boolean }) {
+  const { data, error, loading, action } = usePartyBring({ admin })
   const [editing, setEditing] = useState<BringItem | 'new' | null>(null)
   const [draft, setDraft] = useState<BringDraft>(emptyDraft)
   const [saving, setSaving] = useState(false)
@@ -59,16 +59,17 @@ export default function PartyBring() {
     catch (caught) { setFailure(caught instanceof Error ? caught.message : 'Impossible de retirer cet élément.') }
   }
 
-  return <main className="guest-page bring-page">
+  return <main className={`guest-page bring-page${admin ? ' bring-page--admin' : ''}`}>
     <header className="bring-heading">
-      <Link to="/" className="guest-back">← Accueil</Link>
-      <p className="guest-eyebrow">Organisation de la soirée</p>
-      <div className="bring-heading__row"><div><h1>Ce qu’on ramène.</h1><p>Une liste simple pour s’organiser et éviter les doublons.</p></div>
-        {!readOnly && !editing && <button className="bring-add" type="button" onClick={openNew}>＋ Ajouter</button>}
+      <Link to={admin ? '/admin' : '/'} className="guest-back">← {admin ? 'Administration' : 'Accueil'}</Link>
+      <p className="guest-eyebrow">{admin ? 'Gestion de la soirée' : 'Organisation de la soirée'}</p>
+      <div className="bring-heading__row"><div><h1>{admin ? 'Ce qu’ils ramènent.' : 'Ce qu’on ramène.'}</h1><p>{admin ? 'Modifie ou retire les contributions envoyées par les invités.' : 'Une liste simple pour s’organiser et éviter les doublons.'}</p></div>
+        {!admin && !readOnly && !editing && <button className="bring-add" type="button" onClick={openNew}>＋ Ajouter</button>}
       </div>
     </header>
 
     {readOnly && <p className="bring-notice">La soirée est terminée : la liste reste visible en lecture seule.</p>}
+    {admin && !readOnly && <p className="bring-admin-notice">Tu peux modifier ou retirer chaque contribution. Les invités verront immédiatement les changements.</p>}
     {(error || failure) && <p className="bring-error" role="alert">{failure || error}</p>}
 
     {!loading && data && <div className="bring-summary" aria-label="Résumé de la liste">

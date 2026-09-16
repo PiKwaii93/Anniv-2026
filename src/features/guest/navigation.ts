@@ -55,6 +55,7 @@ export function adminDestinationForGuestPath(path: string): GuestAdminDestinatio
   if (pathname === '/iceberg') return { path: '/admin/iceberg', label: 'Iceberg' }
   if (pathname === '/guests') return { path: '/admin/guests', label: 'Invités' }
   if (pathname === '/info') return { path: '/admin/info', label: 'Infos pratiques' }
+  if (pathname === '/bring') return { path: '/admin/bring', label: 'Ce qu’on ramène' }
   if (pathname === '/chat') return { path: '/admin/chat', label: 'Discussion' }
   if (['/capsule', '/jukebox', '/duos'].includes(pathname)) {
     const labels: Record<string, string> = {

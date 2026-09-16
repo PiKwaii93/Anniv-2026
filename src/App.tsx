@@ -299,6 +299,7 @@ function AppRoutes() {
           <Route path="/bring" element={<PartyIdentityGate><PartyBring /></PartyIdentityGate>} />
           <Route path="/info" element={<EventInfo />} />
           <Route path="/admin/info" element={<AdminRoute><EventInfoAdmin /></AdminRoute>} />
+          <Route path="/admin/bring" element={<AdminRoute><PartyBring admin /></AdminRoute>} />
           <Route path="/admin/chat" element={<AdminRoute><PartyChat admin /></AdminRoute>} />
           <Route path="/capsule" element={<PartyIdentityGate><Capsule /></PartyIdentityGate>} />
           <Route path="/jukebox" element={<PartyIdentityGate><Jukebox /></PartyIdentityGate>} />

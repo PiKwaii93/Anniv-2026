@@ -257,6 +257,7 @@ test('each guest module resolves to its contextual administration page',()=>{
   assert.deepEqual(ui.adminDestinationForGuestPath('/bingo'),{path:'/admin/bingo',label:'Bingo'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/beer-pong/bracket'),{path:'/admin/beer-pong',label:'Beer Pong'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/capsule'),{path:'/admin/party-extras',label:'Capsule'})
+  assert.deepEqual(ui.adminDestinationForGuestPath('/bring'),{path:'/admin/bring',label:'Ce qu’on ramène'})
   assert.deepEqual(ui.adminDestinationForGuestPath('/'),{path:'/admin',label:'Tableau de bord'})
 })
 

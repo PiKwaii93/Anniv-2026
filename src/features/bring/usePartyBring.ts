@@ -28,11 +28,11 @@ function bringError(error: unknown) {
   return 'Connexion interrompue. Réessaie dans un instant.'
 }
 
-export function usePartyBring() {
+export function usePartyBring({ admin = false }: { admin?: boolean } = {}) {
   const { identity } = usePartyIdentity()
   const key = identity?.playerKey ?? null
   const token = identity?.sessionToken ?? null
-  const enabled = !!key && !!token
+  const enabled = admin || (!!key && !!token)
   const [data, setData] = useState<BringState | null>(null)
   const [error, setError] = useState('')
   const generation = useRef(0)
@@ -41,12 +41,12 @@ export function usePartyBring() {
     if (!enabled) return
     const request = ++generation.current
     const { data: next, error: failure } = await supabase.rpc('get_party_bring', {
-      p_player_key: key, p_session_token: token, p_admin: false,
+      p_player_key: key, p_session_token: token, p_admin: admin,
     }).abortSignal(AbortSignal.timeout(12000))
     if (request !== generation.current) return
     if (failure || !next?.ok) setError(bringError(failure))
     else { setData(next as BringState); setError('') }
-  }, [enabled, key, token])
+  }, [admin, enabled, key, token])
 
   useEffect(() => {
     let running = false
@@ -69,11 +69,11 @@ export function usePartyBring() {
 
   const action = useCallback(async (name: 'create' | 'update' | 'delete', payload: Record<string, unknown>) => {
     const { data: result, error: failure } = await supabase.rpc('party_bring_action', {
-      p_action: name, p_payload: payload, p_player_key: key, p_session_token: token, p_admin: false,
+      p_action: name, p_payload: payload, p_player_key: key, p_session_token: token, p_admin: admin,
     }).abortSignal(AbortSignal.timeout(12000))
     if (failure || !result?.ok) throw new Error(bringError(failure))
     await refresh()
-  }, [key, token, refresh])
+  }, [admin, key, token, refresh])
 
   return { data, error, loading: enabled && !data && !error, action }
 }
