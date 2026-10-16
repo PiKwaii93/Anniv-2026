@@ -104,6 +104,24 @@ function IcebergAdmin() {
     setEditPublished,
   ] = useState(true)
 
+  const [
+    collapsedLevels,
+    setCollapsedLevels,
+  ] = useState<IcebergLevel[]>([])
+
+  const toggleLevel = (
+    targetLevel: IcebergLevel,
+  ) => {
+    setCollapsedLevels((currentLevels) =>
+      currentLevels.includes(targetLevel)
+        ? currentLevels.filter(
+            (currentLevel) =>
+              currentLevel !== targetLevel,
+          )
+        : [...currentLevels, targetLevel],
+    )
+  }
+
   const loadEntries =
     useCallback(async () => {
       if (
@@ -880,50 +898,96 @@ function IcebergAdmin() {
                     currentLevel,
                   ) ?? []
 
+                const isCollapsed =
+                  collapsedLevels.includes(
+                    currentLevel,
+                  )
+
+                const levelContentId =
+                  `iceberg-admin-level-${currentLevel}`
+
                 return (
                   <div
                     key={
                       currentLevel
                     }
-                    className="iceberg-admin-level"
+                    className={`iceberg-admin-level ${
+                      isCollapsed
+                        ? 'iceberg-admin-level--collapsed'
+                        : ''
+                    }`}
                   >
                     <div className="iceberg-admin-level__heading">
-                      <span>
-                        0
-                        {
-                          currentLevel
-                        }
-                      </span>
-
-                      <div>
-                        <h3>
+                      <div className="iceberg-admin-level__summary">
+                        <span>
+                          0
                           {
-                            levelNames[
-                              currentLevel
-                            ]
+                            currentLevel
                           }
-                        </h3>
+                        </span>
 
-                        <p>
-                          {
-                            levelEntries.length
-                          }{' '}
-                          élément
-                          {levelEntries.length >
-                          1
-                            ? 's'
-                            : ''}
-                        </p>
+                        <div>
+                          <h3>
+                            {
+                              levelNames[
+                                currentLevel
+                              ]
+                            }
+                          </h3>
+
+                          <p>
+                            {
+                              levelEntries.length
+                            }{' '}
+                            élément
+                            {levelEntries.length >
+                            1
+                              ? 's'
+                              : ''}
+                          </p>
+                        </div>
                       </div>
+
+                      <button
+                        type="button"
+                        className="iceberg-admin-level__toggle"
+                        aria-expanded={
+                          !isCollapsed
+                        }
+                        aria-controls={
+                          levelContentId
+                        }
+                        onClick={() =>
+                          toggleLevel(
+                            currentLevel,
+                          )
+                        }
+                      >
+                        <span>
+                          {isCollapsed
+                            ? 'Déplier'
+                            : 'Plier'}
+                        </span>
+
+                        <i aria-hidden="true">
+                          {isCollapsed
+                            ? '↓'
+                            : '↑'}
+                        </i>
+                      </button>
                     </div>
 
-                    {levelEntries.length ===
-                    0 ? (
-                      <div className="iceberg-admin-level__empty">
-                        Niveau vide
-                      </div>
-                    ) : (
-                      <div className="iceberg-admin-list">
+                    <div
+                      id={levelContentId}
+                      hidden={isCollapsed}
+                    >
+                      {levelEntries.length ===
+                      0 ? (
+                        <div className="iceberg-admin-level__empty">
+                          Niveau vide
+                        </div>
+                      ) : (
+                        <div className="iceberg-admin-list">
                         {levelEntries.map(
                           (
                             entry,
@@ -1217,8 +1281,9 @@ function IcebergAdmin() {
                             )
                           },
                         )}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )
               },
