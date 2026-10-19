@@ -2,6 +2,7 @@
   position: relative;
 
   min-height: 100vh;
+  overflow-x: clip;
 
   padding: 32px 20px 110px;
 
