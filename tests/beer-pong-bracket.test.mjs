@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test, { after } from 'node:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { build } from 'vite'
@@ -10,7 +11,7 @@ const bundle = await build({
   logLevel: 'error',
   build: { ssr: resolve('src/features/beer-pong/tournament.ts'), write: false, minify: false },
 })
-const cache = await mkdtemp(resolve('node_modules/.cache/beer-pong-bracket-'))
+const cache = await mkdtemp(join(tmpdir(), 'beer-pong-bracket-'))
 await mkdir(cache, { recursive: true })
 const output = bundle.output.find((item) => item.isEntry)
 await writeFile(join(cache, output.fileName), output.code)
