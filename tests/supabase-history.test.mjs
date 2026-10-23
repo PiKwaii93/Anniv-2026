@@ -62,6 +62,7 @@ const expectedMigrations = new Map(Object.entries({
 const structurallyReviewedMigrations = [
   '20260914230000_announcement_push.sql',
   '20261016120000_import_legacy_iceberg_titles.sql',
+  '20261024120000_refresh_personalized_secret_missions.sql',
 ]
 
 const normalizedMd5 = (sql) => createHash('md5')
