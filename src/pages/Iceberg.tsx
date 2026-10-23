@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from 'react'
@@ -81,6 +82,8 @@ const mobileBaseHeights: Record<IcebergLevel, number> = {
   4: 255,
   5: 270,
 }
+
+const mobilePageSize = 8
 
 function hashString(value: string) {
   let hash = 2166136261
@@ -347,6 +350,9 @@ function Iceberg() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     null,
   )
+  const [mobileLevelIndex, setMobileLevelIndex] = useState(0)
+  const [mobilePage, setMobilePage] = useState(0)
+  const mobileTouchStart = useRef<{ x: number; y: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -446,6 +452,31 @@ function Iceberg() {
     [entries, selectedEntryId],
   )
 
+  const mobileLevel = levels[mobileLevelIndex]
+  const mobileLevelEntries = entriesByLevel.get(mobileLevel.level) ?? []
+  const mobilePageCount = Math.max(
+    1,
+    Math.ceil(mobileLevelEntries.length / mobilePageSize),
+  )
+  const visibleMobileEntries = mobileLevelEntries.slice(
+    mobilePage * mobilePageSize,
+    (mobilePage + 1) * mobilePageSize,
+  )
+
+  const selectedLevelEntries = useMemo(
+    () =>
+      selectedEntry
+        ? entriesByLevel.get(selectedEntry.level) ?? []
+        : [],
+    [entriesByLevel, selectedEntry],
+  )
+
+  useEffect(() => {
+    if (mobilePage >= mobilePageCount) {
+      setMobilePage(Math.max(0, mobilePageCount - 1))
+    }
+  }, [mobilePage, mobilePageCount])
+
   useEffect(() => {
     if (!selectedEntry) {
       return
@@ -467,6 +498,33 @@ function Iceberg() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [selectedEntry])
+
+  const moveMobileLevel = (direction: -1 | 1) => {
+    setMobileLevelIndex((current) =>
+      clamp(current + direction, 0, levels.length - 1),
+    )
+    setMobilePage(0)
+  }
+
+  const selectMobileLevel = (index: number) => {
+    setMobileLevelIndex(index)
+    setMobilePage(0)
+  }
+
+  const moveSelectedEntry = (direction: -1 | 1) => {
+    if (!selectedEntry || selectedLevelEntries.length < 2) {
+      return
+    }
+
+    const currentIndex = selectedLevelEntries.findIndex(
+      (entry) => entry.id === selectedEntry.id,
+    )
+    const nextIndex =
+      (currentIndex + direction + selectedLevelEntries.length) %
+      selectedLevelEntries.length
+
+    setSelectedEntryId(selectedLevelEntries[nextIndex].id)
+  }
 
   const renderEntries = (level: IcebergLevel) => {
     const levelEntries = entriesByLevel.get(level) ?? []
@@ -603,7 +661,11 @@ function Iceberg() {
           <p>Formation de l&apos;iceberg...</p>
         </section>
       ) : (
-        <section className="iceberg-scene" hidden={view !== 'scene'}>
+        <>
+        <section
+          className="iceberg-scene iceberg-scene--desktop"
+          hidden={view !== 'scene'}
+        >
           <div className="iceberg-sky" style={surfaceStyle}>
             <div className="iceberg-cloud iceberg-cloud--one" />
             <div className="iceberg-cloud iceberg-cloud--two" />
@@ -691,6 +753,138 @@ function Iceberg() {
             </div>
           </div>
         </section>
+
+        <section
+          className={`iceberg-mobile-explorer iceberg-mobile-explorer--level-${mobileLevel.level}`}
+          hidden={view !== 'scene'}
+          aria-label={`Niveau ${mobileLevel.level} : ${mobileLevel.title}`}
+          onTouchStart={(event) => {
+            const touch = event.changedTouches[0]
+            mobileTouchStart.current = { x: touch.clientX, y: touch.clientY }
+          }}
+          onTouchEnd={(event) => {
+            const start = mobileTouchStart.current
+            const touch = event.changedTouches[0]
+            mobileTouchStart.current = null
+
+            if (!start) return
+
+            const deltaX = touch.clientX - start.x
+            const deltaY = touch.clientY - start.y
+
+            if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+              return
+            }
+
+            event.preventDefault()
+            moveMobileLevel(deltaX < 0 ? 1 : -1)
+          }}
+        >
+          <div className="iceberg-mobile-explorer__depth" aria-hidden="true">
+            <div className="iceberg-mobile-explorer__ice" />
+          </div>
+
+          <header className="iceberg-mobile-explorer__header">
+            <div>
+              <span>{mobileLevel.number} · Niveau {mobileLevel.level}</span>
+              <h2>{mobileLevel.title}</h2>
+              <p>{mobileLevel.subtitle}</p>
+            </div>
+            <strong>{mobileLevelEntries.length}</strong>
+          </header>
+
+          <nav
+            className="iceberg-mobile-explorer__levels"
+            aria-label="Choisir la profondeur"
+          >
+            {levels.map((level, index) => (
+              <button
+                type="button"
+                key={level.level}
+                className={index === mobileLevelIndex ? 'is-active' : ''}
+                aria-label={`Niveau ${level.level} : ${level.title}`}
+                aria-current={index === mobileLevelIndex ? 'step' : undefined}
+                onClick={() => selectMobileLevel(index)}
+              >
+                {level.number}
+              </button>
+            ))}
+          </nav>
+
+          <div
+            className="iceberg-mobile-explorer__stories"
+            key={`${mobileLevel.level}-${mobilePage}`}
+            aria-live="polite"
+          >
+            {visibleMobileEntries.length > 0 ? (
+              visibleMobileEntries.map((entry) => (
+                <button
+                  type="button"
+                  key={entry.id}
+                  className={`iceberg-mobile-explorer__entry iceberg-mobile-explorer__entry--${getScatterVariant(entry)}`}
+                  onClick={() => setSelectedEntryId(entry.id)}
+                >
+                  {entry.title}
+                </button>
+              ))
+            ) : (
+              <p className="iceberg-mobile-explorer__empty">
+                Pas encore d’histoire à cette profondeur.
+              </p>
+            )}
+          </div>
+
+          <footer className="iceberg-mobile-explorer__footer">
+            <button
+              type="button"
+              className="iceberg-mobile-explorer__level-button"
+              disabled={mobileLevelIndex === 0}
+              aria-label="Niveau précédent"
+              onClick={() => moveMobileLevel(-1)}
+            >
+              ←
+            </button>
+
+            <div className="iceberg-mobile-explorer__page-status">
+              {mobilePageCount > 1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMobilePage((current) => (current + 1) % mobilePageCount)
+                  }
+                >
+                  {mobilePage + 1 < mobilePageCount
+                    ? `Découvrir ${Math.min(
+                        mobilePageSize,
+                        mobileLevelEntries.length -
+                          (mobilePage + 1) * mobilePageSize,
+                      )} autres ↓`
+                    : 'Revoir les premiers ↺'}
+                </button>
+              ) : (
+                <span>
+                  {mobileLevelEntries.length} archive
+                  {mobileLevelEntries.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              <small>
+                Niveau {mobileLevelIndex + 1} / {levels.length}
+                {mobilePageCount > 1 && ` · Page ${mobilePage + 1} / ${mobilePageCount}`}
+              </small>
+            </div>
+
+            <button
+              type="button"
+              className="iceberg-mobile-explorer__level-button"
+              disabled={mobileLevelIndex === levels.length - 1}
+              aria-label="Niveau suivant"
+              onClick={() => moveMobileLevel(1)}
+            >
+              →
+            </button>
+          </footer>
+        </section>
+        </>
       )}
 
       {selectedEntry && (
@@ -738,6 +932,26 @@ function Iceberg() {
               <p className="iceberg-modal__description iceberg-modal__description--empty">
                 Aucun contexte supplémentaire.
               </p>
+            )}
+
+            {selectedLevelEntries.length > 1 && (
+              <nav
+                className="iceberg-modal__mobile-navigation"
+                aria-label="Parcourir les anecdotes de ce niveau"
+              >
+                <button type="button" onClick={() => moveSelectedEntry(-1)}>
+                  ← Précédent
+                </button>
+                <span>
+                  {selectedLevelEntries.findIndex(
+                    (entry) => entry.id === selectedEntry.id,
+                  ) + 1}{' '}
+                  / {selectedLevelEntries.length}
+                </span>
+                <button type="button" onClick={() => moveSelectedEntry(1)}>
+                  Suivant →
+                </button>
+              </nav>
             )}
 
             <div className="iceberg-modal__footer">
