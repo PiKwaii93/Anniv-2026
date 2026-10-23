@@ -2102,7 +2102,7 @@
 
 @media (max-width: 699px) {
   .iceberg-scene--desktop {
-    display: none;
+    display: block;
   }
 
   .iceberg-mobile-explorer {

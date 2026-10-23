@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
 } from 'react'
@@ -83,7 +82,7 @@ const mobileBaseHeights: Record<IcebergLevel, number> = {
   5: 270,
 }
 
-const mobilePageSize = 8
+const mobileRowPattern = [2, 1, 3, 2, 2, 1]
 
 function hashString(value: string) {
   let hash = 2166136261
@@ -120,8 +119,25 @@ function getDesktopColumnCount(count: number) {
   return 5
 }
 
-function getMobileColumnCount(count: number) {
-  return count <= 1 ? 1 : 2
+function getMobileLayoutPosition(index: number) {
+  let remaining = index
+  let row = 0
+
+  while (remaining >= mobileRowPattern[row % mobileRowPattern.length]) {
+    remaining -= mobileRowPattern[row % mobileRowPattern.length]
+    row += 1
+  }
+
+  return {
+    row,
+    column: remaining,
+    columns: mobileRowPattern[row % mobileRowPattern.length],
+  }
+}
+
+function getMobileRowCount(count: number) {
+  if (count === 0) return 0
+  return getMobileLayoutPosition(count - 1).row + 1
 }
 
 function getColumnPosition(
@@ -142,12 +158,9 @@ function getTierStyle(
   count: number,
 ): CSSProperties {
   const desktopColumns = getDesktopColumnCount(count)
-  const mobileColumns = getMobileColumnCount(count)
-
   const desktopRows =
     count === 0 ? 0 : Math.ceil(count / desktopColumns)
-  const mobileRows =
-    count === 0 ? 0 : Math.ceil(count / mobileColumns)
+  const mobileRows = getMobileRowCount(count)
 
   const desktopTop = level === 1 ? 100 : 110
   const mobileTop = level === 1 ? 108 : 118
@@ -160,7 +173,7 @@ function getTierStyle(
   const mobileNeeded =
     count === 0
       ? mobileBaseHeights[level]
-      : mobileTop + Math.max(0, mobileRows - 1) * 88 + 108
+      : mobileTop + Math.max(0, mobileRows - 1) * 92 + 108
 
   return {
     '--tier-height': `${Math.max(
@@ -184,24 +197,15 @@ function getScatterStyle(
   )
 
   const desktopColumns = getDesktopColumnCount(count)
-  const mobileColumns = getMobileColumnCount(count)
-
   const desktopRow = Math.floor(index / desktopColumns)
-  const mobileRow = Math.floor(index / mobileColumns)
+  const mobileLayout = getMobileLayoutPosition(index)
 
   const desktopRowOffset =
     hashString(`${entry.level}-desktop-${desktopRow}`) %
     desktopColumns
 
-  const mobileRowOffset =
-    hashString(`${entry.level}-mobile-${mobileRow}`) %
-    mobileColumns
-
   const desktopColumn =
     (index % desktopColumns + desktopRowOffset) % desktopColumns
-
-  const mobileColumn =
-    (index % mobileColumns + mobileRowOffset) % mobileColumns
 
   const jitterX = (seed % 7) - 3
   const jitterY = (Math.floor(seed / 17) % 15) - 7
@@ -221,13 +225,13 @@ function getScatterStyle(
 
   const mobileX = clamp(
     getColumnPosition(
-      mobileColumn,
-      mobileColumns,
-      28,
-      72,
+      mobileLayout.column,
+      mobileLayout.columns,
+      mobileLayout.columns === 3 ? 18 : 27,
+      mobileLayout.columns === 3 ? 82 : 73,
     ) + mobileJitterX,
-    24,
-    76,
+    14,
+    86,
   )
 
   const desktopY =
@@ -237,7 +241,7 @@ function getScatterStyle(
 
   const mobileY =
     (entry.level === 1 ? 108 : 118) +
-    mobileRow * 88 +
+    mobileLayout.row * 92 +
     mobileJitterY
 
   const rotationOptions = [-5, -3, -1, 0, 0, 0, 1, 2, 4]
@@ -315,7 +319,14 @@ function getScatterStyle(
     '--scatter-size': `${fontSize}rem`,
     '--scatter-width': `${maxWidth}px`,
     '--scatter-viewport-cap': viewportWidthCap,
-    '--scatter-mobile-width': `${Math.min(maxWidth, 158)}px`,
+    '--scatter-mobile-width': `${Math.min(
+      maxWidth,
+      mobileLayout.columns === 1
+        ? 280
+        : mobileLayout.columns === 2
+          ? 170
+          : 108,
+    )}px`,
     '--scatter-weight': fontWeight,
     '--scatter-opacity': opacity,
     '--scatter-letter-spacing': letterSpacing,
@@ -350,9 +361,6 @@ function Iceberg() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     null,
   )
-  const [mobileLevelIndex, setMobileLevelIndex] = useState(0)
-  const [mobilePage, setMobilePage] = useState(0)
-  const mobileTouchStart = useRef<{ x: number; y: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -452,17 +460,6 @@ function Iceberg() {
     [entries, selectedEntryId],
   )
 
-  const mobileLevel = levels[mobileLevelIndex]
-  const mobileLevelEntries = entriesByLevel.get(mobileLevel.level) ?? []
-  const mobilePageCount = Math.max(
-    1,
-    Math.ceil(mobileLevelEntries.length / mobilePageSize),
-  )
-  const visibleMobileEntries = mobileLevelEntries.slice(
-    mobilePage * mobilePageSize,
-    (mobilePage + 1) * mobilePageSize,
-  )
-
   const selectedLevelEntries = useMemo(
     () =>
       selectedEntry
@@ -470,12 +467,6 @@ function Iceberg() {
         : [],
     [entriesByLevel, selectedEntry],
   )
-
-  useEffect(() => {
-    if (mobilePage >= mobilePageCount) {
-      setMobilePage(Math.max(0, mobilePageCount - 1))
-    }
-  }, [mobilePage, mobilePageCount])
 
   useEffect(() => {
     if (!selectedEntry) {
@@ -498,18 +489,6 @@ function Iceberg() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [selectedEntry])
-
-  const moveMobileLevel = (direction: -1 | 1) => {
-    setMobileLevelIndex((current) =>
-      clamp(current + direction, 0, levels.length - 1),
-    )
-    setMobilePage(0)
-  }
-
-  const selectMobileLevel = (index: number) => {
-    setMobileLevelIndex(index)
-    setMobilePage(0)
-  }
 
   const moveSelectedEntry = (direction: -1 | 1) => {
     if (!selectedEntry || selectedLevelEntries.length < 2) {
@@ -754,136 +733,6 @@ function Iceberg() {
           </div>
         </section>
 
-        <section
-          className={`iceberg-mobile-explorer iceberg-mobile-explorer--level-${mobileLevel.level}`}
-          hidden={view !== 'scene'}
-          aria-label={`Niveau ${mobileLevel.level} : ${mobileLevel.title}`}
-          onTouchStart={(event) => {
-            const touch = event.changedTouches[0]
-            mobileTouchStart.current = { x: touch.clientX, y: touch.clientY }
-          }}
-          onTouchEnd={(event) => {
-            const start = mobileTouchStart.current
-            const touch = event.changedTouches[0]
-            mobileTouchStart.current = null
-
-            if (!start) return
-
-            const deltaX = touch.clientX - start.x
-            const deltaY = touch.clientY - start.y
-
-            if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) {
-              return
-            }
-
-            event.preventDefault()
-            moveMobileLevel(deltaX < 0 ? 1 : -1)
-          }}
-        >
-          <div className="iceberg-mobile-explorer__depth" aria-hidden="true">
-            <div className="iceberg-mobile-explorer__ice" />
-          </div>
-
-          <header className="iceberg-mobile-explorer__header">
-            <div>
-              <span>{mobileLevel.number} · Niveau {mobileLevel.level}</span>
-              <h2>{mobileLevel.title}</h2>
-              <p>{mobileLevel.subtitle}</p>
-            </div>
-            <strong>{mobileLevelEntries.length}</strong>
-          </header>
-
-          <nav
-            className="iceberg-mobile-explorer__levels"
-            aria-label="Choisir la profondeur"
-          >
-            {levels.map((level, index) => (
-              <button
-                type="button"
-                key={level.level}
-                className={index === mobileLevelIndex ? 'is-active' : ''}
-                aria-label={`Niveau ${level.level} : ${level.title}`}
-                aria-current={index === mobileLevelIndex ? 'step' : undefined}
-                onClick={() => selectMobileLevel(index)}
-              >
-                {level.number}
-              </button>
-            ))}
-          </nav>
-
-          <div
-            className="iceberg-mobile-explorer__stories"
-            key={`${mobileLevel.level}-${mobilePage}`}
-            aria-live="polite"
-          >
-            {visibleMobileEntries.length > 0 ? (
-              visibleMobileEntries.map((entry) => (
-                <button
-                  type="button"
-                  key={entry.id}
-                  className={`iceberg-mobile-explorer__entry iceberg-mobile-explorer__entry--${getScatterVariant(entry)}`}
-                  onClick={() => setSelectedEntryId(entry.id)}
-                >
-                  {entry.title}
-                </button>
-              ))
-            ) : (
-              <p className="iceberg-mobile-explorer__empty">
-                Pas encore d’histoire à cette profondeur.
-              </p>
-            )}
-          </div>
-
-          <footer className="iceberg-mobile-explorer__footer">
-            <button
-              type="button"
-              className="iceberg-mobile-explorer__level-button"
-              disabled={mobileLevelIndex === 0}
-              aria-label="Niveau précédent"
-              onClick={() => moveMobileLevel(-1)}
-            >
-              ←
-            </button>
-
-            <div className="iceberg-mobile-explorer__page-status">
-              {mobilePageCount > 1 ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMobilePage((current) => (current + 1) % mobilePageCount)
-                  }
-                >
-                  {mobilePage + 1 < mobilePageCount
-                    ? `Découvrir ${Math.min(
-                        mobilePageSize,
-                        mobileLevelEntries.length -
-                          (mobilePage + 1) * mobilePageSize,
-                      )} autres ↓`
-                    : 'Revoir les premiers ↺'}
-                </button>
-              ) : (
-                <span>
-                  {mobileLevelEntries.length} archive
-                  {mobileLevelEntries.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              <small>
-                Niveau {mobileLevelIndex + 1} / {levels.length}
-                {mobilePageCount > 1 && ` · Page ${mobilePage + 1} / ${mobilePageCount}`}
-              </small>
-            </div>
-
-            <button
-              type="button"
-              className="iceberg-mobile-explorer__level-button"
-              disabled={mobileLevelIndex === levels.length - 1}
-              aria-label="Niveau suivant"
-              onClick={() => moveMobileLevel(1)}
-            >
-              →
-            </button>
-          </footer>
-        </section>
         </>
       )}
 
