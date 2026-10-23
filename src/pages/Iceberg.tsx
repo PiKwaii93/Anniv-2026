@@ -75,14 +75,14 @@ const desktopBaseHeights: Record<IcebergLevel, number> = {
 }
 
 const mobileBaseHeights: Record<IcebergLevel, number> = {
-  1: 430,
-  2: 225,
-  3: 240,
-  4: 255,
-  5: 270,
+  1: 580,
+  2: 560,
+  3: 570,
+  4: 580,
+  5: 590,
 }
 
-const mobileRowPattern = [2, 1, 3, 2, 2, 1]
+const mobileRowPattern = [3, 2, 3, 1, 3, 2, 3]
 
 function hashString(value: string) {
   let hash = 2166136261
@@ -163,7 +163,7 @@ function getTierStyle(
   const mobileRows = getMobileRowCount(count)
 
   const desktopTop = level === 1 ? 100 : 110
-  const mobileTop = level === 1 ? 108 : 118
+  const mobileTop = level === 1 ? 92 : 102
 
   const desktopNeeded =
     count === 0
@@ -173,7 +173,7 @@ function getTierStyle(
   const mobileNeeded =
     count === 0
       ? mobileBaseHeights[level]
-      : mobileTop + Math.max(0, mobileRows - 1) * 92 + 108
+      : mobileTop + Math.max(0, mobileRows - 1) * 54 + 90
 
   return {
     '--tier-height': `${Math.max(
@@ -207,10 +207,17 @@ function getScatterStyle(
   const desktopColumn =
     (index % desktopColumns + desktopRowOffset) % desktopColumns
 
+  const mobileColumnOffset =
+    hashString(`${entry.level}-mobile-${mobileLayout.row}`) %
+    mobileLayout.columns
+
+  const mobileColumn =
+    (mobileLayout.column + mobileColumnOffset) % mobileLayout.columns
+
   const jitterX = (seed % 7) - 3
   const jitterY = (Math.floor(seed / 17) % 15) - 7
-  const mobileJitterX = (Math.floor(seed / 41) % 5) - 2
-  const mobileJitterY = (Math.floor(seed / 67) % 11) - 5
+  const mobileJitterX = (Math.floor(seed / 41) % 9) - 4
+  const mobileJitterY = (Math.floor(seed / 67) % 15) - 7
 
   const desktopX = clamp(
     getColumnPosition(
@@ -225,7 +232,7 @@ function getScatterStyle(
 
   const mobileX = clamp(
     getColumnPosition(
-      mobileLayout.column,
+      mobileColumn,
       mobileLayout.columns,
       mobileLayout.columns === 3 ? 18 : 27,
       mobileLayout.columns === 3 ? 82 : 73,
@@ -240,8 +247,8 @@ function getScatterStyle(
     jitterY
 
   const mobileY =
-    (entry.level === 1 ? 108 : 118) +
-    mobileLayout.row * 92 +
+    (entry.level === 1 ? 92 : 102) +
+    mobileLayout.row * 54 +
     mobileJitterY
 
   const rotationOptions = [-5, -3, -1, 0, 0, 0, 1, 2, 4]
@@ -325,7 +332,7 @@ function getScatterStyle(
         ? 280
         : mobileLayout.columns === 2
           ? 170
-          : 108,
+          : 112,
     )}px`,
     '--scatter-weight': fontWeight,
     '--scatter-opacity': opacity,
@@ -595,6 +602,22 @@ function Iceberg() {
             {entries.length} archive{entries.length !== 1 ? 's' : ''} à explorer
           </p>
         )}
+        {view === 'scene' && (
+          <nav
+            className="iceberg-mobile-depth-nav"
+            aria-label="Accéder directement à une profondeur"
+          >
+            {levels.map((level) => (
+              <a
+                key={level.level}
+                href={`#iceberg-level-${level.level}`}
+                aria-label={`Aller au niveau ${level.level} : ${level.title}`}
+              >
+                {level.number}
+              </a>
+            ))}
+          </nav>
+        )}
       </div>
 
       {view === 'list' && !loading && (
@@ -655,6 +678,7 @@ function Iceberg() {
             </div>
 
             <div
+              id="iceberg-level-1"
               className={`iceberg-tier iceberg-tier--surface ${surfaceDensityClass}`}
               style={surfaceStyle}
             >
@@ -700,6 +724,7 @@ function Iceberg() {
               return (
                 <div
                   key={levelConfig.level}
+                  id={`iceberg-level-${levelConfig.level}`}
                   className={`iceberg-tier iceberg-tier--${levelConfig.level} ${densityClass}`}
                   style={getTierStyle(
                     levelConfig.level,

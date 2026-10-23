@@ -2060,6 +2060,10 @@
   text-align: right;
 }
 
+.iceberg-mobile-depth-nav {
+  display: none;
+}
+
 .iceberg-readable__heading {
   display: flex;
   align-items: end;
@@ -2512,10 +2516,10 @@
     position: sticky;
     top: 8px;
     width: calc(100% - 28px);
-    padding: 7px;
+    padding: 5px;
     background: rgba(5, 11, 16, .9);
     border: 1px solid rgba(139, 190, 218, .18);
-    border-radius: 18px;
+    border-radius: 16px;
     backdrop-filter: blur(16px);
   }
 
@@ -2528,9 +2532,43 @@
     border: 0;
   }
 
+  .iceberg-view-controls .guest-tabs button {
+    min-height: 42px;
+    padding: 7px 10px;
+    font-size: .78rem;
+  }
+
   .iceberg-view-controls > p {
-    padding: 5px 8px 1px;
-    text-align: center;
+    display: none;
+  }
+
+  .iceberg-mobile-depth-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .iceberg-mobile-depth-nav a {
+    display: grid;
+    place-items: center;
+    min-height: 28px;
+    color: rgba(189, 216, 231, .6);
+    background: rgba(255, 255, 255, .025);
+    border-radius: 9px;
+    font-size: .58rem;
+    font-weight: 750;
+    letter-spacing: .08em;
+    text-decoration: none;
+  }
+
+  .iceberg-mobile-depth-nav a:active {
+    color: #f1e2a4;
+    background: rgba(239, 218, 139, .12);
+  }
+
+  .iceberg-tier[id] {
+    scroll-margin-top: 94px;
   }
 
   .iceberg-readable .guest-section {
