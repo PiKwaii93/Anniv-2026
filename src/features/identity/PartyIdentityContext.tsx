@@ -12,6 +12,8 @@ import { useLocation } from 'react-router-dom'
 
 import { useGuests } from '../guests/GuestsContext'
 import { supabase } from '../../lib/supabase'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
+import { unsubscribeLocalPush } from '../push/pushClient'
 
 export type PartyIdentity = {
   playerKey: string
@@ -115,6 +117,7 @@ function PartyIdentityProvider({
   children: ReactNode
 }) {
   const location = useLocation()
+  const requiresIosInstallation = useRequiresIosInstallation()
 
   const {
     guests,
@@ -389,7 +392,7 @@ function PartyIdentityProvider({
       if (event.key === PARTY_IDENTITY_STORAGE_KEY || event.key === null) void check()
     }
     void check()
-    const timer = window.setInterval(() => void check(), 10_000)
+    const timer = window.setInterval(() => void check(), 30_000)
     window.addEventListener('focus', check)
     window.addEventListener('online', check)
     window.addEventListener('storage', onStorage)
@@ -407,6 +410,10 @@ function PartyIdentityProvider({
   const claimIdentity = useCallback(
     async (playerKey: string) => {
       if (busy) return false
+      if (requiresIosInstallation) {
+        setError('Ouvre Anniv 2026 depuis son icône pour choisir ton prénom.')
+        return false
+      }
 
       const player = playerByKeyRef.current.get(playerKey)
       if (!player) {
@@ -437,7 +444,7 @@ function PartyIdentityProvider({
       setBusy(false)
       return ok === true
     },
-    [busy, claimStoredIdentity],
+    [busy, claimStoredIdentity, requiresIosInstallation],
   )
 
   const releaseIdentity = useCallback(async () => {
@@ -472,6 +479,7 @@ function PartyIdentityProvider({
       return false
     }
 
+    await unsubscribeLocalPush()
     clearLocalIdentity()
     setIdentity(null)
     setMigrationConflict(false)

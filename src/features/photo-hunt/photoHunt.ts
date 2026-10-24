@@ -20,6 +20,8 @@ export type PhotoHuntSubmission = {
   player_name: string
   storage_path: string
   mime_type: string
+  image_width?: number | null
+  image_height?: number | null
   caption: string | null
   status: PhotoHuntSubmissionStatus
   created_at: string

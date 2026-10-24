@@ -216,6 +216,32 @@
   border-radius: 19px;
 }
 
+.photo-hunt-admin__panel > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #cfd4dd;
+  font-size: 0.75rem;
+  font-weight: 750;
+  list-style: none;
+}
+
+.photo-hunt-admin__panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.photo-hunt-admin__panel > summary::after {
+  content: 'Déplier +';
+  margin-left: auto;
+  color: #8c95a3;
+  font-size: 0.66rem;
+}
+
+.photo-hunt-admin__panel[open] > summary::after {
+  content: 'Replier −';
+}
+
 .photo-hunt-admin__panel-heading {
   display: flex;
   align-items: end;
@@ -414,10 +440,14 @@
 
 .photo-hunt-admin__submission-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   margin-top: auto;
   padding: 0 12px 12px;
+}
+
+.photo-review__actions:has(> button:only-child) > button {
+  width: 100%;
 }
 
 .photo-hunt-admin__submission-actions button,
@@ -436,6 +466,12 @@
 .photo-hunt-admin__delete {
   color: #e69aa8 !important;
   border-color: rgba(236, 99, 121, 0.14) !important;
+}
+
+.photo-hunt-admin__remove {
+  color: #ffb0bc !important;
+  background: rgba(236, 99, 121, 0.055) !important;
+  border-color: rgba(236, 99, 121, 0.2) !important;
 }
 
 .photo-hunt-admin__empty {
@@ -585,7 +621,104 @@ button:disabled {
 
 @media (max-width: 620px) {
   .photo-hunt-admin {
-    padding-inline: 14px;
+    padding: 12px 14px 104px;
+  }
+
+  .photo-hunt-admin__hero {
+    padding-top: 0;
+  }
+
+  .photo-hunt-admin__hero > p {
+    margin-top: 16px;
+  }
+
+  .photo-hunt-admin .photo-hunt-admin__hero h1 {
+    margin-top: 7px;
+    font-size: clamp(2.75rem, 14vw, 3.5rem);
+    line-height: 0.9;
+  }
+
+  .photo-hunt-admin__hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 18px;
+  }
+
+  .photo-hunt-admin__hero-actions a,
+  .photo-hunt-admin__hero-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    text-align: center;
+  }
+
+  .photo-hunt-admin .photo-admin-tabs {
+    position: sticky;
+    z-index: 8;
+    top: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 14px 0 16px;
+    padding: 5px;
+    background: rgba(8, 10, 14, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    backdrop-filter: blur(14px);
+  }
+
+  .photo-hunt-admin .photo-admin-tabs button {
+    width: 100%;
+    padding-inline: 8px;
+    border-color: transparent;
+  }
+
+  .photo-hunt-admin .photo-review {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .photo-hunt-admin .photo-review > img {
+    height: min(44dvh, 380px);
+  }
+
+  .photo-hunt-admin .photo-review h2 {
+    margin-top: 13px;
+  }
+
+  .photo-hunt-admin .photo-review p {
+    margin-block: 8px;
+    font-size: 0.9rem;
+  }
+
+  .photo-hunt-admin .photo-review__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 12px;
+  }
+
+  .photo-hunt-admin .photo-review__actions:has(> button:only-child) {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-hunt-admin__metrics {
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .photo-hunt-admin__metrics > div {
+    padding: 13px;
+  }
+
+  .photo-hunt-admin__metrics strong {
+    font-size: 1.65rem;
+  }
+
+  .photo-hunt-admin__panel {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 17px;
   }
 
   .photo-hunt-admin__metrics,
@@ -628,7 +761,6 @@ button:disabled {
 
 @media (max-width: 420px) {
   .photo-hunt-admin__contributors-list,
-  .photo-hunt-admin__metrics,
   .photo-hunt-admin__moderation-grid,
   .photo-hunt-admin__batch-bar > div {
     grid-template-columns: 1fr;

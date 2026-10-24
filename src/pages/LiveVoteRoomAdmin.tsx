@@ -6,6 +6,8 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import AdminSectionNav from '../features/party/AdminSectionNav'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { useGuests } from '../features/guests/GuestsContext'
 import { supabase } from '../lib/supabase'
 
@@ -13,6 +15,7 @@ import './LiveVoteRoomAdmin.css'
 
 type VoteMode = 'likely' | 'majority' | 'predict' | 'who_said'
 type VoteStage = 'single' | 'nomination' | 'final'
+type WhoSaidAnswerKind = 'people' | 'text'
 
 type QuestionRow = {
   id: string
@@ -75,6 +78,13 @@ const modeCopy: Record<VoteMode, { label: string; detail: string }> = {
   },
 }
 
+const roomAdminSections = [
+  { href: '#room-live', icon: partyModuleIcons.room, label: 'En direct' },
+  { href: '#room-editor', icon: '+', label: 'Préparer' },
+  { href: '#room-questions', icon: '≡', label: 'Questions' },
+  { href: '#room-players', icon: '○', label: 'Participants' },
+]
+
 function adminError(code?: string) {
   switch (code) {
     case 'ROUND_ALREADY_OPEN': return 'Un round est déjà ouvert. Révèle-le ou passe-le avant d’en lancer un autre.'
@@ -105,6 +115,9 @@ function LiveVoteRoomAdmin() {
   const [correctPlayerKey, setCorrectPlayerKey] = useState('')
   const [suspectKeys, setSuspectKeys] = useState<string[]>([])
   const [suspectSearch, setSuspectSearch] = useState('')
+  const [whoSaidAnswerKind, setWhoSaidAnswerKind] =
+    useState<WhoSaidAnswerKind>('people')
+  const [correctTextAnswer, setCorrectTextAnswer] = useState('')
 
   const availablePlayers = useMemo<AvailablePlayer[]>(() => {
     const rows: AvailablePlayer[] = []
@@ -178,17 +191,38 @@ function LiveVoteRoomAdmin() {
     setCorrectPlayerKey('')
     setSuspectKeys([])
     setSuspectSearch('')
+    setWhoSaidAnswerKind('people')
+    setCorrectTextAnswer('')
   }
 
   const editQuestion = (question: QuestionRow) => {
+    const usesTextAnswers =
+      question.mode === 'who_said' &&
+      question.suspects.length > 0 &&
+      question.suspects.every((suspect) => suspect.key.startsWith('answer:'))
+
     setEditingId(question.id)
     setMode(question.mode)
     setPrompt(question.prompt)
-    setOptionsText(question.options.join('\n'))
+    setOptionsText(
+      usesTextAnswers
+        ? question.suspects.map((suspect) => suspect.label).join('\n')
+        : question.options.join('\n'),
+    )
     setRevealNote(question.reveal_note)
     setTimer(question.timer_seconds ? String(question.timer_seconds) : '')
-    setCorrectPlayerKey(question.correct_player_key ?? '')
-    setSuspectKeys(question.suspects.map((suspect) => suspect.key))
+    setWhoSaidAnswerKind(usesTextAnswers ? 'text' : 'people')
+    setCorrectTextAnswer(
+      usesTextAnswers
+        ? question.suspects.find(
+          (suspect) => suspect.key === question.correct_player_key,
+        )?.label ?? ''
+        : '',
+    )
+    setCorrectPlayerKey(usesTextAnswers ? '' : question.correct_player_key ?? '')
+    setSuspectKeys(
+      usesTextAnswers ? [] : question.suspects.map((suspect) => suspect.key),
+    )
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -224,23 +258,40 @@ function LiveVoteRoomAdmin() {
       return
     }
 
-    if (mode === 'who_said') {
+    const usesTextAnswers =
+      mode === 'who_said' && whoSaidAnswerKind === 'text'
+
+    if (usesTextAnswers) {
+      if (options.length !== 4 || !options.includes(correctTextAnswer)) {
+        setError('Pour ce QCM, renseigne 4 réponses différentes et choisis la bonne réponse.')
+        return
+      }
+    } else if (mode === 'who_said') {
       if (!correctPlayerKey || suspectKeys.length < 4 || suspectKeys.length > 6 || !suspectKeys.includes(correctPlayerKey)) {
         setError('Pour “Qui a répondu ça ?”, choisis une bonne réponse et 4 à 6 suspects au total.')
         return
       }
     }
 
-    const suspects = suspectKeys
-      .map((key) => playerMap.get(key))
-      .filter((player): player is AvailablePlayer => Boolean(player))
-      .map((player) => ({ key: player.key, label: player.name }))
+    const suspects = usesTextAnswers
+      ? options.map((label, index) => ({
+        key: `answer:${index + 1}`,
+        label,
+      }))
+      : suspectKeys
+        .map((key) => playerMap.get(key))
+        .filter((player): player is AvailablePlayer => Boolean(player))
+        .map((player) => ({ key: player.key, label: player.name }))
+
+    const correctAnswerKey = usesTextAnswers
+      ? suspects.find((suspect) => suspect.label === correctTextAnswer)?.key ?? null
+      : correctPlayerKey
 
     const payload = {
       mode,
       prompt: prompt.trim(),
       options: mode === 'majority' || mode === 'predict' ? options : [],
-      correct_player_key: mode === 'who_said' ? correctPlayerKey : null,
+      correct_player_key: mode === 'who_said' ? correctAnswerKey : null,
       suspects: mode === 'who_said' ? suspects : [],
       reveal_note: revealNote.trim(),
       timer_seconds: timer ? Number(timer) : null,
@@ -372,9 +423,14 @@ function LiveVoteRoomAdmin() {
         <Link to="/room" className="live-room-admin__public-link">Voir l’écran public ↗</Link>
       </header>
 
+      <AdminSectionNav
+        label="Sections de la régie La Salle"
+        items={roomAdminSections}
+      />
+
       {error && <div className="live-room-admin__error">{error}</div>}
 
-      <section className={`live-control live-control--${publicState.phase}${isLikelyRound ? ' live-control--likely' : ''}`}>
+      <section id="room-live" className={`live-control live-control--${publicState.phase}${isLikelyRound ? ' live-control--likely' : ''}`}>
         <div className="live-control__top">
           <div>
             <span className="live-control__dot" />
@@ -463,7 +519,7 @@ function LiveVoteRoomAdmin() {
         )}
       </section>
 
-      <section className="live-room-admin__editor">
+      <section id="room-editor" className="live-room-admin__editor">
         <div className="live-room-admin__section-title">
           <div>
             <span>{editingId ? 'Modification' : 'Nouvelle question'}</span>
@@ -500,31 +556,79 @@ function LiveVoteRoomAdmin() {
 
         {mode === 'who_said' && (
           <div className="live-room-admin__suspects">
-            <label className="live-room-admin__field">
-              <span>Bonne réponse</span>
-              <select value={correctPlayerKey} onChange={(event) => changeCorrect(event.target.value)}>
-                <option value="">Choisir la personne</option>
-                {availablePlayers.map((player) => <option key={player.key} value={player.key}>{player.name} · {player.detail}</option>)}
-              </select>
-            </label>
-
-            <div className="live-room-admin__field">
-              <span>Suspects · {suspectKeys.length}/6 · minimum 4</span>
-              <input value={suspectSearch} onChange={(event) => setSuspectSearch(event.target.value)} placeholder="Rechercher un suspect…" />
-              <div className="live-room-admin__suspect-grid">
-                {suspectMatches.map((player) => (
-                  <button
-                    key={player.key}
-                    type="button"
-                    className={suspectKeys.includes(player.key) ? 'live-room-admin__suspect live-room-admin__suspect--selected' : 'live-room-admin__suspect'}
-                    onClick={() => toggleSuspect(player.key)}
-                  >
-                    <strong>{player.name}</strong>
-                    <span>{player.key === correctPlayerKey ? '✓ réponse' : player.detail}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="live-room-admin__answer-kind" role="group" aria-label="Type de réponses">
+              <button
+                type="button"
+                className={whoSaidAnswerKind === 'people' ? 'live-room-admin__answer-kind-button live-room-admin__answer-kind-button--active' : 'live-room-admin__answer-kind-button'}
+                onClick={() => setWhoSaidAnswerKind('people')}
+              >
+                Personnes
+              </button>
+              <button
+                type="button"
+                className={whoSaidAnswerKind === 'text' ? 'live-room-admin__answer-kind-button live-room-admin__answer-kind-button--active' : 'live-room-admin__answer-kind-button'}
+                onClick={() => setWhoSaidAnswerKind('text')}
+              >
+                Réponses textuelles
+              </button>
             </div>
+
+            {whoSaidAnswerKind === 'text' ? (
+              <>
+                <label className="live-room-admin__field">
+                  <span>Réponses · exactement 4, une par ligne</span>
+                  <textarea
+                    value={optionsText}
+                    onChange={(event) => setOptionsText(event.target.value)}
+                    placeholder={'Réponse A\nRéponse B\nRéponse C\nRéponse D'}
+                    rows={5}
+                  />
+                </label>
+                <label className="live-room-admin__field">
+                  <span>Bonne réponse</span>
+                  <select
+                    value={correctTextAnswer}
+                    onChange={(event) => setCorrectTextAnswer(event.target.value)}
+                  >
+                    <option value="">Choisir la réponse</option>
+                    {optionsText
+                      .split('\n')
+                      .map((value) => value.trim())
+                      .filter(Boolean)
+                      .filter((value, index, array) => array.indexOf(value) === index)
+                      .map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="live-room-admin__field">
+                  <span>Bonne réponse</span>
+                  <select value={correctPlayerKey} onChange={(event) => changeCorrect(event.target.value)}>
+                    <option value="">Choisir la personne</option>
+                    {availablePlayers.map((player) => <option key={player.key} value={player.key}>{player.name} · {player.detail}</option>)}
+                  </select>
+                </label>
+
+                <div className="live-room-admin__field">
+                  <span>Suspects · {suspectKeys.length}/6 · minimum 4</span>
+                  <input value={suspectSearch} onChange={(event) => setSuspectSearch(event.target.value)} placeholder="Rechercher un suspect…" />
+                  <div className="live-room-admin__suspect-grid">
+                    {suspectMatches.map((player) => (
+                      <button
+                        key={player.key}
+                        type="button"
+                        className={suspectKeys.includes(player.key) ? 'live-room-admin__suspect live-room-admin__suspect--selected' : 'live-room-admin__suspect'}
+                        onClick={() => toggleSuspect(player.key)}
+                      >
+                        <strong>{player.name}</strong>
+                        <span>{player.key === correctPlayerKey ? '✓ réponse' : player.detail}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -549,7 +653,7 @@ function LiveVoteRoomAdmin() {
         </button>
       </section>
 
-      <section className="live-room-admin__bank">
+      <section id="room-questions" className="live-room-admin__bank">
         <div className="live-room-admin__section-title">
           <div>
             <span>File préparée</span>
@@ -571,7 +675,14 @@ function LiveVoteRoomAdmin() {
               <div className="live-room-admin__question-body">
                 <span>{modeCopy[question.mode].label} · {question.timer_seconds ? `${question.timer_seconds}s` : 'sans timer'}</span>
                 <h3>{question.prompt}</h3>
-                {question.mode === 'who_said' && <small>{question.suspects.length} suspects</small>}
+                {question.mode === 'who_said' && (
+                  <small>
+                    {question.suspects.length}{' '}
+                    {question.suspects.every((suspect) => suspect.key.startsWith('answer:'))
+                      ? 'réponses'
+                      : 'suspects'}
+                  </small>
+                )}
                 {(question.mode === 'majority' || question.mode === 'predict') && <small>{question.options.join(' · ')}</small>}
               </div>
               <div className="live-room-admin__question-actions">
@@ -585,7 +696,7 @@ function LiveVoteRoomAdmin() {
         </div>
       </section>
 
-      <section className="live-room-admin__players">
+      <section id="room-players" className="live-room-admin__players">
         <div className="live-room-admin__section-title">
           <div>
             <span>Identités La Salle</span>

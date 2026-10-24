@@ -75,12 +75,14 @@ const desktopBaseHeights: Record<IcebergLevel, number> = {
 }
 
 const mobileBaseHeights: Record<IcebergLevel, number> = {
-  1: 430,
-  2: 225,
-  3: 240,
-  4: 255,
-  5: 270,
+  1: 580,
+  2: 560,
+  3: 570,
+  4: 580,
+  5: 590,
 }
+
+const mobileRowPattern = [3, 2, 3, 1, 3, 2, 3]
 
 function hashString(value: string) {
   let hash = 2166136261
@@ -117,8 +119,25 @@ function getDesktopColumnCount(count: number) {
   return 5
 }
 
-function getMobileColumnCount(count: number) {
-  return count <= 1 ? 1 : 2
+function getMobileLayoutPosition(index: number) {
+  let remaining = index
+  let row = 0
+
+  while (remaining >= mobileRowPattern[row % mobileRowPattern.length]) {
+    remaining -= mobileRowPattern[row % mobileRowPattern.length]
+    row += 1
+  }
+
+  return {
+    row,
+    column: remaining,
+    columns: mobileRowPattern[row % mobileRowPattern.length],
+  }
+}
+
+function getMobileRowCount(count: number) {
+  if (count === 0) return 0
+  return getMobileLayoutPosition(count - 1).row + 1
 }
 
 function getColumnPosition(
@@ -139,15 +158,12 @@ function getTierStyle(
   count: number,
 ): CSSProperties {
   const desktopColumns = getDesktopColumnCount(count)
-  const mobileColumns = getMobileColumnCount(count)
-
   const desktopRows =
     count === 0 ? 0 : Math.ceil(count / desktopColumns)
-  const mobileRows =
-    count === 0 ? 0 : Math.ceil(count / mobileColumns)
+  const mobileRows = getMobileRowCount(count)
 
   const desktopTop = level === 1 ? 100 : 110
-  const mobileTop = level === 1 ? 108 : 118
+  const mobileTop = level === 1 ? 92 : 102
 
   const desktopNeeded =
     count === 0
@@ -157,7 +173,7 @@ function getTierStyle(
   const mobileNeeded =
     count === 0
       ? mobileBaseHeights[level]
-      : mobileTop + Math.max(0, mobileRows - 1) * 88 + 108
+      : mobileTop + Math.max(0, mobileRows - 1) * 54 + 90
 
   return {
     '--tier-height': `${Math.max(
@@ -181,29 +197,27 @@ function getScatterStyle(
   )
 
   const desktopColumns = getDesktopColumnCount(count)
-  const mobileColumns = getMobileColumnCount(count)
-
   const desktopRow = Math.floor(index / desktopColumns)
-  const mobileRow = Math.floor(index / mobileColumns)
+  const mobileLayout = getMobileLayoutPosition(index)
 
   const desktopRowOffset =
     hashString(`${entry.level}-desktop-${desktopRow}`) %
     desktopColumns
 
-  const mobileRowOffset =
-    hashString(`${entry.level}-mobile-${mobileRow}`) %
-    mobileColumns
-
   const desktopColumn =
     (index % desktopColumns + desktopRowOffset) % desktopColumns
 
+  const mobileColumnOffset =
+    hashString(`${entry.level}-mobile-${mobileLayout.row}`) %
+    mobileLayout.columns
+
   const mobileColumn =
-    (index % mobileColumns + mobileRowOffset) % mobileColumns
+    (mobileLayout.column + mobileColumnOffset) % mobileLayout.columns
 
   const jitterX = (seed % 7) - 3
   const jitterY = (Math.floor(seed / 17) % 15) - 7
-  const mobileJitterX = (Math.floor(seed / 41) % 5) - 2
-  const mobileJitterY = (Math.floor(seed / 67) % 11) - 5
+  const mobileJitterX = (Math.floor(seed / 41) % 9) - 4
+  const mobileJitterY = (Math.floor(seed / 67) % 15) - 7
 
   const desktopX = clamp(
     getColumnPosition(
@@ -219,12 +233,12 @@ function getScatterStyle(
   const mobileX = clamp(
     getColumnPosition(
       mobileColumn,
-      mobileColumns,
-      28,
-      72,
+      mobileLayout.columns,
+      mobileLayout.columns === 3 ? 18 : 27,
+      mobileLayout.columns === 3 ? 82 : 73,
     ) + mobileJitterX,
-    24,
-    76,
+    14,
+    86,
   )
 
   const desktopY =
@@ -233,8 +247,8 @@ function getScatterStyle(
     jitterY
 
   const mobileY =
-    (entry.level === 1 ? 108 : 118) +
-    mobileRow * 88 +
+    (entry.level === 1 ? 92 : 102) +
+    mobileLayout.row * 54 +
     mobileJitterY
 
   const rotationOptions = [-5, -3, -1, 0, 0, 0, 1, 2, 4]
@@ -312,7 +326,14 @@ function getScatterStyle(
     '--scatter-size': `${fontSize}rem`,
     '--scatter-width': `${maxWidth}px`,
     '--scatter-viewport-cap': viewportWidthCap,
-    '--scatter-mobile-width': `${Math.min(maxWidth, 158)}px`,
+    '--scatter-mobile-width': `${Math.min(
+      maxWidth,
+      mobileLayout.columns === 1
+        ? 280
+        : mobileLayout.columns === 2
+          ? 170
+          : 112,
+    )}px`,
     '--scatter-weight': fontWeight,
     '--scatter-opacity': opacity,
     '--scatter-letter-spacing': letterSpacing,
@@ -343,7 +364,7 @@ function Iceberg() {
   const { isAdmin, loading: authLoading } = useAuth()
 
   const [entries, setEntries] = useState<IcebergEntry[]>([])
-  const [view, setView] = useState<'list' | 'scene'>('list')
+  const [view, setView] = useState<'list' | 'scene'>('scene')
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
     null,
   )
@@ -446,6 +467,14 @@ function Iceberg() {
     [entries, selectedEntryId],
   )
 
+  const selectedLevelEntries = useMemo(
+    () =>
+      selectedEntry
+        ? entriesByLevel.get(selectedEntry.level) ?? []
+        : [],
+    [entriesByLevel, selectedEntry],
+  )
+
   useEffect(() => {
     if (!selectedEntry) {
       return
@@ -467,6 +496,21 @@ function Iceberg() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [selectedEntry])
+
+  const moveSelectedEntry = (direction: -1 | 1) => {
+    if (!selectedEntry || selectedLevelEntries.length < 2) {
+      return
+    }
+
+    const currentIndex = selectedLevelEntries.findIndex(
+      (entry) => entry.id === selectedEntry.id,
+    )
+    const nextIndex =
+      (currentIndex + direction + selectedLevelEntries.length) %
+      selectedLevelEntries.length
+
+    setSelectedEntryId(selectedLevelEntries[nextIndex].id)
+  }
 
   const renderEntries = (level: IcebergLevel) => {
     const levelEntries = entriesByLevel.get(level) ?? []
@@ -536,8 +580,81 @@ function Iceberg() {
         </div>
       </header>
 
-      <div className="guest-tabs" aria-label="Lecture de l’Iceberg"><button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>Par niveaux</button><button type="button" aria-pressed={view === 'scene'} onClick={() => setView('scene')}>Vue illustrée</button></div>
-      {view === 'list' && !loading && <div className="iceberg-readable">{levels.map(level => <section className="guest-section" key={level.level}><h2>{level.number} · {level.title}</h2><p className="guest-empty">{level.subtitle}</p><div className="guest-activity-list">{(entriesByLevel.get(level.level) ?? []).map(entry => <details key={entry.id}><summary>{entry.title}</summary><p>{entry.description.trim() || 'Cette histoire se raconte de vive voix. Demande autour de toi !'}</p></details>)}</div>{!(entriesByLevel.get(level.level)?.length) && <p className="guest-empty">Pas encore d’histoire à ce niveau.</p>}</section>)}</div>}
+      <div className="iceberg-view-controls">
+        <div className="guest-tabs" aria-label="Lecture de l’Iceberg">
+          <button
+            type="button"
+            aria-pressed={view === 'scene'}
+            onClick={() => setView('scene')}
+          >
+            Vue illustrée
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'list'}
+            onClick={() => setView('list')}
+          >
+            Par niveaux
+          </button>
+        </div>
+        {!loading && (
+          <p>
+            {entries.length} archive{entries.length !== 1 ? 's' : ''} à explorer
+          </p>
+        )}
+        {view === 'scene' && (
+          <nav
+            className="iceberg-mobile-depth-nav"
+            aria-label="Accéder directement à une profondeur"
+          >
+            {levels.map((level) => (
+              <a
+                key={level.level}
+                href={`#iceberg-level-${level.level}`}
+                aria-label={`Aller au niveau ${level.level} : ${level.title}`}
+              >
+                {level.number}
+              </a>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      {view === 'list' && !loading && (
+        <div className="iceberg-readable">
+          {levels.map((level) => {
+            const levelEntries = entriesByLevel.get(level.level) ?? []
+
+            return (
+              <section className="guest-section" key={level.level}>
+                <div className="iceberg-readable__heading">
+                  <div>
+                    <span>Niveau {level.number}</span>
+                    <h2>{level.title}</h2>
+                  </div>
+                  <strong>{levelEntries.length}</strong>
+                </div>
+                <p className="guest-empty">{level.subtitle}</p>
+                {levelEntries.length > 0 ? (
+                  <div className="guest-activity-list">
+                    {levelEntries.map((entry) => (
+                      <details key={entry.id}>
+                        <summary>{entry.title}</summary>
+                        <p>
+                          {entry.description.trim() ||
+                            'Cette histoire se raconte de vive voix. Demande autour de toi !'}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="guest-empty">Pas encore d’histoire à ce niveau.</p>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      )}
       {error && <div className="iceberg-error">{error}</div>}
 
       {loading ? (
@@ -546,7 +663,11 @@ function Iceberg() {
           <p>Formation de l&apos;iceberg...</p>
         </section>
       ) : (
-        <section className="iceberg-scene" hidden={view !== 'scene'}>
+        <>
+        <section
+          className="iceberg-scene iceberg-scene--desktop"
+          hidden={view !== 'scene'}
+        >
           <div className="iceberg-sky" style={surfaceStyle}>
             <div className="iceberg-cloud iceberg-cloud--one" />
             <div className="iceberg-cloud iceberg-cloud--two" />
@@ -557,6 +678,7 @@ function Iceberg() {
             </div>
 
             <div
+              id="iceberg-level-1"
               className={`iceberg-tier iceberg-tier--surface ${surfaceDensityClass}`}
               style={surfaceStyle}
             >
@@ -602,6 +724,7 @@ function Iceberg() {
               return (
                 <div
                   key={levelConfig.level}
+                  id={`iceberg-level-${levelConfig.level}`}
                   className={`iceberg-tier iceberg-tier--${levelConfig.level} ${densityClass}`}
                   style={getTierStyle(
                     levelConfig.level,
@@ -634,6 +757,8 @@ function Iceberg() {
             </div>
           </div>
         </section>
+
+        </>
       )}
 
       {selectedEntry && (
@@ -681,6 +806,26 @@ function Iceberg() {
               <p className="iceberg-modal__description iceberg-modal__description--empty">
                 Aucun contexte supplémentaire.
               </p>
+            )}
+
+            {selectedLevelEntries.length > 1 && (
+              <nav
+                className="iceberg-modal__mobile-navigation"
+                aria-label="Parcourir les anecdotes de ce niveau"
+              >
+                <button type="button" onClick={() => moveSelectedEntry(-1)}>
+                  ← Précédent
+                </button>
+                <span>
+                  {selectedLevelEntries.findIndex(
+                    (entry) => entry.id === selectedEntry.id,
+                  ) + 1}{' '}
+                  / {selectedLevelEntries.length}
+                </span>
+                <button type="button" onClick={() => moveSelectedEntry(1)}>
+                  Suivant →
+                </button>
+              </nav>
             )}
 
             <div className="iceberg-modal__footer">

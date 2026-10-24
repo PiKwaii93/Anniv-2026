@@ -1,0 +1,125 @@
+.beer-bracket-page {
+  min-height: 100dvh;
+  padding: 20px clamp(16px, 3vw, 42px) 32px;
+  color: #f5f5f7;
+  background: radial-gradient(circle at 92% 8%, rgba(255, 62, 84, 0.1), transparent 28%), #09090d;
+}
+
+.beer-bracket-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.beer-bracket-page__header a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: #aaaab3;
+  text-decoration: none;
+}
+
+.beer-bracket-page__header p {
+  margin: 14px 0 6px;
+  color: #98646a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.beer-bracket-page__header h1 {
+  margin: 0;
+  font: 750 clamp(2.8rem, 7vw, 5.8rem)/0.9 'Space Grotesk', sans-serif;
+  letter-spacing: -0.065em;
+}
+
+.beer-bracket-page__header h1 span {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.28);
+}
+
+.beer-bracket-page__status {
+  flex: 0 0 auto;
+  min-width: 130px;
+  padding: 14px;
+  text-align: right;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.beer-bracket-page__status strong,
+.beer-bracket-page__status small {
+  display: block;
+}
+
+.beer-bracket-page__status strong {
+  font: 750 1.7rem 'Space Grotesk', sans-serif;
+}
+
+.beer-bracket-page__status strong span,
+.beer-bracket-page__status small {
+  color: #73737d;
+}
+
+.beer-bracket-page__status small {
+  margin-top: 3px;
+  font-size: 0.62rem;
+}
+
+.beer-bracket-page__guide {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  color: #777781;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  font-size: 0.7rem;
+}
+
+.beer-bracket-page__guide strong {
+  color: #d8b3b6;
+}
+
+.beer-bracket-page__empty,
+.beer-bracket-page__error {
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  color: #90909a;
+}
+
+.beer-bracket-page__error {
+  color: #f2a3ab;
+  border-color: rgba(255, 82, 101, 0.2);
+}
+
+@media (max-width: 700px) {
+  .beer-bracket-page {
+    padding: 10px 14px 24px;
+  }
+
+  .beer-bracket-page__header {
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .beer-bracket-page__header h1 {
+    font-size: clamp(2.7rem, 14vw, 4rem);
+  }
+
+  .beer-bracket-page__status {
+    display: none;
+  }
+
+  .beer-bracket-page__guide {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

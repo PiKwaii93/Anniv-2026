@@ -278,6 +278,8 @@ function PhotoHunt() {
           p_slot_id: slot.slotId,
           p_player_key: identity.playerKey,
           p_session_token: identity.sessionToken,
+          p_image_width: preparedPhoto.width,
+          p_image_height: preparedPhoto.height,
           p_caption: caption.trim() || null,
         },
       )
@@ -294,7 +296,7 @@ function PhotoHunt() {
       setCaption('')
       setSelectedChallenge(null)
       setParams({ view: 'mine' }, { replace: true })
-      setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est privée jusqu’à validation par la régie.`)
+      setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est déjà visible dans la galerie.`)
       await loadData()
     } catch (uploadError) {
       console.error('Unable to submit Photo Hunt image:', uploadError)
@@ -322,12 +324,12 @@ function PhotoHunt() {
         <p className="photo-hunt__eyebrow">Anniv 2026 · chasse photo</p>
         <h1>Les <span>photos.</span></h1>
         <p>
-          Un défi, une photo, un souvenir. Les photos sont validées avant publication.
+          Un défi, une photo, un souvenir. Chaque envoi rejoint directement la galerie.
         </p>
 
         <div className="photo-hunt__stats" hidden>
           <div><strong>{approvedCount}</strong><span>validée{approvedCount !== 1 ? 's' : ''}</span></div>
-          <div><strong>{pendingCount}</strong><span>en validation</span></div>
+          <div><strong>{pendingCount}</strong><span>en publication</span></div>
           <div><strong>{challenges.length}</strong><span>défis actifs</span></div>
         </div>
       </header>
@@ -340,7 +342,7 @@ function PhotoHunt() {
         <div className="photo-hunt__success" role="status">
           <span>✓</span>
           <div>
-            <strong>Bien reçu par la régie</strong>
+            <strong>Photo publiée</strong>
             <p>{success}</p>
           </div>
         </div>
@@ -360,8 +362,8 @@ function PhotoHunt() {
             {pendingCount > 0 && (
               <div className="photo-hunt__status-card photo-hunt__status-card--pending">
                 <strong>{pendingCount}</strong>
-                <span>en validation</span>
-                <p>La photo reste privée. Dès qu’elle est publiée, elle rejoint automatiquement le mur.</p>
+                <span>en publication</span>
+                <p>L’envoi est terminé. La photo rejoint le mur automatiquement.</p>
               </div>
             )}
             {rejectedCount > 0 && (
@@ -373,7 +375,7 @@ function PhotoHunt() {
             )}
           </div>
           {ownSubmissions.length === 0 && <p className="guest-empty">Tu n’as pas encore envoyé de photo. Choisis un défi pour commencer.</p>}
-          <div className="guest-activity-list">{ownSubmissions.map(submission => <article key={submission.challengeId} className="guest-activity"><div><h3>{challengeById.get(submission.challengeId)?.prompt ?? 'Ton défi photo'}</h3><p>{submission.status === 'approved' ? 'Publiée ✓' : submission.status === 'pending' ? 'En validation · privée' : 'À refaire · tu peux envoyer une nouvelle photo'}</p></div>{submission.status === 'rejected' && challengeById.has(submission.challengeId) && <button type="button" className="guest-primary" onClick={() => openChallenge(challengeById.get(submission.challengeId)!)}>Retenter</button>}</article>)}</div>
+          <div className="guest-activity-list">{ownSubmissions.map(submission => <article key={submission.challengeId} className="guest-activity"><div><h3>{challengeById.get(submission.challengeId)?.prompt ?? 'Ton défi photo'}</h3><p>{submission.status === 'approved' ? 'Publiée ✓' : submission.status === 'pending' ? 'Publication en cours…' : 'Retirée · tu peux envoyer une nouvelle photo'}</p></div>{submission.status === 'rejected' && challengeById.has(submission.challengeId) && <button type="button" className="guest-primary" onClick={() => openChallenge(challengeById.get(submission.challengeId)!)}>Retenter</button>}</article>)}</div>
         </section>
       )}
 
@@ -421,9 +423,9 @@ function PhotoHunt() {
               status === 'approved'
                 ? 'Publiée ✓'
                 : status === 'pending'
-                  ? 'En validation · privée'
+                  ? 'Publication en cours…'
                   : status === 'rejected'
-                    ? 'Refusée · retente'
+                    ? 'Retirée · retente'
                     : 'Disponible'
 
             return (
@@ -447,7 +449,7 @@ function PhotoHunt() {
         <div className="photo-hunt__section-title">
           <div>
             <p>Mur collectif</p>
-            <h2>Les photos validées</h2>
+            <h2>Les photos de la soirée</h2>
           </div>
           <span>{gallery.length > 0 ? 'Dernières publications' : 'Le mur se remplit bientôt'}</span>
         </div>
@@ -456,7 +458,7 @@ function PhotoHunt() {
           <div className="photo-hunt__empty-gallery">
             <span>◫</span>
             <strong>Pas encore de photo publiée</strong>
-            <p>Les premières validations de la régie apparaîtront ici automatiquement.</p>
+            <p>La première photo envoyée apparaîtra ici automatiquement.</p>
           </div>
         ) : (
           <div className="photo-hunt__gallery">
@@ -572,7 +574,7 @@ function PhotoHunt() {
             </button>
 
             <p className="photo-hunt-composer__privacy">
-              La photo reste privée tant qu’un admin ne l’a pas validée.
+              La photo rejoint la galerie dès que l’envoi est terminé.
             </p>
           </section>
         </GuestDialog>

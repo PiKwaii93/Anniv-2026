@@ -465,7 +465,7 @@
 
 @media (max-width: 720px) {
   .content-manager {
-    padding: 22px 14px 100px;
+    padding: 14px 14px 104px;
   }
 
   .content-manager__header,
@@ -476,19 +476,90 @@
   }
 
   .content-manager__header {
-    gap: 18px;
+    gap: 14px;
+    margin-bottom: 22px;
   }
 
   .content-manager__header h1 {
-    margin-top: 24px;
+    margin: 16px 0 10px;
+    font-size: clamp(2.85rem, 15vw, 4rem);
+    line-height: 0.9;
+  }
+
+  .content-manager__header > div:first-child > p:last-child {
+    font-size: 0.82rem;
+    line-height: 1.5;
   }
 
   .content-manager__health {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     min-width: 0;
+    padding: 13px 15px;
+  }
+
+  .content-manager__health strong {
+    font-size: 1.9rem;
+  }
+
+  .content-manager__health span {
+    margin-top: 0;
   }
 
   .content-panel {
-    padding: 17px;
+    margin-bottom: 12px;
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .content-panel__heading {
+    gap: 14px;
+  }
+
+  .content-panel h2 {
+    font-size: 1.5rem;
+  }
+
+  .content-panel__description {
+    margin: 13px 0 16px;
+    font-size: 0.72rem;
+  }
+
+  .content-module-card {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    padding: 12px;
+  }
+
+  .content-module-card button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .content-dropzone {
+    min-height: 112px;
+    margin-top: 14px;
+    padding: 16px;
+  }
+
+  .content-mode-switch {
+    margin-top: 14px;
+  }
+
+  .content-mode-switch button {
+    min-height: 72px;
+    padding: 13px;
+  }
+
+  .content-preview-card input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .content-apply {
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 14px;
   }
 
   .content-module-grid,
@@ -499,6 +570,7 @@
   }
 
   .content-primary {
+    min-height: 48px;
     width: 100%;
   }
 }

@@ -2,7 +2,7 @@
 // replaced by memory fixtures; no production question, vote or photo is changed.
 import assert from 'node:assert/strict'
 import test, { after, afterEach, beforeEach } from 'node:test'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import React, { act } from 'react'
@@ -16,6 +16,7 @@ const mocks = {
   '/photo-hunt/PhotoHuntImage': 'import React from "react"; export default function Photo({ alt }) { return React.createElement("img", { alt }) }',
   './PartyEndingScreen': 'export default function Ending() { return "Générique" }',
   './PartyScreenAuto': 'export default function Auto() { return "Rotation automatique" }',
+  '/screen/ScreenEventOverlay': 'export default function ScreenEvent() { return "Événement TV" }',
 }
 const bundle = await build({ configFile: false, logLevel: 'error', plugins: [{
   name: 'screen-transition-fixtures', enforce: 'pre',
@@ -50,21 +51,27 @@ async function emit(name) { await act(async () => channels.get(name)?.emit()) }
 beforeEach(() => {
   dom = new JSDOM('<div id="root"></div>', { url: 'https://party.test/screen' })
   globalThis.window = dom.window; globalThis.document = dom.window.document
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   channels = new Map(); errors = []; timers = new Map(); nextTimer = 0
   window.setInterval = callback => { const id = ++nextTimer; timers.set(id, callback); return id }
   window.clearInterval = id => timers.delete(id)
   root = createRoot(document.getElementById('root'), { onUncaughtError: error => errors.push(error) })
   fixture = globalThis.__screenTransition = {
-    party: { loading: false, settings: { phase: 'live', featuredModule: 'photos' } },
+    party: { loading: false, settings: { phase: 'live', featuredModule: 'photos' }, refresh: async () => {} },
     room: { phase: 'open', prompt: 'Question test', mode: 'majority', closesAt: '2099-01-01T00:00:00Z' },
-    photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg' }],
+    photos: [{ id: 'photo-1', player_key: 'fixture', player_name: 'Invité test', challenge_id: 'challenge-1', storage_path: 'fixture.jpg', image_width: 1600, image_height: 900 }],
     photoGate: null,
     db: {
+      rpc: async () => ({ data: null, error: null }),
       from(table) {
         const rows = {
           live_vote_public_state: { state: structuredClone(fixture.room) },
           beer_pong_state: { state: {} }, secret_mission_scoreboard: [],
+          bingo_prompts: [{ id: 'bingo-1', text: 'Quelqu’un lance une chenille' }],
+          iceberg_entries: [{ id: 'iceberg-1', level: 1, title: 'Le dossier test', description: 'Une histoire à raconter.', sort_order: 0 }],
+          guests: [{ id: 'guest-1', name: 'Invité confirmé', avatar_path: null, status: 'confirmed' }],
+          plus_ones: [{ id: 'plus-1', guest_id: 'guest-1', name: 'Accompagnant test', avatar_path: null }],
           photo_hunt_submissions: fixture.photos,
           photo_hunt_challenges: [{ id: 'challenge-1', prompt: 'Défi photo test' }],
         }
@@ -120,7 +127,8 @@ for (const first of [screenChannel, routerChannel]) {
 test('normal reveal and active-room priority remain unchanged, then clearing shows Photos', async () => {
   await render()
   assert.match(content(), /vote ouvert/)
-  assert.equal(document.querySelector('.photo-hunt-screen'), null)
+  assert.ok(document.querySelector('.photo-hunt-screen'), 'The photo wall stays mounted under La Salle')
+  assert.ok(document.querySelector('.screen-director__ambient--hidden'), 'The photo wall is hidden while La Salle has priority')
   fixture.room = { phase: 'revealed', prompt: 'Question test', result: { rows: [], totalVotes: 0 } }
   await emit(screenChannel); await emit(routerChannel)
   assert.match(content(), /résultats/)
@@ -128,14 +136,42 @@ test('normal reveal and active-room priority remain unchanged, then clearing sho
   await emit(screenChannel); await emit(routerChannel)
   isPhotoWall()
 })
-test('slow photo reads show the loading screen instead of a blank root after skip', async () => {
+
+test('TV polling reflects room changes when Realtime delivers no event', async () => {
   await render()
-  let release
-  fixture.photoGate = new Promise(resolve => { release = resolve })
+  fixture.room = { phase: 'open', prompt: 'Question test', mode: 'majority', voteCount: 3, closesAt: '2099-01-01T00:00:00Z' }
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+  assert.match(content(), /3votes enregistrés/)
+
+  fixture.room = { phase: 'revealed', prompt: 'Question test', result: { rows: [], totalVotes: 3 } }
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+  assert.match(content(), /résultats/)
+})
+test('TV polling refreshes the featured module when Realtime delivers no event', async () => {
+  let partyRefreshes = 0
+  fixture.party.refresh = async () => { partyRefreshes += 1 }
+  await render()
+
+  await act(async () => {
+    for (const callback of [...timers.values()]) callback()
+    await Promise.resolve()
+  })
+
+  assert.equal(partyRefreshes, 1)
+})
+test('the photo wall stays mounted under La Salle and is ready immediately after skip', async () => {
+  await render()
+  isPhotoWall()
   fixture.room = { phase: 'idle' }
-  await emit(screenChannel)
-  assert.match(content(), /Connexion au mur photo/)
-  await act(async () => release())
+  await emit(screenChannel); await emit(routerChannel)
   isPhotoWall()
   assert.match(content(), /Invité test/)
 })
@@ -148,12 +184,24 @@ for (const [module, expected] of [['bingo', 'Bingo'], ['missions', 'Missions sec
     assert.match(content(), new RegExp(expected))
   })
 }
+for (const [module, expected] of [
+  ['bingo', 'Quelqu’un lance une chenille'],
+  ['iceberg', 'Le dossier test'],
+  ['guests', 'Accompagnant test'],
+]) {
+  test(`${module} renders useful live content instead of only its QR code`, async () => {
+    fixture.party.settings.featuredModule = module
+    fixture.room = { phase: 'idle' }
+    await render(Screen)
+    assert.match(content(), new RegExp(expected))
+  })
+}
 test('skip without a featured module resumes automatic rotation', async () => {
   fixture.party.settings.featuredModule = null
   await render()
   fixture.room = { phase: 'idle' }
   await emit(screenChannel)
-  assert.match(content(), /Rejoins/)
+  assert.match(content(), /Rotation automatique/)
   await emit(routerChannel)
   assert.match(content(), /Rotation automatique/)
 })

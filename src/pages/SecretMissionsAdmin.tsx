@@ -6,6 +6,8 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 
+import AdminSectionNav from '../features/party/AdminSectionNav'
+import { partyModuleIcons } from '../features/party/moduleVisuals'
 import { supabase } from '../lib/supabase'
 
 import './SecretMissionsAdmin.css'
@@ -14,6 +16,13 @@ type MissionDifficulty =
   | 'easy'
   | 'medium'
   | 'hard'
+
+const missionAdminSections = [
+  { href: '#missions-overview', icon: partyModuleIcons.missions, label: 'Aperçu' },
+  { href: '#missions-create', icon: '+', label: 'Ajouter' },
+  { href: '#missions-pool', icon: '≡', label: 'Missions' },
+  { href: '#missions-players', icon: '○', label: 'Agents' },
+]
 
 type PromptRow = {
   id: string
@@ -464,13 +473,18 @@ function SecretMissionsAdmin() {
         </p>
       </header>
 
+      <AdminSectionNav
+        label="Sections de la régie Missions secrètes"
+        items={missionAdminSections}
+      />
+
       {error && (
         <div className="missions-admin-error">
           {error}
         </div>
       )}
 
-      <section className="missions-admin-stats">
+      <section id="missions-overview" className="missions-admin-stats">
         <article>
           <span>Pool</span>
           <strong>{prompts.length}</strong>
@@ -490,7 +504,7 @@ function SecretMissionsAdmin() {
         </article>
       </section>
 
-      <section className="missions-admin-section">
+      <section id="missions-create" className="missions-admin-section">
         <div className="missions-admin-section__heading">
           <div>
             <p className="missions-admin-eyebrow">
@@ -542,7 +556,7 @@ function SecretMissionsAdmin() {
         </div>
       </section>
 
-      <section className="missions-admin-section">
+      <section id="missions-pool" className="missions-admin-section">
         <div className="missions-admin-section__heading missions-admin-section__heading--search">
           <div>
             <p className="missions-admin-eyebrow">
@@ -696,7 +710,7 @@ function SecretMissionsAdmin() {
         )}
       </section>
 
-      <section className="missions-admin-section">
+      <section id="missions-players" className="missions-admin-section">
         <div className="missions-admin-section__heading">
           <div>
             <p className="missions-admin-eyebrow">

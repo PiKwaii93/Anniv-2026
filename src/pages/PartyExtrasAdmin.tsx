@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import AdminSectionNav from '../features/party/AdminSectionNav'
 import { ExtrasPage, SongCard } from '../features/party-extras/ExtrasUI'
 import { downloadText, letterExport, revealDate, songExport, type Song, type SongStatus } from '../features/party-extras/model'
 import { usePartyExtras } from '../features/party-extras/usePartyExtras'
@@ -7,6 +8,14 @@ import { useParty } from '../features/party/PartyContext'
 import SpotifyPanel from '../features/spotify/SpotifyPanel'
 import SpotifySongAction from '../features/spotify/SpotifySongAction'
 import { useSpotify, type SpotifyController } from '../features/spotify/useSpotify'
+
+const extrasAdminSections = [
+  { href: '#spotify', icon: '♫', label: 'Spotify' },
+  { href: '#capsule', icon: '✉', label: 'Capsule' },
+  { href: '#jukebox', icon: '♪', label: 'Jukebox' },
+  { href: '#duos', icon: '↔', label: 'Duos' },
+  { href: '#credits', icon: '▶', label: 'Générique' },
+]
 
 function Toggle({ label, checked, disabled, change }: { label: string; checked: boolean; disabled: boolean; change: (value: boolean) => void }) {
   return <label className="extras-toggle"><span>{label}</span><input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => change(event.target.checked)} /></label>
@@ -37,7 +46,10 @@ export default function PartyExtrasAdmin() {
   const setting = (key: string, value: boolean) => void action('admin_settings', { [key]: value })
   const settings = data?.settings
   return <ExtrasPage title="Les petits plus." eyebrow="Régie · Anniv 2026" intro="Les lettres de demain, la bande-son d’aujourd’hui, les rencontres et le dernier mot de la soirée." error={error} admin>
-    <nav className="extras-tabs" aria-label="Régie des activités"><a href="#spotify">Spotify</a><a href="#capsule">Capsule</a><a href="#jukebox">Jukebox</a><a href="#duos">Duos</a><a href="#credits">Générique</a></nav>
+    <AdminSectionNav
+      label="Sections de la régie des petits plus"
+      items={extrasAdminSections}
+    />
     <SpotifyPanel controller={spotify} rehearsal={rehearsal} />
     <div role="status" aria-live="polite">{notice && <p className="extras-notice">{notice}</p>}</div>
     {!data || !settings ? <p className="extras-loading">Chargement de la régie…</p> : <>

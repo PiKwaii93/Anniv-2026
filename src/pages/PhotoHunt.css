@@ -547,7 +547,30 @@
 
 @media (max-width: 760px) {
   .photo-hunt {
-    padding-inline: 16px;
+    padding: 14px 14px 90px;
+  }
+
+  .photo-hunt__hero {
+    padding-top: 8px;
+  }
+
+  .photo-hunt__hero h1 {
+    margin-top: 10px;
+  }
+
+  .photo-hunt__hero > p:last-of-type {
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+
+  .photo-hunt > .guest-tabs {
+    position: sticky;
+    z-index: 20;
+    top: 8px;
+    margin-bottom: 16px;
+    padding: 6px;
+    background: rgba(10, 11, 16, .9);
+    backdrop-filter: blur(16px);
   }
 
   .photo-hunt__spotlight,
@@ -556,7 +579,16 @@
   }
 
   .photo-hunt__spotlight-card {
-    min-height: 205px;
+    min-height: 165px;
+    padding: 18px;
+  }
+
+  .photo-hunt__spotlight-card > strong {
+    margin-top: 20px;
+  }
+
+  .photo-hunt__spotlight-card > b {
+    padding-top: 18px;
   }
 
   .photo-hunt__section-title {
@@ -574,7 +606,7 @@
   }
 
   .photo-hunt-composer__pickers > button {
-    min-height: 112px;
+    min-height: 96px;
   }
 }
 

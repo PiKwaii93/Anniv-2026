@@ -8,12 +8,16 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 import GuestAvatar from '../guests/GuestAvatar'
+import PwaInstallCard from '../pwa/PwaInstallCard'
+import { useRequiresIosInstallation } from '../pwa/PwaState'
+import IosInstallIdentityGate from './IosInstallIdentityGate'
 import { usePartyIdentity } from './PartyIdentityContext'
 
 import './HomeIdentityOnboarding.css'
 
 function HomeIdentityOnboarding() {
   const { isAdmin } = useAuth()
+  const requiresIosInstallation = useRequiresIosInstallation()
   const {
     identity,
     availablePlayers,
@@ -61,6 +65,8 @@ function HomeIdentityOnboarding() {
     )
   }
 
+  if (requiresIosInstallation) return <IosInstallIdentityGate />
+
   if (identity && !welcoming) return null
 
   const confirmIdentity = async () => {
@@ -96,6 +102,8 @@ function HomeIdentityOnboarding() {
           <span>ANNIV 2026</span>
           <b>01</b>
         </div>
+
+        <PwaInstallCard placement="onboarding" />
 
         <p className="home-onboarding__eyebrow">Première étape</p>
         <h1 id="home-onboarding-title">
