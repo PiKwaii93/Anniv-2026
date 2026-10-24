@@ -47,8 +47,4 @@ values
   ('Fais adopter à au moins 5 personnes une nouvelle expression inventée pendant la soirée, sans annoncer qu’il s’agit d’une mission. 🗣️', 'hard', 790, true),
   ('Fais qu’un invité raconte une anecdote de l’Iceberg tellement incroyable qu’au moins 3 personnes demandent si elle est réellement arrivée. 🧊', 'hard', 800, true),
   ('Fais qu’au moins 5 personnes participent à une cérémonie officielle totalement improvisée pour remettre à Maxence le titre de « Meilleur organisateur de soirée de France ». 🏆', 'hard', 810, true)
-on conflict (text) do update
-set difficulty = excluded.difficulty,
-    sort_order = excluded.sort_order,
-    is_active = true,
-    updated_at = now();
+on conflict (text) do nothing;
