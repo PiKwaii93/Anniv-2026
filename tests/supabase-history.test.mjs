@@ -63,6 +63,7 @@ const structurallyReviewedMigrations = [
   '20260914230000_announcement_push.sql',
   '20261016120000_import_legacy_iceberg_titles.sql',
   '20261024120000_refresh_personalized_secret_missions.sql',
+  '20261024130000_add_45_secret_missions.sql',
 ]
 
 const normalizedMd5 = (sql) => createHash('md5')
