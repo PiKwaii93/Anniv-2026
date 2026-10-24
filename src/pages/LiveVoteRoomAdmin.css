@@ -327,6 +327,23 @@
   border-color: rgba(90, 130, 255, 0.26);
 }
 
+.live-room-admin__answer-kind {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.live-room-admin__answer-kind-button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.live-room-admin__answer-kind-button--active {
+  color: #e8edfb;
+  background: rgba(90, 130, 255, 0.12);
+  border-color: rgba(90, 130, 255, 0.32);
+}
+
 .live-room-admin__save {
   min-height: 46px;
   margin-top: 18px;

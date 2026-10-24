@@ -416,6 +416,10 @@ function LiveVoteRoom() {
   const myVote = playerState?.myVote ?? null
   const resultRows = [...(publicState.result?.rows ?? [])].sort((a, b) => b.count - a.count)
   const topScore = scores[0]?.score ?? 0
+  const isTextQuiz =
+    publicState.mode === 'who_said' &&
+    (publicState.options?.length ?? 0) === 4 &&
+    publicState.options?.every((option) => option.key.startsWith('answer:'))
 
   if (loading || guestsLoading) {
     return <main className="live-room live-room--center"><p>Connexion à La Salle…</p></main>
@@ -494,7 +498,9 @@ function LiveVoteRoom() {
           <p className="live-room__instruction">
             {publicState.stage === 'final'
               ? 'Les nominations sont terminées. Vote maintenant parmi les 4 finalistes.'
-              : mode.instruction}
+              : isTextQuiz
+                ? 'Choisis la bonne réponse. +1 point si tu connais bien Maxence.'
+                : mode.instruction}
           </p>
 
           {publicState.stage === 'nomination' ? (

@@ -66,6 +66,7 @@ const structurallyReviewedMigrations = [
   '20261024130000_add_45_secret_missions.sql',
   '20261024140000_add_guest_bingo_prompts.sql',
   '20261024150000_add_personalized_live_vote_questions.sql',
+  '20261024160000_add_maxence_quiz_questions.sql',
 ]
 
 const normalizedMd5 = (sql) => createHash('md5')
