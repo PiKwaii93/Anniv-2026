@@ -1,5 +1,7 @@
 [functions.spotify-jukebox]
-verify_jwt = true
+# Guests authenticate with the private party identity inside the function.
+# Admin actions still validate their Supabase access token in service.ts.
+verify_jwt = false
 entrypoint = "./functions/spotify-jukebox/index.ts"
 
 [functions.push-subscription]

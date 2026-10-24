@@ -29,11 +29,16 @@ function harness(options = {}) {
     report: () => {},
   })
   const call = async (action = 'guest_search', patch = {}) => {
-    const response = await handler(new Request('https://example.test', { method: 'POST', headers: { Authorization: 'Bearer gateway-anon' }, body: JSON.stringify({ action, player_key: 'guest:test', session_token: token, song_id: song, title: 'diamond', artist: '', track_id: track.id, ...patch }) }))
+    const response = await handler(new Request('https://example.test', { method: 'POST', body: JSON.stringify({ action, player_key: 'guest:test', session_token: token, song_id: song, title: 'diamond', artist: '', track_id: track.id, ...patch }) }))
     return { status: response.status, body: await response.json() }
   }
   return { call, ops, network }
 }
+test('Spotify gateway leaves JWT verification to the dual-auth handler', async () => {
+  const config = await import('node:fs/promises').then(({ readFile }) => readFile(new URL('../supabase/config.toml', import.meta.url), 'utf8'))
+  const section = config.match(/\[functions\.spotify-jukebox\]([\s\S]*?)(?=\n\[|$)/)?.[1] ?? ''
+  assert.match(section, /verify_jwt\s*=\s*false/)
+})
 test('guest search returns choices to guest, with no submission or playback command', async () => {
   const h = harness(); const result = await h.call()
   assert.equal(result.status, 200); assert.equal(result.body.choices[0].artists, 'Rihanna')
