@@ -45,8 +45,6 @@ export function createHandler({ authenticate, rpc, guestRpc, fetcher = fetch, re
     // Only fixed action names and error codes are logged, never tokens, bodies or URLs.
     const diagnostic = (code: string, stage: string, status?: number) => report({ event: 'spotify_bridge', action, stage, code, ...(status === undefined ? {} : { status }) })
     try {
-      const jwt = request.headers.get('Authorization')?.match(/^Bearer (.+)$/i)?.[1]
-      if (!jwt) throw new BridgeError('NOT_ADMIN', 401)
       const raw = await request.text()
       if (raw.length > 12000) throw new BridgeError('INVALID_INPUT')
       let body: Json
@@ -56,6 +54,8 @@ export function createHandler({ authenticate, rpc, guestRpc, fetcher = fetch, re
         const result = await guestRequest(body, guestRpc, fetcher)
         return respond(result, result.error ? 400 : 200)
       }
+      const jwt = request.headers.get('Authorization')?.match(/^Bearer (.+)$/i)?.[1]
+      if (!jwt) throw new BridgeError('NOT_ADMIN', 401)
       if (!(admin = await authenticate(jwt))) throw new BridgeError('NOT_ADMIN', 401)
       if (['configure', 'disconnect', 'connect', 'callback', 'status', 'device', 'resolve', 'play', 'pause', 'next', 'queue', 'search'].includes(body.action)) action = body.action
       const db = (op: string, payload: Json = {}) => rpc(admin!, op, payload, lease)

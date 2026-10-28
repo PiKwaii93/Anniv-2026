@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { zip } from 'fflate'
 import { Link, useSearchParams } from 'react-router-dom'
 import GuestDialog from '../features/guest/GuestDialog'
 
@@ -32,6 +33,69 @@ type PreparedPhoto = CompressedPhoto & {
   previewUrl: string
 }
 
+const PHOTO_GALLERY_PAGE_SIZE = 250
+
+async function loadApprovedGallery() {
+  const photos: PhotoHuntSubmission[] = []
+
+  for (let from = 0; ; from += PHOTO_GALLERY_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('photo_hunt_submissions')
+      .select('id, challenge_id, player_key, player_name, storage_path, mime_type, caption, status, created_at, moderated_at')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .range(from, from + PHOTO_GALLERY_PAGE_SIZE - 1)
+
+    if (error) return { data: photos, error }
+
+    const page = (data ?? []) as PhotoHuntSubmission[]
+    photos.push(...page)
+    if (page.length < PHOTO_GALLERY_PAGE_SIZE) return { data: photos, error: null }
+  }
+}
+
+function safePhotoFilePart(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+    .slice(0, 42) || 'photo'
+}
+
+function photoExtension(photo: PhotoHuntSubmission) {
+  if (photo.mime_type.includes('png')) return 'png'
+  if (photo.mime_type.includes('webp')) return 'webp'
+  if (photo.mime_type.includes('heic') || photo.mime_type.includes('heif')) return 'heic'
+  return 'jpg'
+}
+
+function photoFilename(photo: PhotoHuntSubmission, index: number) {
+  const author = safePhotoFilePart(photo.player_name)
+  return `${String(index + 1).padStart(3, '0')}-${author}-${photo.id.slice(0, 8)}.${photoExtension(photo)}`
+}
+
+function saveDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function createZip(files: Record<string, Uint8Array>) {
+  return new Promise<Uint8Array>((resolve, reject) => {
+    zip(files, { level: 0 }, (error, archive) => {
+      if (error) reject(error)
+      else resolve(archive)
+    })
+  })
+}
+
 function PhotoHunt() {
   const [params, setParams] = useSearchParams()
   const view = ['gallery', 'mine'].includes(params.get('view') ?? '') ? params.get('view')! : 'challenges'
@@ -47,6 +111,7 @@ function PhotoHunt() {
   const [caption, setCaption] = useState('')
   const [processing, setProcessing] = useState(false)
   const [sending, setSending] = useState(false)
+  const [archiveProgress, setArchiveProgress] = useState<number | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const realtimeConnectedRef = useRef(false)
@@ -68,12 +133,7 @@ function PhotoHunt() {
         .eq('is_active', true)
         .order('sort_order')
         .order('created_at'),
-      supabase
-        .from('photo_hunt_submissions')
-        .select('id, challenge_id, player_key, player_name, storage_path, mime_type, caption, status, created_at, moderated_at')
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(18),
+      loadApprovedGallery(),
       supabase.rpc('get_photo_hunt_player_state', {
         p_player_key: identity.playerKey,
         p_session_token: identity.sessionToken,
@@ -278,6 +338,8 @@ function PhotoHunt() {
           p_slot_id: slot.slotId,
           p_player_key: identity.playerKey,
           p_session_token: identity.sessionToken,
+          p_image_width: preparedPhoto.width,
+          p_image_height: preparedPhoto.height,
           p_caption: caption.trim() || null,
         },
       )
@@ -294,13 +356,61 @@ function PhotoHunt() {
       setCaption('')
       setSelectedChallenge(null)
       setParams({ view: 'mine' }, { replace: true })
-      setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est privée jusqu’à validation par la régie.`)
+      setSuccess(`Photo envoyée pour « ${challengeName} ». Elle est déjà visible dans la galerie.`)
       await loadData()
     } catch (uploadError) {
       console.error('Unable to submit Photo Hunt image:', uploadError)
       setError('L’envoi de la photo a échoué. Tu peux réessayer sans perdre ton défi.')
     } finally {
       setSending(false)
+    }
+  }
+
+  const downloadPhoto = async (photo: PhotoHuntSubmission, index: number) => {
+    setError('')
+    const { data, error: downloadError } = await supabase.storage
+      .from('photo-hunt')
+      .download(photo.storage_path)
+
+    if (downloadError || !data) {
+      console.error('Unable to download Photo Hunt image:', downloadError)
+      setError('Cette photo n’a pas pu être téléchargée. Réessaie dans un instant.')
+      return
+    }
+
+    saveDownload(data, photoFilename(photo, index))
+  }
+
+  const downloadAllPhotos = async () => {
+    if (archiveProgress !== null || gallery.length === 0) return
+
+    setError('')
+    setArchiveProgress(0)
+
+    try {
+      const files: Record<string, Uint8Array> = {}
+
+      for (let index = 0; index < gallery.length; index += 1) {
+        const photo = gallery[index]
+        const { data, error: downloadError } = await supabase.storage
+          .from('photo-hunt')
+          .download(photo.storage_path)
+
+        if (downloadError || !data) throw downloadError ?? new Error('PHOTO_DOWNLOAD_FAILED')
+        files[photoFilename(photo, index)] = new Uint8Array(await data.arrayBuffer())
+        setArchiveProgress(index + 1)
+      }
+
+      const archive = await createZip(files)
+      saveDownload(
+        new Blob([new Uint8Array(archive).buffer], { type: 'application/zip' }),
+        'anniv-2026-photos.zip',
+      )
+    } catch (archiveError) {
+      console.error('Unable to create Photo Hunt archive:', archiveError)
+      setError('L’archive complète n’a pas pu être créée. Tu peux toujours télécharger les photos une par une.')
+    } finally {
+      setArchiveProgress(null)
     }
   }
 
@@ -322,12 +432,12 @@ function PhotoHunt() {
         <p className="photo-hunt__eyebrow">Anniv 2026 · chasse photo</p>
         <h1>Les <span>photos.</span></h1>
         <p>
-          Un défi, une photo, un souvenir. Les photos sont validées avant publication.
+          Un défi, une photo, un souvenir. Chaque envoi rejoint directement la galerie.
         </p>
 
         <div className="photo-hunt__stats" hidden>
           <div><strong>{approvedCount}</strong><span>validée{approvedCount !== 1 ? 's' : ''}</span></div>
-          <div><strong>{pendingCount}</strong><span>en validation</span></div>
+          <div><strong>{pendingCount}</strong><span>en publication</span></div>
           <div><strong>{challenges.length}</strong><span>défis actifs</span></div>
         </div>
       </header>
@@ -340,7 +450,7 @@ function PhotoHunt() {
         <div className="photo-hunt__success" role="status">
           <span>✓</span>
           <div>
-            <strong>Bien reçu par la régie</strong>
+            <strong>Photo publiée</strong>
             <p>{success}</p>
           </div>
         </div>
@@ -360,8 +470,8 @@ function PhotoHunt() {
             {pendingCount > 0 && (
               <div className="photo-hunt__status-card photo-hunt__status-card--pending">
                 <strong>{pendingCount}</strong>
-                <span>en validation</span>
-                <p>La photo reste privée. Dès qu’elle est publiée, elle rejoint automatiquement le mur.</p>
+                <span>en publication</span>
+                <p>L’envoi est terminé. La photo rejoint le mur automatiquement.</p>
               </div>
             )}
             {rejectedCount > 0 && (
@@ -373,7 +483,7 @@ function PhotoHunt() {
             )}
           </div>
           {ownSubmissions.length === 0 && <p className="guest-empty">Tu n’as pas encore envoyé de photo. Choisis un défi pour commencer.</p>}
-          <div className="guest-activity-list">{ownSubmissions.map(submission => <article key={submission.challengeId} className="guest-activity"><div><h3>{challengeById.get(submission.challengeId)?.prompt ?? 'Ton défi photo'}</h3><p>{submission.status === 'approved' ? 'Publiée ✓' : submission.status === 'pending' ? 'En validation · privée' : 'À refaire · tu peux envoyer une nouvelle photo'}</p></div>{submission.status === 'rejected' && challengeById.has(submission.challengeId) && <button type="button" className="guest-primary" onClick={() => openChallenge(challengeById.get(submission.challengeId)!)}>Retenter</button>}</article>)}</div>
+          <div className="guest-activity-list">{ownSubmissions.map(submission => <article key={submission.challengeId} className="guest-activity"><div><h3>{challengeById.get(submission.challengeId)?.prompt ?? 'Ton défi photo'}</h3><p>{submission.status === 'approved' ? 'Publiée ✓' : submission.status === 'pending' ? 'Publication en cours…' : 'Retirée · tu peux envoyer une nouvelle photo'}</p></div>{submission.status === 'rejected' && challengeById.has(submission.challengeId) && <button type="button" className="guest-primary" onClick={() => openChallenge(challengeById.get(submission.challengeId)!)}>Retenter</button>}</article>)}</div>
         </section>
       )}
 
@@ -421,9 +531,9 @@ function PhotoHunt() {
               status === 'approved'
                 ? 'Publiée ✓'
                 : status === 'pending'
-                  ? 'En validation · privée'
+                  ? 'Publication en cours…'
                   : status === 'rejected'
-                    ? 'Refusée · retente'
+                    ? 'Retirée · retente'
                     : 'Disponible'
 
             return (
@@ -447,30 +557,47 @@ function PhotoHunt() {
         <div className="photo-hunt__section-title">
           <div>
             <p>Mur collectif</p>
-            <h2>Les photos validées</h2>
+            <h2>Les photos de la soirée</h2>
           </div>
-          <span>{gallery.length > 0 ? 'Dernières publications' : 'Le mur se remplit bientôt'}</span>
+          <div className="photo-hunt__gallery-actions">
+            <span>{gallery.length > 0 ? `${gallery.length} photo${gallery.length > 1 ? 's' : ''} publiée${gallery.length > 1 ? 's' : ''}` : 'Le mur se remplit bientôt'}</span>
+            {gallery.length > 0 && (
+              <button
+                type="button"
+                className="photo-hunt__archive-button"
+                disabled={archiveProgress !== null}
+                onClick={() => void downloadAllPhotos()}
+              >
+                {archiveProgress === null
+                  ? 'Tout télécharger · ZIP'
+                  : `Préparation ${archiveProgress}/${gallery.length}…`}
+              </button>
+            )}
+          </div>
         </div>
 
         {gallery.length === 0 ? (
           <div className="photo-hunt__empty-gallery">
             <span>◫</span>
             <strong>Pas encore de photo publiée</strong>
-            <p>Les premières validations de la régie apparaîtront ici automatiquement.</p>
+            <p>La première photo envoyée apparaîtra ici automatiquement.</p>
           </div>
         ) : (
           <div className="photo-hunt__gallery">
-            {gallery.map((photo) => (
+            {gallery.map((photo, index) => (
               <article key={photo.id} className="photo-hunt__gallery-card">
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt__gallery-image"
                 />
-                <div>
+                <div className="photo-hunt__gallery-caption">
                   <span>{photo.player_name}</span>
                   <strong>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</strong>
                   {photo.caption && <p>{photo.caption}</p>}
+                  <button type="button" onClick={() => void downloadPhoto(photo, index)}>
+                    Télécharger la photo ↓
+                  </button>
                 </div>
               </article>
             ))}
@@ -572,7 +699,7 @@ function PhotoHunt() {
             </button>
 
             <p className="photo-hunt-composer__privacy">
-              La photo reste privée tant qu’un admin ne l’a pas validée.
+              La photo rejoint la galerie dès que l’envoi est terminé.
             </p>
           </section>
         </GuestDialog>

@@ -9,6 +9,7 @@ export function useLiveRoom() {
   useEffect(() => {
     let active = true
     let version = 0
+    let realtimeReady = false
     const refresh = async () => {
       const request = ++version
       const result = await supabase.from('live_vote_public_state').select('state').eq('id', 'main').maybeSingle()
@@ -17,8 +18,11 @@ export function useLiveRoom() {
     const visible = () => { if (document.visibilityState === 'visible') void refresh() }
     void refresh()
     const channel = supabase.channel('guest-room-status')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_vote_public_state' }, visible).subscribe()
-    const timer = window.setInterval(visible, 15000)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_vote_public_state' }, visible)
+      .subscribe((status) => { realtimeReady = status === 'SUBSCRIBED' })
+    const timer = window.setInterval(() => {
+      if (!realtimeReady) void visible()
+    }, 60000)
     document.addEventListener('visibilitychange', visible)
     return () => { active = false; window.clearInterval(timer); document.removeEventListener('visibilitychange', visible); void supabase.removeChannel(channel) }
   }, [])

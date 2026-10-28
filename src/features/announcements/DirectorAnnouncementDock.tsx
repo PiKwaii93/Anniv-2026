@@ -58,12 +58,14 @@ function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (
     visible,
     saving,
     error,
+    feedback,
     publish,
     clear,
   } = useAnnouncement()
   const [message, setMessage] = useState('')
   const [kind, setKind] = useState<AnnouncementKind>('info')
   const [duration, setDuration] = useState('15')
+  const [notifyPhones, setNotifyPhones] = useState(false)
 
   const selectedDuration = useMemo(
     () => durationOptions.find((option) => option.value === duration),
@@ -79,6 +81,7 @@ function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (
       message,
       kind,
       durationSeconds: selectedDurationSeconds,
+      ...(notifyPhones ? { notifyPhones: true } : {}),
     })
 
     if (ok) {
@@ -93,6 +96,7 @@ function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (
       message: preset.message,
       kind: preset.kind,
       durationSeconds: selectedDurationSeconds,
+      ...(notifyPhones ? { notifyPhones: true } : {}),
     })
   }
 
@@ -201,6 +205,23 @@ function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (
             </label>
           </div>
 
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notifyPhones}
+            className={`director-announcement-notify${notifyPhones ? ' director-announcement-notify--active' : ''}`}
+            disabled={saving}
+            onClick={() => setNotifyPhones((current) => !current)}
+          >
+            <span className="director-announcement-notify__switch" aria-hidden="true">
+              <span />
+            </span>
+            <span>
+              <strong>🔔 Notifier les téléphones</strong>
+              <small>Pour les invités qui ne regardent pas l’app.</small>
+            </span>
+          </button>
+
           <div className="director-announcement-footer">
             <span>{message.length}/240</span>
             <button
@@ -209,9 +230,19 @@ function DirectorAnnouncementDock({ open, setOpen }: { open: boolean; setOpen: (
               disabled={saving || !message.trim()}
               onClick={() => void broadcast()}
             >
-              {saving ? 'Diffusion…' : '📣 Diffuser'}
+              {saving
+                ? 'Diffusion…'
+                : notifyPhones
+                  ? '📣 Diffuser et notifier'
+                  : '📣 Diffuser'}
             </button>
           </div>
+
+          {feedback && !error && (
+            <p className="director-announcement-feedback" role="status">
+              {feedback}
+            </p>
+          )}
 
           {error && (
             <p className="director-announcement-error">

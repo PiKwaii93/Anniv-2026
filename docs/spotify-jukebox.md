@@ -20,7 +20,7 @@ Un envoi incertain n'est pas répété automatiquement. L'organisateur vérifie 
 
 ## Sécurité et déploiement
 
-- Edge Function `spotify-jukebox`, `verify_jwt=true`. Les actions admin vérifient `auth.getUser` et `app_admins`. Les deux actions invité `guest_search`/`guest_send` vérifient séparément la session privée `party_identity_sessions` ; elles ne passent jamais par une identité admin.
+- Edge Function `spotify-jukebox`, `verify_jwt=false`, car elle accepte deux systèmes d’authentification. Les actions admin vérifient explicitement le JWT avec `auth.getUser` et `app_admins`. Les deux actions invité `guest_search`/`guest_send` vérifient séparément la session privée `party_identity_sessions` ; elles ne passent jamais par une identité admin.
 - RPC `spotify_guest_bridge` exécutable uniquement par `service_role` : contrôle de l’identité, propriété de la proposition, ouverture du jukebox, quota de trois propositions, limite de vingt requêtes par minute et invité. Aucun appareil choisi par l’invité n’est accepté. Métadonnées canoniques relues chez Spotify avant tout envoi.
 - Un UUID de proposition stable rend les nouvelles tentatives idempotentes. Le bail est partagé avec les commandes admin. Les confirmations incertaines ne sont jamais renvoyées automatiquement. Les recherches ne créent pas de propositions.
 - RPC `spotify_bridge` exécutable uniquement par `service_role`. Schéma privé avec RLS sans lecture directe pour les clients (les deux avis INFO no-policy sont intentionnels).

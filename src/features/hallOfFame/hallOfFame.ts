@@ -1,4 +1,8 @@
 import { supabase } from '../../lib/supabase'
+import {
+  getChampionTeamId,
+  normalizeTournamentRounds,
+} from '../beer-pong/tournament'
 import { summarizeHallPhotos, type HallPhoto, type HallPhotoSummary } from './highlights'
 
 export type HallRankingRow = {
@@ -125,16 +129,18 @@ export function getBeerPongHallSummary(
   const teams = new Map(
     (state.teams ?? []).map((team) => [team.id, team]),
   )
+  const rounds = normalizeTournamentRounds(state.rounds)
+  const championTeamId = getChampionTeamId(rounds)
 
-  const championTeam = state.championTeamId
-    ? teams.get(state.championTeamId)
+  const championTeam = championTeamId
+    ? teams.get(championTeamId)
     : undefined
 
   const championPlayers = championTeam
     ? championTeam.playerIds.map((playerId) => players.get(playerId) ?? 'Joueur')
     : []
 
-  const matchesPlayed = (state.rounds ?? []).reduce(
+  const matchesPlayed = rounds.reduce(
     (total, round) => total + round.filter(
       (match) =>
         Boolean(match.teamAId) &&

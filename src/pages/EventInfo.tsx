@@ -42,6 +42,10 @@ export default function EventInfo() {
     return () => { active = false }
   }, [])
 
+  const mapsUrl = info?.address.trim()
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.address.trim())}`
+    : ''
+
   return <main className="event-info-page">
     <Link to="/" className="event-info-back">← Accueil</Link>
     <header className="event-info-hero">
@@ -54,28 +58,48 @@ export default function EventInfo() {
     {error && <p className="event-info-state event-info-state--error" role="alert">{error}</p>}
     {info && <div className="event-info-grid">
       <article className="event-info-card event-info-card--date">
-        <small>Date et heure</small>
-        <h2>{formatter.format(new Date(info.event_at))}</h2>
+        <span className="event-info-card__icon" aria-hidden="true">24</span>
+        <div>
+          <small>Date et heure</small>
+          <h2>{formatter.format(new Date(info.event_at))}</h2>
+        </div>
       </article>
-      <InfoCard label="Lieu" value={info.venue_name} fallback="Le lieu sera précisé bientôt." />
-      <InfoCard label="Adresse" value={info.address} fallback="L’adresse sera précisée bientôt." />
-      <InfoCard label="Accès" value={info.access_notes} />
-      <InfoCard label="Tenue" value={info.dress_code} />
-      <InfoCard label="Stationnement" value={info.parking_notes} />
-      <InfoCard label="À savoir" value={info.other_notes} wide />
+      <article className="event-info-card event-info-card--address">
+        <span className="event-info-card__icon" aria-hidden="true">↗</span>
+        <div>
+          <small>Adresse</small>
+          <p className={info.address.trim() ? '' : 'event-info-muted'}>
+            {info.address.trim() || 'L’adresse sera précisée bientôt.'}
+          </p>
+          {mapsUrl && (
+            <a href={mapsUrl} target="_blank" rel="noreferrer">
+              Ouvrir dans Google Maps
+              <span aria-hidden="true">↗</span>
+            </a>
+          )}
+        </div>
+      </article>
+      <InfoCard label="Accès" value={info.access_notes} icon="→" />
+      <InfoCard label="Tenue" value={info.dress_code} icon="✦" />
+      <InfoCard label="Stationnement" value={info.parking_notes} icon="P" />
+      <InfoCard label="À savoir" value={info.other_notes} icon="i" wide />
     </div>}
   </main>
 }
 
-function InfoCard({ label, value, fallback, wide = false }: {
+function InfoCard({ label, value, fallback, icon, wide = false }: {
   label: string
   value: string
   fallback?: string
+  icon: string
   wide?: boolean
 }) {
   if (!value.trim() && !fallback) return null
   return <article className={`event-info-card${wide ? ' event-info-card--wide' : ''}`}>
-    <small>{label}</small>
-    <p className={value.trim() ? '' : 'event-info-muted'}>{value.trim() || fallback}</p>
+    <span className="event-info-card__icon" aria-hidden="true">{icon}</span>
+    <div>
+      <small>{label}</small>
+      <p className={value.trim() ? '' : 'event-info-muted'}>{value.trim() || fallback}</p>
+    </div>
   </article>
 }
