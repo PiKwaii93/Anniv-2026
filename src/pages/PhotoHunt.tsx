@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { zip } from 'fflate'
 import { Link, useSearchParams } from 'react-router-dom'
 import GuestDialog from '../features/guest/GuestDialog'
 
@@ -32,6 +33,69 @@ type PreparedPhoto = CompressedPhoto & {
   previewUrl: string
 }
 
+const PHOTO_GALLERY_PAGE_SIZE = 250
+
+async function loadApprovedGallery() {
+  const photos: PhotoHuntSubmission[] = []
+
+  for (let from = 0; ; from += PHOTO_GALLERY_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('photo_hunt_submissions')
+      .select('id, challenge_id, player_key, player_name, storage_path, mime_type, caption, status, created_at, moderated_at')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .range(from, from + PHOTO_GALLERY_PAGE_SIZE - 1)
+
+    if (error) return { data: photos, error }
+
+    const page = (data ?? []) as PhotoHuntSubmission[]
+    photos.push(...page)
+    if (page.length < PHOTO_GALLERY_PAGE_SIZE) return { data: photos, error: null }
+  }
+}
+
+function safePhotoFilePart(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+    .slice(0, 42) || 'photo'
+}
+
+function photoExtension(photo: PhotoHuntSubmission) {
+  if (photo.mime_type.includes('png')) return 'png'
+  if (photo.mime_type.includes('webp')) return 'webp'
+  if (photo.mime_type.includes('heic') || photo.mime_type.includes('heif')) return 'heic'
+  return 'jpg'
+}
+
+function photoFilename(photo: PhotoHuntSubmission, index: number) {
+  const author = safePhotoFilePart(photo.player_name)
+  return `${String(index + 1).padStart(3, '0')}-${author}-${photo.id.slice(0, 8)}.${photoExtension(photo)}`
+}
+
+function saveDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function createZip(files: Record<string, Uint8Array>) {
+  return new Promise<Uint8Array>((resolve, reject) => {
+    zip(files, { level: 0 }, (error, archive) => {
+      if (error) reject(error)
+      else resolve(archive)
+    })
+  })
+}
+
 function PhotoHunt() {
   const [params, setParams] = useSearchParams()
   const view = ['gallery', 'mine'].includes(params.get('view') ?? '') ? params.get('view')! : 'challenges'
@@ -47,6 +111,7 @@ function PhotoHunt() {
   const [caption, setCaption] = useState('')
   const [processing, setProcessing] = useState(false)
   const [sending, setSending] = useState(false)
+  const [archiveProgress, setArchiveProgress] = useState<number | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const realtimeConnectedRef = useRef(false)
@@ -68,12 +133,7 @@ function PhotoHunt() {
         .eq('is_active', true)
         .order('sort_order')
         .order('created_at'),
-      supabase
-        .from('photo_hunt_submissions')
-        .select('id, challenge_id, player_key, player_name, storage_path, mime_type, caption, status, created_at, moderated_at')
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(18),
+      loadApprovedGallery(),
       supabase.rpc('get_photo_hunt_player_state', {
         p_player_key: identity.playerKey,
         p_session_token: identity.sessionToken,
@@ -306,6 +366,54 @@ function PhotoHunt() {
     }
   }
 
+  const downloadPhoto = async (photo: PhotoHuntSubmission, index: number) => {
+    setError('')
+    const { data, error: downloadError } = await supabase.storage
+      .from('photo-hunt')
+      .download(photo.storage_path)
+
+    if (downloadError || !data) {
+      console.error('Unable to download Photo Hunt image:', downloadError)
+      setError('Cette photo n’a pas pu être téléchargée. Réessaie dans un instant.')
+      return
+    }
+
+    saveDownload(data, photoFilename(photo, index))
+  }
+
+  const downloadAllPhotos = async () => {
+    if (archiveProgress !== null || gallery.length === 0) return
+
+    setError('')
+    setArchiveProgress(0)
+
+    try {
+      const files: Record<string, Uint8Array> = {}
+
+      for (let index = 0; index < gallery.length; index += 1) {
+        const photo = gallery[index]
+        const { data, error: downloadError } = await supabase.storage
+          .from('photo-hunt')
+          .download(photo.storage_path)
+
+        if (downloadError || !data) throw downloadError ?? new Error('PHOTO_DOWNLOAD_FAILED')
+        files[photoFilename(photo, index)] = new Uint8Array(await data.arrayBuffer())
+        setArchiveProgress(index + 1)
+      }
+
+      const archive = await createZip(files)
+      saveDownload(
+        new Blob([new Uint8Array(archive).buffer], { type: 'application/zip' }),
+        'anniv-2026-photos.zip',
+      )
+    } catch (archiveError) {
+      console.error('Unable to create Photo Hunt archive:', archiveError)
+      setError('L’archive complète n’a pas pu être créée. Tu peux toujours télécharger les photos une par une.')
+    } finally {
+      setArchiveProgress(null)
+    }
+  }
+
   if (loading) {
     return (
       <main className="photo-hunt photo-hunt--loading">
@@ -451,7 +559,21 @@ function PhotoHunt() {
             <p>Mur collectif</p>
             <h2>Les photos de la soirée</h2>
           </div>
-          <span>{gallery.length > 0 ? 'Dernières publications' : 'Le mur se remplit bientôt'}</span>
+          <div className="photo-hunt__gallery-actions">
+            <span>{gallery.length > 0 ? `${gallery.length} photo${gallery.length > 1 ? 's' : ''} publiée${gallery.length > 1 ? 's' : ''}` : 'Le mur se remplit bientôt'}</span>
+            {gallery.length > 0 && (
+              <button
+                type="button"
+                className="photo-hunt__archive-button"
+                disabled={archiveProgress !== null}
+                onClick={() => void downloadAllPhotos()}
+              >
+                {archiveProgress === null
+                  ? 'Tout télécharger · ZIP'
+                  : `Préparation ${archiveProgress}/${gallery.length}…`}
+              </button>
+            )}
+          </div>
         </div>
 
         {gallery.length === 0 ? (
@@ -462,17 +584,20 @@ function PhotoHunt() {
           </div>
         ) : (
           <div className="photo-hunt__gallery">
-            {gallery.map((photo) => (
+            {gallery.map((photo, index) => (
               <article key={photo.id} className="photo-hunt__gallery-card">
                 <PhotoHuntImage
                   path={photo.storage_path}
                   alt={`Photo de ${photo.player_name}`}
                   className="photo-hunt__gallery-image"
                 />
-                <div>
+                <div className="photo-hunt__gallery-caption">
                   <span>{photo.player_name}</span>
                   <strong>{challengeById.get(photo.challenge_id)?.prompt ?? 'Défi Photo Hunt'}</strong>
                   {photo.caption && <p>{photo.caption}</p>}
+                  <button type="button" onClick={() => void downloadPhoto(photo, index)}>
+                    Télécharger la photo ↓
+                  </button>
                 </div>
               </article>
             ))}

@@ -93,15 +93,19 @@ beforeEach(async()=>{
     extras:{data,error:'',busy:false,act:async(action,payload)=>{actions.push({action,payload});return true},refresh:async()=>true},
     ownPhotos:[{challengeId:'c1',status:'pending'}],
     challenges:[{id:'c1',prompt:'Photo ensemble',hint:'',sort_order:0},{id:'c2',prompt:'Photo du gâteau',hint:'',sort_order:1}],
+    gallery:[
+      {id:'p1',challenge_id:'c1',player_key:'guest:one',player_name:'Camille',storage_path:'one.webp',mime_type:'image/webp',caption:null,status:'approved',created_at:'2026-10-25T01:00:00Z'},
+      {id:'p2',challenge_id:'c2',player_key:'guest:two',player_name:'Alex',storage_path:'two.webp',mime_type:'image/webp',caption:'Le gâteau',status:'approved',created_at:'2026-10-25T02:00:00Z'},
+    ],
     chat:{messages:[],unread:0,latest:'0',open:true,more:false,oldest:null},
     chatFailure:null,sendFailure:null,chatReads:[],
     db:{
       from(table){
         reads.push(table)
-        const rows={live_vote_public_state:{state:fixture.overview.room},bingo_prompts:Array.from({length:16},(_,i)=>({id:'b'+i,text:'Situation numéro '+i})),photo_hunt_challenges:fixture.challenges,photo_hunt_submissions:[]}
+        const rows={live_vote_public_state:{state:fixture.overview.room},bingo_prompts:Array.from({length:16},(_,i)=>({id:'b'+i,text:'Situation numéro '+i})),photo_hunt_challenges:fixture.challenges,photo_hunt_submissions:fixture.gallery}
         assert.ok(Object.hasOwn(rows,table),'Unexpected read '+table)
         const value={data:rows[table],error:null}
-        const query={select(){return query},eq(){return query},order(){return query},limit(){return query},maybeSingle:async()=>value,then(a,b){return Promise.resolve(value).then(a,b)}}
+        const query={select(){return query},eq(){return query},order(){return query},limit(){return query},range(){return query},maybeSingle:async()=>value,then(a,b){return Promise.resolve(value).then(a,b)}}
         return query
       },
       rpc(name,args){
@@ -337,6 +341,9 @@ test('Photos renders one view and one suggested challenge, then own submissions 
   assert.equal(q('.photo-hunt__challenge-list'),null)
   await click(button('Galerie'))
   assert.ok(q('.photo-hunt__gallery-section'));assert.equal(q('.photo-hunt__status-panel'),null)
+  assert.match(text(),/2 photos publiées/)
+  assert.ok(button('Tout télécharger · ZIP'))
+  assert.equal(document.querySelectorAll('.photo-hunt__gallery-caption > button').length,2)
 })
 test('direct link to own photos does not bury them under challenges',async()=>{
   await render(ui.Photos,'/photos?view=mine')
